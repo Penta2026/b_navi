@@ -14,4 +14,4 @@ See [HANDOFF_CURRENT.md](HANDOFF_CURRENT.md) and [NEXT_STEPS.md](NEXT_STEPS.md).
 
 ## Deployment
 
-Repository Settings → Pages → Source: **GitHub Actions**. The workflow deploys the static frontend. Backend must be deployed independently. Do not publish Java RD5 or Android source as public website files.
+Repository Settings → Pages → Source: **Deploy from a branch**, Branch: **main**, Folder: **/(root)**, then Save. This one-time setting needs repository administrator action. The frontend is static; the backend must be deployed independently. Do not publish Java RD5 or Android source as public website files.
