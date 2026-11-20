@@ -19,3 +19,14 @@
 - Cloudflare account deployed apps, plan, server URL: NOT VERIFIED.
 - Cloudflare BRouter Containers: DESIGN CANDIDATE ONLY; NOT DEPLOYED.
 - GitHub Pages user saved config: USER-REPORTED; HTTP public URL not independently verified.
+
+
+Previous-PWA public BRouter trial
+- Static JS syntax checks and local tests: planned; see verification below.
+- Public brouter.de end-to-end POST profile / GET route: UNVERIFIED.
+- Shimanami/Kanmon private Java API availability: NOT DEPLOYED.
+- Existing bridge handling code: unchanged.
+- 2026-11-20 public BRouter compatibility (actual static frontend code): node --check app.js, public-brouter-client.js, sw.js: PASS.
+- node --test tests/*.cjs: 14 tests PASS, 0 FAIL, including all six Shimanami bridge shape/hand-off checks and new mock /profile + GeoJSON voicehint API tests.
+- Public BRouter live service POST /profile + GET route, iOS/Android Chrome, CORS, actual speech output: NOT VERIFIED.
+- GitHub Pages success and public BRouter real routing need independent validation; service limits and terms unresolved.

@@ -102,3 +102,11 @@
 - Cloudflareアカウントは未接続で、実際のデプロイ・有料プラン・URLは未確認。Cloudflare Containers（Workers Paid）を使った別ルートサービスが候補。
 - ユーザーがGitHub Pages設定を保存したとの報告あり。公開HTTP実応答はまだ確認できていない。
 - 詳細設計: `docs/CLOUDFLARE_REUSE_PLAN.md`。この更新は**調査・資料の追加のみ**。ルートAPIのクラウド公開、音声の実走検証を完了扱いしない。
+
+
+## 2026-11-20 実際の旧PWA方式を再確認
+- Source proof: old `Penta2026/BikeNavigator/motorcycle-map-v734.html` has hidden endpoint `https://brouter.de/brouter`. `assets/motorcycle-map-v660.mjs` posts custom BRF to `/profile` and GETs `?lonlats=...&profile=custom_...&format=geojson&timode=3`. **Cloudflare map relay is separate and does not route.**
+- Public-brouter compatibility now in `public-brouter-client.js` for ordinary mainland routing in GitHub Pages when no private route API is configured. Vehicle/mode mapping taken from B_Navi `BikeNavServer.java`; used the latest 10 BRFs from previous PWA (including tuned `bn_50_explore`).
+- BRouter public API's real response/CORS/limits/unrestricted access from the deployed iPhone/Android have NOT BEEN verified. No false 'working' claim. Public server cannot execute B_Navi `/api/shimanami/island-legs`, `/api/shimanami/preview` or Kanmon specific push-walk. Dedicated service is still future work.
+- GPX from public GeoJSON voicehints may drive offline audio, but **no hints returned means no fabricated turns**. Browser device TTS voices/screen-off cannot be guaranteed.
+- Do not replace B_Navi specialized routing with old generic BRouter for Shimanami or Kanmon; keep the same Java backend as an optional configured HTTPS endpoint.

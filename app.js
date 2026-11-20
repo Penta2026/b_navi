@@ -48,6 +48,24 @@ function fitMarkers(){const x=getMarkers().map(m=>m.point);if(x.length)map.fit(x
 function clearResult(){stopDemo();state.islandLegs=[];state.islandIndex=0;state.awaitingBridge=false;state.turnCues=[];state.cumKm=[];$('demo-on').disabled=true;$('demo-off').disabled=true;state.routeType=null;state.currentGpx=null;state.routes=[];state.gpsPoints=[];$('save-gpx').disabled=true;$('fit-route').disabled=true;$('route-label').textContent='未計算';$('metrics').textContent='計算すると距離や経路が表示されるよ。';$('route-segments').replaceChildren();refreshMap();}
 const API_CONFIG_KEY='bnavi.routeApiBase.v1';
 function hostedOnPages(){return location.hostname.endsWith('.github.io')}
+function usePublicBrouter(){return hostedOnPages()&&!(localStorage.getItem(API_CONFIG_KEY)||'').trim()}
+function needsDedicatedApi(points){
+ // Public BRouter has no B_Navi-specific island-bridge or tunnel-push API.
+ const inShimanami=p=>p[0]>=34.0&&p[0]<=34.45&&p[1]>=132.88&&p[1]<=133.26;
+ const inKanmon=p=>p[0]>=33.89&&p[0]<=34.04&&p[1]>=130.8&&p[1]<=131.10;
+ const longTrip=(km(points[0],points.at(-1))>8);
+ return Number($('vehicle').value)<=1&&longTrip&&
+   ((points.every(inShimanami))||(points.every(inKanmon)));
+}
+async function calculatePublicRoute(points){
+ if(needsDedicatedApi(points))throw Error('しまなみ・関門の原付専用案内は公開BRouterでは再現できません。専用B_Navi Javaサーバー接続が必要です。');
+ if(typeof BNaviPublicBrouter==='undefined')throw Error('旧PWAのBRouterクライアントを読み込めません');
+ setMessage('旧PWA方式：公開BRouterへAndroid由来BRFを送って経路を計算中…');
+ const result=await BNaviPublicBrouter.query(points,$('vehicle').value,$('mode').value);
+ routeView('normal',[{type:'road',points:result.track.points,color:'#06799b',width:5,label:'公開BRouter・旧PWA方式（試験）',gpx:result.gpx}],result.gpx,
+   '公開BRouter試験計算：'+result.profile+'。GPXと案内指示を端末に保存。道路規制・適法性は未検証。'+(!result.track.cues.length?'今回は音声用右左折指示が返りませんでした。':''));
+}
+
 function apiRoot(){
  const configured=(localStorage.getItem(API_CONFIG_KEY)||'').trim();
  if(configured){const url=new URL(configured);if(url.protocol!=='https:'&&!(url.hostname==='localhost'&&url.protocol==='http:'))throw Error('経路サーバーはHTTPSのURLを指定してください');return url.href.endsWith('/')?url.href:url.href+'/'}
@@ -55,12 +73,13 @@ function apiRoot(){
  return new URL('./',location.href).href;
 }
 function apiUrl(path){return new URL('api/'+path,apiRoot()).href}
-function updateApiSettings(){const u=localStorage.getItem(API_CONFIG_KEY)||'';$('route-api-base').value=u;$('route-api-status').textContent=u?'接続先：'+u:(hostedOnPages()?'経路サーバー未接続：ルート計算はまだできません。保存済みGPXのオフライン案内は利用可能。':'この端末のローカルJavaサーバーを利用します。')}
+function updateApiSettings(){const u=localStorage.getItem(API_CONFIG_KEY)||'';$('route-api-base').value=u;$('route-api-status').textContent=u?'接続先：'+u:(hostedOnPages()?'旧PWA方式の公開BRouterで通常経路を試験計算します。しまなみ・関門の専用処理は別のB_Navi Java APIが必要です。':'この端末のローカルJavaサーバーを利用します。')}
 $('route-api-save').addEventListener('click',()=>{try{const raw=$('route-api-base').value.trim();if(!raw)throw Error('URLを入力してください');const url=new URL(raw);if(url.protocol!=='https:'&&!(url.hostname==='localhost'&&url.protocol==='http:'))throw Error('HTTPSのURLを指定してください');localStorage.setItem(API_CONFIG_KEY,url.href);updateApiSettings();refreshServer()}catch(e){$('route-api-status').textContent='設定エラー：'+e.message}});
 $('route-api-clear').addEventListener('click',()=>{localStorage.removeItem(API_CONFIG_KEY);updateApiSettings();refreshServer()});
 updateApiSettings();
 async function postApi(path,points){const form=new URLSearchParams({vehicle:$('vehicle').value,mode:$('mode').value,points:points.map(fmt).join('|')});const response=await fetch(apiUrl(path),{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:form});const text=await response.text();if(!response.ok)throw new Error(text.slice(0,300));return {response,text};}
 async function calculate(){const btn=$('calculate');btn.disabled=true;clearResult();try{const points=getRequestPoints();persist();setMessage('BRouter計算中。道路データを照合しています…');
+ if(usePublicBrouter()){await calculatePublicRoute(points);return;}
   // Each waypoint is mandatory and stays in the requested order. A Shimanami
   // crossing is handled one pair at a time, including reverse crossings.
   if(Number($('vehicle').value)<=1 && points.length>2 && points.every(p=>p[0]>34.0&&p[0]<34.45&&p[1]>132.9&&p[1]<133.25)){
@@ -182,7 +201,7 @@ function setExample(which){clearResult();state.via=[];if(which==='hiroshima'){$(
  if(which==='shimanami'){$('vehicle').value='1';updateModes();$('mode').value='1';updatePolicy();$('start').value='34.389000,133.200000';$('goal').value='34.064000,132.995000';}
  if(which==='kanmon'){$('vehicle').value='0';updateModes();$('mode').value='1';updatePolicy();$('start').value='33.975115,130.947556';$('goal').value='33.951385,130.968889';}
  renderVia();refreshMap();fitMarkers();persist();setPick('start');setMessage('テスト地点を設定したよ。計算ボタンで実際のBRouterを試せるよ。');}
-async function refreshServer(){try{const r=await fetch(apiUrl('status'),{cache:'no-store'});if(!r.ok)throw Error(`HTTP ${r.status}`);const d=await r.json();$('server-status').textContent=d.routeReady?`● BRouter準備OK / RD5 ${d.segments}件`:'● 道路データがありません';$('server-status').classList.toggle('bad',!d.routeReady);}catch(e){$('server-status').textContent='● サーバーに接続できません';$('server-status').classList.add('bad');setMessage(hostedOnPages()?'オンライン経路サーバーは未接続です。GPXの読み込みとオフライン案内は使えます。':'BRouterサーバーへ接続できません。',true);}}
+async function refreshServer(){if(usePublicBrouter()){$('server-status').textContent='● 公開BRouter試験モード';$('server-status').classList.remove('bad');return;}try{const r=await fetch(apiUrl('status'),{cache:'no-store'});if(!r.ok)throw Error(`HTTP ${r.status}`);const d=await r.json();$('server-status').textContent=d.routeReady?`● BRouter準備OK / RD5 ${d.segments}件`:'● 道路データがありません';$('server-status').classList.toggle('bad',!d.routeReady);}catch(e){$('server-status').textContent='● サーバーに接続できません';$('server-status').classList.add('bad');setMessage(hostedOnPages()?'オンライン経路サーバーは未接続です。GPXの読み込みとオフライン案内は使えます。':'BRouterサーバーへ接続できません。',true);}}
 function speak(text){if(!$('voice-on').checked||!('speechSynthesis'in window))return;try{window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ja-JP';u.rate=1.05;window.speechSynthesis.speak(u);}catch(e){console.warn(e);}}
 function cueText(desc){const name={'start':'出発です','destination':'目的地です','left':'左折です','right':'右折です','slight left':'やや左方向です','slight right':'やや右方向です','sharp left':'大きく左折です','sharp right':'大きく右折です','straight':'直進です','keep left':'左方向です','keep right':'右方向です','u-turn':'Uターンです'};return name[desc]||'この先、曲がり角です';}
 function startDemo(){if(state.routeType!=='normal'||!state.gpsPoints.length)return;stopGps();stopDemo();state.demoIndex=0;state.saidCues=new Set();$('demo-on').disabled=true;$('demo-off').disabled=false;state.demoTimer=setInterval(()=>{state.demoIndex=Math.min(state.gpsPoints.length-1,state.demoIndex+Math.max(1,Math.floor(state.gpsPoints.length/260)));state.location=state.gpsPoints[state.demoIndex];map.center(...state.location,Math.max(map.zoom,14));refreshMap();updateGpsProgress(true);if(state.demoIndex>=state.gpsPoints.length-1){stopDemo();$('nav-status').textContent='案内デモ：目的地に到着。';speak('目的地に到着しました');}},175);updateGpsProgress(true);}

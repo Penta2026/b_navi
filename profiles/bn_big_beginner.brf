@@ -1,0 +1,85 @@
+# B_Navi enjoyment routing 2026-11-13 / experimental 
+# OSM estimated_* attributes are optional: no measured traffic, width or vista is claimed.
+# B_Navi shared 3-mode soft-costs: beginner/general/explore; legal access gates unchanged
+# B_Navi 7 modes: bn_big_balance
+# OSM信号情報の未登録や車線数・道幅の情報欠落があります。片側1車線を保証できません。
+# 高速・有料・motorroadは厳格に回避。海峡横断の特例は未実装です。
+# BikeNavigator NEXT v0.6 / 126cc+ general roads / 気持良好 (experimental)
+# Priority: road suitability for groups > fewer traffic signals > bypass avoidance.
+# Limitation: base rd5 lookups do not reliably contain actual width, lanes, or road surface quality.
+# highway classification is an indirect proxy, not a promise of >= two-lane / centerline roads.
+# Ordinary Japanese motorcycle regulations are not fully encoded in OSM.
+---context:global
+assign considerTurnRestrictions = true
+assign validForCars 1
+assign turnInstructionMode 3
+
+---context:way
+assign againstOneway
+    switch reversedirection=yes
+        switch oneway=yes|true|1 10000
+        switch junction=roundabout 10000 0
+    switch oneway=-1 10000 0
+
+assign regional_route_bias
+    0
+
+assign traffic_route_bias
+    0
+
+assign ride_width_surface_bias
+    add
+        switch lanes=1 2.100
+        switch lanes=1.5 0.900
+        0
+        switch surface=unpaved|gravel|ground|dirt 3.000
+        switch smoothness=bad|very_bad|horrible|very_horrible|impassable 3.000
+        0
+
+assign contextual_ride_bias
+    add regional_route_bias
+    add traffic_route_bias ride_width_surface_bias
+
+assign costfactor
+    switch highway=footway|pedestrian|cycleway|steps|path|bridleway|construction|proposed|abandoned 10000
+    switch access=no|private 10000
+    switch vehicle=no|private 10000
+    switch motor_vehicle=no|private 10000
+    switch motorcycle=no|private 10000
+    switch service=alley|driveway|parking_aisle|drive-through|emergency_access 10000
+    switch highway= 10000
+    switch toll=yes 10000
+    switch motorroad=yes 10000
+    switch highway=motorway|motorway_link 10000
+    add againstOneway
+    max 1.01
+    add
+    # Group-riding: prefer typical through roads; avoid narrow residential / unclassified shortcuts.
+    # Avoidance of trunk/primary is MODERATE, not absolute: a proper-width road wins over a tiny detour.
+    switch highway=secondary|secondary_link 1.020
+    switch highway=tertiary|tertiary_link 1.220
+    switch highway=primary|primary_link 1.050
+    switch highway=trunk|trunk_link 1.380
+    switch highway=unclassified 6.000
+    switch highway=residential 8.500
+    switch highway=living_street 15.000
+    switch highway=service 22.00
+    switch highway=track 10000
+    switch route=ferry 10000
+    10000
+    contextual_ride_bias
+
+# Reduce unnecessary turning through local roads to avoid signals.
+assign turncost 130.000
+assign initialcost 0
+
+---context:node
+assign initialcost
+    switch access=no|private 1000000
+    switch vehicle=no|private 1000000
+    switch motor_vehicle=no|private 1000000
+    switch motorcycle=no|private 1000000
+    switch barrier=bollard|cycle_barrier|stile|block|kissing_gate 1000000
+    # Strong penalty for MAPPED signals, subordinate to severe narrow-road penalty.
+    switch highway=traffic_signals 235.000
+    0

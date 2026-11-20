@@ -1,0 +1,100 @@
+# B_Navi enjoyment routing 2026-11-13 / experimental 
+# OSM estimated_* attributes are optional: no measured traffic, width or vista is claimed.
+# B_Navi shared 3-mode soft-costs: beginner/general/explore; legal access gates unchanged
+# B_Nabi experimental only: 巡航重視（仮） v0.1
+# No traffic counts are embedded. All restrictions preserved from source.
+# These relative weights are hypotheses, NOT measured flow.
+# B_Navi 7 modes: bn_125_buraritabi
+# v2.6.25: safe-flow experiment: 30 turncost, 175 OSM signals; deter residential cut-through.
+# OSM traffic volume, scenery and curve enjoyment unavailable: no claims of direct measurement.
+# BikeNavigator v2.6.9 / 走りを楽しむ（実験用）
+# 生活道路へ過度に誘導しないため residential/living_street/service の負担は維持。
+# 幹線道路のコストを高め、tertiary/unclassified に相対的な優先度を付ける。
+# OSMに登録された信号のみペナルティ加算。信号数・曲がり具合・交通量・舗装品質は保証しない。
+# 日本の時間帯規制や50ccの二段階右折は完全検出できない。
+
+---context:global
+# Honor ordinary OSM turn-restriction relations where BRouter rd5 includes them.
+# This does NOT enable conditional turn restrictions by itself.
+assign considerTurnRestrictions = true
+assign validForCars 1
+assign turnInstructionMode 3
+
+---context:way
+assign againstOneway
+    switch reversedirection=yes
+        switch oneway=yes|true|1 10000
+        switch junction=roundabout 10000 0
+    switch oneway=-1 10000 0
+
+assign regional_route_bias
+    0
+
+assign traffic_route_bias
+    0
+
+assign ride_width_surface_bias
+    add
+        switch lanes=1 2.100
+        switch lanes=1.5 0.900
+        0
+        switch surface=unpaved|gravel|ground|dirt 3.000
+        switch smoothness=bad|very_bad|horrible|very_horrible|impassable 3.000
+        0
+
+assign contextual_ride_bias
+    add regional_route_bias
+    add traffic_route_bias ride_width_surface_bias
+
+assign costfactor
+    # Explicitly permitted small-motorbike paths may be tolled; they are NOT motorways.
+    switch highway=path|cycleway
+        switch access=no|private 10000
+        switch vehicle=no|private 10000
+        switch motorroad=yes 10000
+        switch moped=no 10000
+        switch mofa=no 10000
+        switch moped=yes|designated 12
+        switch mofa=yes|designated 12 10000
+        switch highway=footway|pedestrian|steps|bridleway|construction|proposed|abandoned 10000
+    switch access=no|private 10000
+    switch vehicle=no|private 10000
+    switch motor_vehicle=no|private 10000
+    switch motorcycle=no|private 10000
+    # V2.5.8: do not cut through alleys, driveways or car park aisles.
+    # WIDTH CAVEAT: the stock rd5 lookup does not preserve measured width.
+    switch service=alley|driveway|parking_aisle|drive-through|emergency_access 10000
+    switch highway= 10000
+    switch toll=yes 10000
+    switch motorroad=yes 10000
+    switch highway=motorway 10000.00
+    switch highway=motorway_link 10000.00
+    add againstOneway
+    max 1.01
+    add
+    switch highway=trunk|trunk_link 3.300
+    switch highway=primary|primary_link 2.500
+    switch highway=secondary|secondary_link 1.150
+    switch highway=tertiary|tertiary_link 1.350
+    switch highway=unclassified 1.750
+    switch highway=residential 6.600
+    switch highway=living_street 8.000
+    switch highway=service 14.00
+    switch highway=track
+        switch surface=asphalt|concrete|paved 15.00 10000
+    switch route=ferry 10000
+    10000
+    contextual_ride_bias
+
+assign turncost 125.000
+assign initialcost 0
+
+---context:node
+assign initialcost
+    switch access=no|private 1000000
+    switch vehicle=no|private 1000000
+    switch motor_vehicle=no|private 1000000
+    switch motorcycle=no|private 1000000
+    switch barrier=bollard|cycle_barrier|stile|block|kissing_gate 1000000
+    switch highway=traffic_signals 215.000
+    0

@@ -1,0 +1,118 @@
+# B_Navi enjoyment routing 2026-11-13 / experimental 
+# OSM estimated_* attributes are optional: no measured traffic, width or vista is claimed.
+# B_Navi shared 3-mode soft-costs: beginner/general/explore; legal access gates unchanged
+# BikeNavigator PC v1.4 / 51-125cc 冒険走: 125 楽しい × 126 快走。
+# 県道と走りやすい裏道を重視しつつ、信号・大幹線・住宅街へのペナルティを調整。
+# 道幅・景色・道路状況は直接測定不可。125cc以下の高速/自動車専用道路は禁止。
+
+---context:global
+# Honor ordinary OSM turn-restriction relations where BRouter rd5 includes them.
+# This does NOT enable conditional turn restrictions by itself.
+assign considerTurnRestrictions = true
+assign validForCars 1
+assign turnInstructionMode 3
+
+---context:way
+assign againstOneway
+    switch reversedirection=yes
+        switch oneway=yes|true|1 10000
+        switch junction=roundabout 10000 0
+    switch oneway=-1 10000 0
+
+
+# A context hint: town class is population-based, not a precise city boundary.
+# High town classes prefer *usable* backroads; lane/surface costs still apply.
+assign regional_route_bias
+    switch estimated_town_class=3|4|5|6
+        switch highway=residential -1.320
+        switch highway=unclassified -0.360
+        switch highway=tertiary|tertiary_link 0.270
+        switch highway=secondary|secondary_link 0.500
+        switch highway=primary|primary_link 0.650
+        0
+    # In smaller towns/countryside favor green/river-adjacent through roads,
+    # but ONLY when these pseudo-tags actually exist in the local rd5.
+    switch estimated_forest_class=4|5|6
+        switch highway=tertiary|tertiary_link -0.18
+        switch highway=unclassified -0.12
+        0
+    switch estimated_river_class=4|5|6
+        switch highway=tertiary|tertiary_link -0.16
+        switch highway=unclassified -0.10
+        0
+    switch highway=tertiary|tertiary_link -0.06
+    switch highway=unclassified -0.06
+    0
+
+assign traffic_route_bias
+    switch estimated_traffic_class=5|6|7
+        switch highway=primary|primary_link 0.35
+        switch highway=secondary|secondary_link 0.30
+        0
+    0
+
+assign ride_width_surface_bias
+    add
+        switch lanes=1 1.150
+        switch lanes=1.5 0.450
+        0
+        switch surface=unpaved|gravel|ground|dirt 2.500
+        switch smoothness=bad|very_bad|horrible|very_horrible|impassable 3.000
+        0
+
+assign contextual_ride_bias
+    add regional_route_bias
+    add traffic_route_bias ride_width_surface_bias
+
+assign costfactor
+    # Explicitly permitted small-motorbike paths may be tolled; they are NOT motorways.
+    switch highway=path|cycleway
+        switch access=no|private 10000
+        switch vehicle=no|private 10000
+        switch motorroad=yes 10000
+        switch moped=no 10000
+        switch mofa=no 10000
+        switch moped=yes|designated 12
+        switch mofa=yes|designated 12 10000
+        switch highway=footway|pedestrian|steps|bridleway|construction|proposed|abandoned 10000
+    switch access=no|private 10000
+    switch vehicle=no|private 10000
+    switch motor_vehicle=no|private 10000
+    switch motorcycle=no|private 10000
+    # V2.5.8: do not cut through alleys, driveways or car park aisles.
+    # WIDTH CAVEAT: the stock rd5 lookup does not preserve measured width.
+    switch service=alley|driveway|parking_aisle|drive-through|emergency_access 10000
+    switch highway= 10000
+    switch toll=yes 10000
+    switch motorroad=yes 10000
+    switch highway=motorway 10000.00
+    switch highway=motorway_link 10000.00
+    add againstOneway
+    max 1.01
+    add
+    switch highway=trunk|trunk_link 5.250
+    switch highway=primary|primary_link 3.250
+    switch highway=secondary|secondary_link 1.850
+    switch highway=tertiary|tertiary_link 1.220
+    switch highway=unclassified 1.450
+    switch highway=residential 4.000
+    switch highway=living_street 6.400
+    switch highway=service 12.00
+    switch highway=track
+        switch surface=asphalt|concrete|paved 15.00 10000
+    switch route=ferry 10000
+    10000
+    contextual_ride_bias
+
+assign turncost 55.000
+assign initialcost 0
+
+---context:node
+assign initialcost
+    switch access=no|private 1000000
+    switch vehicle=no|private 1000000
+    switch motor_vehicle=no|private 1000000
+    switch motorcycle=no|private 1000000
+    switch barrier=bollard|cycle_barrier|stile|block|kissing_gate 1000000
+    switch highway=traffic_signals 330.000
+    0

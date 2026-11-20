@@ -1,0 +1,30 @@
+'use strict';
+const fs=require('node:fs');
+const crypto=require('node:crypto');
+const assert=require('node:assert/strict');
+const {audit}=require('../android-approaches.js');
+const bytes=fs.readFileSync('tests/fixtures/shimanami_bridge_approaches.json');
+const expected='ab900be3ef3e20886dc273d0280a478838d0308039b4718583f58e31a3bb24a7';
+assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),expected,'Android original asset must be byte-identical');
+const data=JSON.parse(bytes);
+for(const forward of [true,false]){
+ const bridges=[0,1,2,3,4,5].map(i=>({bridgeIndex:i+1,forward}));
+ const report=audit(data,forward?bridges:bridges.reverse());
+ assert.equal(report.issues.length,0,JSON.stringify(report.issues));
+ assert.equal(report.overlays.length,13,'2 approaches per bridge + Innoshima moped-tagged deck');
+ assert.equal(report.overlays.filter(x=>x.type==='moped_approach_reference').length,5);
+ assert.equal(report.overlays.filter(x=>x.type==='cycling_approach_reference').length,7);
+ assert.equal(report.overlays.filter(x=>x.type==='moped_deck_reference').length,1);
+ assert.ok(report.overlays.every(x=>x.navigationEligible===false));
+ assert.equal(report.navigationReady,false);
+ const bad=structuredClone(data);
+ const target=bad.bridges[1].directions[forward?'forward':'reverse'][0];
+ target.points[0][0]+=.001;
+ const rejected=audit(bad,bridges);
+ assert.ok(rejected.issues.some(x=>x.includes('生口橋')),'Do not connect a shifted cycling or moped ramp');
+ assert.ok(rejected.overlays.length<13);
+ const classified=structuredClone(data);
+ classified.bridges[2].directions[forward?'forward':'reverse'][1].kind='verified_moped_navigation';
+ assert.ok(audit(classified,bridges).issues.length>0,'Do not accept invented road-legal classifications');
+}
+console.log('PASS: Android 1.1.31 exact asset hash; 6 bridges forward/reverse; 13 approach/deck shapes; no false navigation; tampering rejected');

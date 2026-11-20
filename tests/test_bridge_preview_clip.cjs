@@ -1,0 +1,17 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const src=fs.readFileSync('app.js','utf8');
+const a=src.indexOf('function bridgeGapPreview('),b=src.indexOf('async function calculateShimanami(',a);
+assert(a>=0&&b>a);
+const ctx={};vm.runInNewContext(`function km(a,b){return Math.abs(a[1]-b[1])*90;}\n${src.slice(a,b)}\nthis.clip=bridgeGapPreview`,ctx);
+const ref=[[34,132],[34,132.0002],[34,132.0004],[34,132.0006],[34,132.0008]];
+const aligned=ctx.clip(ref,[[34,131.99],[34,132.0004]],[[34,132.001],[34,132.0012]]);
+assert.equal(aligned.points.length,3);
+assert.equal(aligned.connectors.length,1);
+assert.equal(aligned.connectors[0].side,'exit');
+const wide=[[34,132],[34,132.001],[34,132.002],[34,132.003]];
+const near=ctx.clip(wide,[[34,131.99],[34,132.0006]],[[34,132.0034],[34,132.004]]);
+assert.equal(near.connectors.length,2);
+const far=ctx.clip(ref,[[34,131.99],[34,131.991]],[[34,132.001],[34,132.0012]]);
+assert.equal(far.points.length,ref.length);
+assert.equal(far.connectors.length,0);
+console.log('PASS: preview clipping + clearly distinct visual-only 100m gap connectors; no GPS/GPX modification');
