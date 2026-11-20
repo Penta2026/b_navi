@@ -36,3 +36,9 @@
 - Added remote BRouter API URL setting; will not pretend GitHub hosts routing Java.
 - Added IndexedDB persistent last route/GPX geometry/turn metadata and offline re-open.
 - Added Pages Actions workflow, `.nojekyll`, docs on known limitations.
+
+
+## 2026-11-20 Cloudflare再利用の調査（ドキュメント更新）
+- 旧GitHub Worker `bikenavigator-map-relay` が地図配信専用であることをソースで確認。
+- 旧 `brouter-server` Docker構成を確認。新PWAの経路API契約に合わせた別コンテナ計画を文書化。
+- `docs/CLOUDFLARE_REUSE_PLAN.md` を追加。実サーバーデプロイ・接続テストは未実施。
