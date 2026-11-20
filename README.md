@@ -15,3 +15,7 @@ See [HANDOFF_CURRENT.md](HANDOFF_CURRENT.md) and [NEXT_STEPS.md](NEXT_STEPS.md).
 ## Deployment
 
 Repository Settings → Pages → Source: **Deploy from a branch**, Branch: **main**, Folder: **/(root)**, then Save. This one-time setting needs repository administrator action. The frontend is static; the backend must be deployed independently. Do not publish Java RD5 or Android source as public website files.
+
+
+## Cloudflare backend reuse investigation
+Old `BikeNavigator` Cloudflare Worker `bikenavigator-map-relay` is a map-data streaming relay, **not** the Java BRouter engine. See [Cloudflare reuse plan](docs/CLOUDFLARE_REUSE_PLAN.md). No hosted routing endpoint is currently verified; the existing app UI's HTTPS API setting is not yet configured.
