@@ -1,0 +1,8 @@
+2026-11-20 Github Pages frontend preparation
+- JS syntax: PASS (node --check app.js, offline-route-store.js, sw.js)
+- Existing bridge/navigation tests: PASS (all 7 Node tests; 12 bridge directions, handoff, via, search core)
+- Real GitHub Pages deployment: NOT_CONFIRMED
+- Real cloud BRouter backend: NOT_DEPLOYED
+- Real online calculation: NOT_VERIFIED
+- Offline GPX IndexedDB and speech on iPhone/Android real devices: NOT_VERIFIED
+- Background/screen-off guidance: NOT_GUARANTEED

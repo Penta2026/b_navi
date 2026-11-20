@@ -1,0 +1,43 @@
+{
+  "name": "B_Navi | スマホPWA",
+  "short_name": "B_Navi",
+  "description": "B_Navi PC・Android版BRouter継承のツーリングナビ試験版",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "lang": "ja",
+  "background_color": "#eef3f4",
+  "theme_color": "#102a3b",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "share_target": {
+    "action": "./share-gpx",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "files": [
+        {
+          "name": "gpx",
+          "accept": [
+            ".gpx",
+            "application/gpx+xml",
+            "application/xml",
+            "text/xml"
+          ]
+        }
+      ]
+    }
+  }
+}
