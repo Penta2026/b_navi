@@ -94,3 +94,11 @@
 - Two attempted Actions deployments failed at `actions/configure-pages`: initial Pages site not found; second `enablement: true` failed `Resource not accessible by integration` when creating the Pages site. This is a verified GitHub permission limit, not a frontend JS build error.
 - Simplified deployment to **Settings → Pages → Deploy from a branch → main → /(root) → Save**. Until user performs this GitHub admin action and site responds with HTTP 200, public URL is NOT verified.
 - Java BRouter API is not deployed, so new online route computation is NOT operational. GPX import and local/offline navigation code are in repo but still require iOS/Android field tests.
+
+
+## 2026-11-20 Cloudflare旧環境の再利用調査
+- 旧GitHub `Penta2026/BikeNavigator/infra/cloudflare-map-relay` を直接確認。`bikenavigator-map-relay` は `/maps/*.zip` と `/health` の地図中継専用。ルートAPIは実装されていない。
+- 旧 `brouter-server` にはJava BRouterのDocker案あり。新 `b_navi` の `api/status` / `api/route` / `api/shimanami/...` とはインターフェースが違うためそのまま差し替えできない。
+- Cloudflareアカウントは未接続で、実際のデプロイ・有料プラン・URLは未確認。Cloudflare Containers（Workers Paid）を使った別ルートサービスが候補。
+- ユーザーがGitHub Pages設定を保存したとの報告あり。公開HTTP実応答はまだ確認できていない。
+- 詳細設計: `docs/CLOUDFLARE_REUSE_PLAN.md`。この更新は**調査・資料の追加のみ**。ルートAPIのクラウド公開、音声の実走検証を完了扱いしない。
