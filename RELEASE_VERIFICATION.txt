@@ -7,6 +7,15 @@
 - Offline GPX IndexedDB and speech on iPhone/Android real devices: NOT_VERIFIED
 - Background/screen-off guidance: NOT_GUARANTEED
 
+- GitHub repository main updated: commit 0fda16324294c6e81a9a55bc34387487af9d0fa7 (23 files)
+- GitHub Pages first-run enablement fix: commit 88f7dd301133e24656fb72b17da1e5b5c4005ccd
+- GitHub Pages public URL: NOT YET VERIFIED
+
 - GitHub main tree: UPLOADED (23 files, confirmed via GitHub API)
 - Pages initial Action attempts: FAILED. Pages site must be enabled via repository Settings -> Pages -> Deploy from a branch -> main / (root) -> Save.
 - Public HTTPS site: NOT DEPLOYED/NOT VERIFIED as of this check.
+
+- Old Cloudflare map-relay Worker code: REVIEWED via GitHub repository. Provides /health and /maps/*.zip, NOT routing API.
+- Cloudflare account deployed apps, plan, server URL: NOT VERIFIED.
+- Cloudflare BRouter Containers: DESIGN CANDIDATE ONLY; NOT DEPLOYED.
+- GitHub Pages user saved config: USER-REPORTED; HTTP public URL not independently verified.
