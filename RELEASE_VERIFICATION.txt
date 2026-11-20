@@ -6,3 +6,7 @@
 - Real online calculation: NOT_VERIFIED
 - Offline GPX IndexedDB and speech on iPhone/Android real devices: NOT_VERIFIED
 - Background/screen-off guidance: NOT_GUARANTEED
+
+- GitHub main tree: UPLOADED (23 files, confirmed via GitHub API)
+- Pages initial Action attempts: FAILED. Pages site must be enabled via repository Settings -> Pages -> Deploy from a branch -> main / (root) -> Save.
+- Public HTTPS site: NOT DEPLOYED/NOT VERIFIED as of this check.
