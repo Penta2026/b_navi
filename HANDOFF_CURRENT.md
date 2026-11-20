@@ -87,3 +87,10 @@
 - New `route-api-base` setting accepts separately hosted HTTPS Java API. No backend URL configured or falsely presented as available. Local Java mode remains possible.
 - iPhone/Android voice during screen-off, offline availability of voice files, and real GPS crossings remain unverified.
 - Never publish the RD5 dataset (79MB), server JAR, or private Android source in GitHub Pages web root. Server deployment needs separate secure hosting and legal review.
+
+
+## GitHub Pages status / first activation blocker (2026-11-20)
+- Code uploaded to `Penta2026/b_navi` main (23 web/docs files), confirmed via GitHub tree.
+- Two attempted Actions deployments failed at `actions/configure-pages`: initial Pages site not found; second `enablement: true` failed `Resource not accessible by integration` when creating the Pages site. This is a verified GitHub permission limit, not a frontend JS build error.
+- Simplified deployment to **Settings → Pages → Deploy from a branch → main → /(root) → Save**. Until user performs this GitHub admin action and site responds with HTTP 200, public URL is NOT verified.
+- Java BRouter API is not deployed, so new online route computation is NOT operational. GPX import and local/offline navigation code are in repo but still require iOS/Android field tests.
