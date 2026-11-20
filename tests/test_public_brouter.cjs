@@ -28,3 +28,17 @@ test('sends original /profile POST and BRouter geojson + timode=3 GET, with via 
  const p=new URL(calls[2].url);assert.equal(p.searchParams.get('lonlats'),'132.45,34.4|132.46,34.405|132.47,34.41');assert.equal(p.searchParams.get('profile'),'custom_abcDEF11');assert.equal(p.searchParams.get('timode'),'3');assert.equal(p.searchParams.get('format'),'geojson');
  assert.match(r.gpx,/<offset>1<\/offset>/);
 });
+test('BRouter client reports upload and routing phases for user-facing wait diagnosis',async()=>{
+ global.location={href:'https://penta2026.github.io/b_navi/'};
+ const progress=[];
+ const mock=async (url)=>{
+  const x=String(url);
+  if(x.endsWith('.brf'))return {ok:true,text:async()=> '---context:way\n---context:node\n'};
+  if(x.endsWith('/profile'))return {ok:true,text:async()=> '{"id":"custom_perftest"}'};
+  if(x.includes('/brouter?'))return {ok:true,json:async()=>({type:'FeatureCollection',features:[{geometry:{type:'LineString',coordinates:[[132.45,34.4],[132.46,34.405]]},properties:{voicehints:[]}}]})};
+  throw Error('Unexpected '+x);
+ };
+ const result=await query([[34.4,132.45],[34.405,132.46]],0,0,mock,m=>progress.push(m));
+ assert.deepEqual(progress.map(x=>x.phase),['profile','route','done']);
+ assert.ok(Number.isFinite(result.elapsedMs)&&result.elapsedMs>=0);
+});

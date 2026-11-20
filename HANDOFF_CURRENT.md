@@ -114,3 +114,13 @@
 - BRouter public API's real response/CORS/limits/unrestricted access from the deployed iPhone/Android have NOT BEEN verified. No false 'working' claim. Public server cannot execute B_Navi `/api/shimanami/island-legs`, `/api/shimanami/preview` or Kanmon specific push-walk. Dedicated service is still future work.
 - GPX from public GeoJSON voicehints may drive offline audio, but **no hints returned means no fabricated turns**. Browser device TTS voices/screen-off cannot be guaranteed.
 - Do not replace B_Navi specialized routing with old generic BRouter for Shimanami or Kanmon; keep the same Java backend as an optional configured HTTPS endpoint.
+
+
+## 2026-11-20 — smartphone smooth map / calmer tiles (current)
+- Reported: public routing appears to calculate, but operation feels slow; standard OSM raster is visually busy. No end-user timing log supplied, so do not claim server speed or network throughput is fixed.
+- `map-core.js`: cached road SVG line geometry across panning, map bearing changes and GPS updates. Rebuild only when path list, zoom, or viewport size changes. No GPS/GPX points are removed or reordered; bridge/walk lines are still distinct. Correct rotated viewport tile bounds reduce excess OSM tiles. Eager decoding for visible subset. No background map prefetch or bulk download.
+- `app.js`, `index.html`, `style.css`: default **淡色（simple）** with reduced base-map opacity against a pale background. Button `標準へ` restores the prior full-color map; `淡色へ` switches back. The chosen display mode persists in localStorage. This **does not remove printed POI labels or provide true offline basemap**. No new tile provider introduced.
+- `public-brouter-client.js` + `app.js`: visible API phases (BRF transmission, route calculation, retry) and reported elapsed duration. Cloud/server response time still depends on `brouter.de` and is not under this client's control. Never claim public API guaranteed availability.
+- `tests/test_fast_map_render.cjs` + added public BRouter progress test: 17/17 Node tests PASS incl 6 bridge round trips, GPS handoff, ordering, raster coverage, cached GPX path redraw, and public API request mocks. Browser screenshot / real mobile frame rate / public BRouter real response NOT VERIFIED.
+- Deployed frontend source to `Penta2026/b_navi`, GitHub Pages build must be checked separately after commit; last deployed status is not inferred from source upload.
+- **Version source**: `B_Navi_PWA_Smooth_Map_2026-11-20.zip`. This supersedes the earlier experimental public BRouter ZIP for UI and rendering. Android `vf1` remains feature source; old `BikeNavigator` remains external BRouter implementation reference.

@@ -22,3 +22,11 @@
 3. Independently deploy the **same** Java B_Navi specialized API for Shimanami and Kanmon when required; do not trust public BRouter for bridge/push-walk permission.
 4. Confirm traffic limits, terms, and privacy implications of public brouter.de before exposing to wider audience; public service is only a prototype.
 5. Keep future handoff ZIP+GitHub docs current; never delete old routes or saved maps.
+
+
+## Current UI/performance follow-up (2026-11-20)
+1. On iPhone Safari and Android Chrome, compare pan and pinch smoothness on normal and long 8k+ point GPX with the pale and standard basemaps. Use actual user observation; no simulated benchmark can guarantee field performance.
+2. Observe the public BRouter progress message. If most waiting time is at **BRF upload**, consider a safely invalidated session-only profile ID cache. If at **route calculation**, public service load may dominate; do not silently switch profiles or straight-line routes.
+3. If a truly sparse map is desired (labels/POIs actually omitted), evaluate a licensed, adequately attributed low-detail vector or raster basemap respecting tile provider policy. This revision only reduces OSM raster contrast/visual emphasis.
+4. Keep off-line saved route, GPS and TTS tests separate: no promise of screen-off background guidance or offline OSM base tiles.
+5. Maintain identical 6 bridge route behavior, correct via ordering, Android vf1 BRF rules, and updated docs with each ZIP / GitHub revision.

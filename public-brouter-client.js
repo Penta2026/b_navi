@@ -41,18 +41,22 @@ async function upload(name,netFetch=fetch){
  const id=options.find(v=>typeof v==='string'&&/^(custom_|shared_)[A-Za-z0-9_-]+$/.test(v))||body.match(/(?:custom_|shared_)[A-Za-z0-9_-]+/)?.[0];
  if(!id)throw Error('BRouterのカスタムプロファイルIDを取得できません');IDS.set(name,id);return id;
 }
-async function query(points,vehicle,mode,netFetch=fetch){
+async function query(points,vehicle,mode,netFetch=fetch,onProgress=null){
+ const started=Date.now();const progress=(phase,message)=>{if(typeof onProgress==='function')onProgress({phase,message,elapsedMs:Date.now()-started})};
  if(!Array.isArray(points)||points.length<2||points.length>52||points.some(p=>!validPoint(p)))throw Error('経路地点が不正です');
  const profile=profileName(vehicle,mode);
+ progress('profile',IDS.has(profile)?'公開BRouter：前回の走行プロファイルを使用中…':'公開BRouter：走行プロファイルを送信中…');
  let id=IDS.get(profile)||await upload(profile,netFetch);
  const calc=async()=>{const url=new URL(SERVER);url.searchParams.set('lonlats',points.map(p=>p[1]+','+p[0]).join('|'));url.searchParams.set('profile',id);url.searchParams.set('alternativeidx','0');url.searchParams.set('format','geojson');url.searchParams.set('timode','3');
  return netFetch(url,{signal:AbortSignal.timeout(90000),cache:'no-store',credentials:'omit'});};
- let r=await calc();if(!r.ok&&[400,404,500].includes(r.status)){IDS.delete(profile);id=await upload(profile,netFetch);r=await calc()}
+ progress('route','公開BRouter：道路ルートを計算中…');
+ let r=await calc();if(!r.ok&&[400,404,500].includes(r.status)){IDS.delete(profile);progress('retry','公開BRouter：プロファイル期限切れを確認・再送信中…');id=await upload(profile,netFetch);progress('route','公開BRouter：経路を再計算中…');r=await calc()}
  if(!r.ok)throw Error('公開BRouterの計算エラー HTTP '+r.status+' '+(await r.text()).slice(0,150));
  const track=trackFromGeoJSON(await r.json());
  const farMeters=(p,q)=>{const rad=Math.PI/180,dlat=(p[0]-q[0])*rad,dlon=(p[1]-q[1])*rad,a=Math.sin(dlat/2)**2+Math.cos(p[0]*rad)*Math.cos(q[0]*rad)*Math.sin(dlon/2)**2;return 12742000*Math.asin(Math.sqrt(Math.min(1,a)))};
  if(farMeters(track.points[0],points[0])>300||farMeters(track.points.at(-1),points.at(-1))>300)throw Error('BRouterの計算起終点が指定位置と一致しません');
- return {profile,track,gpx:gpxFromTrack(track,profile)};
+ progress('done','公開BRouter：経路を受信しました');
+ return {profile,track,gpx:gpxFromTrack(track,profile),elapsedMs:Date.now()-started};
 }
 const api={SERVER,profileName,trackFromGeoJSON,gpxFromTrack,query};root.BNaviPublicBrouter=api;
 if(typeof module!=='undefined'&&module.exports)module.exports=api;

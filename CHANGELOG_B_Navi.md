@@ -51,3 +51,11 @@
 - Note: no public live API end-to-end route or iPhone/Android GPS audio test verified.
 
 - GitHub Pages Actions for commit `39e89c6` were confirmed success (public device HTTP and route API not tested). Cloudflare map relay is separate from BRouter public route service.
+
+
+### 2026-11-20: smartphone map responsiveness and calm map presentation
+- Route SVG cached during dragging, GPS tracking and rotation; reduced viewport raster request extent.
+- Calm OSM-background display enabled by default (opacity only, to avoid heavy filters); single-tap original map toggle persists in localStorage.
+- Public BRouter progress now distinguishes profile upload, route computation and automatic retry, and reports elapsed duration.
+- No changes to BRF contents, Shimanami/Kanmon navigation, GPX turn metadata, search or local offline route storage.
+- 17/17 offline Node tests pass; no real smartphone performance or production API timing proof.

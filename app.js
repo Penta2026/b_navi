@@ -8,6 +8,17 @@ const ROUTE_POLICIES=['ビギナー：狭い道と曲がりを抑え、走りや
 const MODES=[['ビギナー','一般','探索'],['ビギナー','一般','探索'],['ビギナー','一般','探索','ファストトラベル（高速・有料優先）']];
 const state={pick:'start',via:[],routes:[],currentGpx:null,location:null,watchId:null,routeType:null,gpsPoints:[],lastInputHash:'',turnCues:[],demoTimer:null,demoIndex:0,saidCues:new Set(),cumKm:[],islandLegs:[],islandIndex:0,awaitingBridge:false,gpsAccuracy:Infinity};
 const map=new BNaviMapCore.MapCore($('map-container'),$('tile-layer'),$('map-overlay'),$('path-layer'),$('point-layer'),$('gps-layer'),handleMapClick);
+// Default to a calmer OSM raster style; keep the original detailed view one tap away.
+// Only display styling changes: road eligibility, GPS accuracy and routes are untouched.
+const MAP_STYLE_KEY='bnavi.mapStyle.v1';
+function setMapStyle(style){const mode=style==='standard'?'standard':'simple';document.body.dataset.mapStyle=mode;
+ const b=$('map-style-toggle');b.textContent=mode==='simple'?'標準へ':'淡色へ';b.setAttribute('aria-pressed',String(mode==='simple'));
+ try{localStorage.setItem(MAP_STYLE_KEY,mode)}catch{}
+}
+let rememberedStyle='simple';try{rememberedStyle=localStorage.getItem(MAP_STYLE_KEY)||'simple'}catch{}
+setMapStyle(rememberedStyle);
+$('map-style-toggle').addEventListener('click',()=>setMapStyle(document.body.dataset.mapStyle==='simple'?'standard':'simple'));
+
 // The existing search/favorites action dialog is also used for a map long-press.
 map.onLongPress=point=>window.BNaviSelectMapPoint?.(point);
 function setMessage(message,error=false){$('message').textContent=message;$('message').classList.toggle('error',error);}
@@ -60,10 +71,10 @@ function needsDedicatedApi(points){
 async function calculatePublicRoute(points){
  if(needsDedicatedApi(points))throw Error('しまなみ・関門の原付専用案内は公開BRouterでは再現できません。専用B_Navi Javaサーバー接続が必要です。');
  if(typeof BNaviPublicBrouter==='undefined')throw Error('旧PWAのBRouterクライアントを読み込めません');
- setMessage('旧PWA方式：公開BRouterへAndroid由来BRFを送って経路を計算中…');
- const result=await BNaviPublicBrouter.query(points,$('vehicle').value,$('mode').value);
+ setMessage('公開BRouter：経路計算の準備中…');
+ const result=await BNaviPublicBrouter.query(points,$('vehicle').value,$('mode').value,fetch,progress=>{setMessage(progress.message);});
  routeView('normal',[{type:'road',points:result.track.points,color:'#06799b',width:5,label:'公開BRouter・旧PWA方式（試験）',gpx:result.gpx}],result.gpx,
-   '公開BRouter試験計算：'+result.profile+'。GPXと案内指示を端末に保存。道路規制・適法性は未検証。'+(!result.track.cues.length?'今回は音声用右左折指示が返りませんでした。':''));
+   '公開BRouter試験計算：'+result.profile+'（通信・計算 '+(result.elapsedMs/1000).toFixed(1)+'秒）。GPXと案内指示を端末に保存。道路規制・適法性は未検証。'+(!result.track.cues.length?'今回は音声用右左折指示が返りませんでした。':''));
 }
 
 function apiRoot(){

@@ -27,3 +27,10 @@ Old `BikeNavigator` Cloudflare Worker `bikenavigator-map-relay` is a map-data st
 - BRouter is a public third-party server: availability, quotas and long-term permission for third-party apps are not verified. This is a pilot, not a guaranteed production backend.
 - For Shimanami and Kanmon, **public routing is NOT equivalent to the B_Navi specialized island/human-push behavior**. The dedicated Java API is still required. No bridge reference lines are silently added to a GPX.
 - When server returns `voicehints` with `timode=3`, the PWA converts supported BRouter hints to GPX `<rtept><desc>...<offset>` metadata and saves the GPX locally. Unknown maneuvers are omitted; iPhone/Android actual offline GPS/audio and screen-off use remain unverified.
+
+
+## Latest: smoother map and simple background (2026-11-20)
+- Default map view is **淡色** (muted OSM raster). Tap **標準へ** on the map to see the original vivid background. The choice is remembered.
+- GPX geometry is no longer rebuilt every time the map pans, rotates, or a new GPS location arrives. Visible OSM tile requests better match the viewport; no bulk caching has been added.
+- If route calculation feels slow, the display now reports whether it is uploading a profile or waiting for public BRouter, and reports the network/compute elapsed time after success. This is diagnostic; third-party server latency remains beyond our control.
+- The original OSM text is still embedded in raster tiles. For an actually low-label basemap a separate licensing/provider decision is needed.

@@ -37,3 +37,10 @@
 .point-summary{padding:10px 12px;background:#f3f8fa;border:1px solid #dce9ed;border-radius:10px;margin:8px 0 3px;font-weight:650;overflow-wrap:anywhere}
 .coordinate-details{margin:2px 0 8px;color:#67818a;font-size:11px}.coordinate-details summary{cursor:pointer;padding:4px 6px}.coordinate-details input{width:100%;font-size:12px}.via-info{flex:1;min-width:0;overflow-wrap:anywhere;padding:3px 4px}.via-info strong{font-size:13px}.via-row{padding:6px 3px;border-bottom:1px solid #e7eef1;align-items:center;min-height:48px}.route-options{margin-top:12px;color:#607883}.route-options summary{cursor:pointer;font-size:12px}.route-quick{margin-bottom:12px}.pickbar{margin-top:8px;margin-bottom:9px}
 #import-gpx{border:1px solid #b6dbe3}#gpx-import-status{margin-top:10px}
+
+/* 2026-11-20: calm basemap for route visibility, without changing OSM tile source or hiding attribution. */
+body[data-map-style="simple"] #map-container{background:#f6f8f7}
+body[data-map-style="simple"] #tile-layer{opacity:.62}
+body[data-map-style="standard"] #tile-layer{filter:none;opacity:1}
+#map-style-toggle{font-size:11px;font-weight:700;letter-spacing:-.01em;line-height:1.2}
+@media(max-width:800px){#map-style-toggle{min-width:44px;min-height:44px}}
