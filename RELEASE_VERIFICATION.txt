@@ -30,3 +30,6 @@ Previous-PWA public BRouter trial
 - node --test tests/*.cjs: 14 tests PASS, 0 FAIL, including all six Shimanami bridge shape/hand-off checks and new mock /profile + GeoJSON voicehint API tests.
 - Public BRouter live service POST /profile + GET route, iOS/Android Chrome, CORS, actual speech output: NOT VERIFIED.
 - GitHub Pages success and public BRouter real routing need independent validation; service limits and terms unresolved.
+
+- GitHub Pages automatic `pages build and deployment` workflow for commit `39e89c6` (previous source commit): SUCCESS, checked via GitHub Actions. HTTP 200 from public URL: still NOT VERIFIED due network tool restriction.
+- Public BRouter legacy client test suite: 14 PASS / 0 FAIL (test fixtures and mock API); no public server live route tested.

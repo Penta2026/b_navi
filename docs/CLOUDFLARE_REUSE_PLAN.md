@@ -47,3 +47,10 @@
 - https://developers.cloudflare.com/containers/
 - https://developers.cloudflare.com/containers/platform/pricing/
 - https://developers.cloudflare.com/containers/get-started/
+
+
+## 2026-11-20 NEW: former PWA routing architecture found (supersedes earlier assumptions)
+- Original public repo `Penta2026/BikeNavigator/motorcycle-map-v734.html` contains `value="https://brouter.de/brouter"`; `assets/motorcycle-map-v660.mjs` POSTs Android-derived custom BRFs to `https://brouter.de/brouter/profile`, then GETs the BRouter GeoJSON with `timode=3` voicehints. Thus the prior route searches **did not require paid Cloudflare Containers**.
+- Cloudflare's existing `bikenavigator-map-relay` remains solely a map-data streaming relay. It is not a BRouter engine.
+- Current `b_navi` Pages client restores the direct-public-BRouter method for ordinary routes only (pilot). Dedicated Java API for 50/125 Shimanami island/bridge handoffs and Kanmon push-walk remains a separate missing backend. Do not replace special safety constraints with generic public routing.
+- Public `brouter.de` is a third-party shared service. Availability, custom BRF upload policy, CORS, usage restrictions and longevity must be verified on devices. Do not claim permanent free routing, guaranteed legality or a user-owned service.

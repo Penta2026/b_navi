@@ -1,5 +1,9 @@
 # B_Navi PWA — 引継ぎ正本 / CURRENT HANDOFF
 
+> **最終更新・2026-11-20:** ユーザーがGitHub Pagesを有効化済み。`Penta2026/b_navi` で commit `39e89c6` の **pages build and deployment** が success。旧GitHub `BikeNavigator` の実装から、経路探索は公開 `https://brouter.de/brouter` に Android BRF を `POST /profile` していたと確定。今回、同じ方式を通常経路の試験用として追加（`public-brouter-client.js`＋10 BRF）。**Cloudflare Workers Paidへの変更はこの方式の試験には不要。** ただし実APIリクエストとiOS/Android GPS音声は未確認。しまなみ・関門の専用処理には従来どおり別Java APIが必要。この更新を、以下の古い『まだPages未設定』『Container前提』の記載より優先する。
+
+
+
 **更新：2026-11-20**  
 **配布版：`B_Navi_PWA_Search_Handoff_2026-11-20.zip` — Search Parity Foundation v1（旧版の正常動作を壊さず検索を見直すための統合版）**  
 **次の作業者はこのファイルを最初に読むこと。** 古い `Handoff_Next_Chat.md` / README 中に残る旧段階の未実装表記より、本ファイルと実ソースを優先する。

@@ -1,10 +1,10 @@
 # B_Navi PWA — Online route calculation / offline voice navigation
 
-**Status (2026-11-20): GitHub Pages frontend preparation only.**
+**Status (2026-11-20): GitHub Pages build & deployment workflow SUCCESS for commit `39e89c6`. Public URL HTTP response and smartphone E2E not directly verified. Public BRouter method is an experimental online routing fallback.**
 
-- Open `https://penta2026.github.io/b_navi/` once Pages deploy succeeds (not verified until deployed).
+- Open `https://penta2026.github.io/b_navi/`. GitHub Pages Actions reported a successful build/deployment for commit `39e89c6`; an external HTTP 200 fetch was unavailable in this environment.
 - GitHub Pages hosts a static, HTTPS mobile PWA, **not** the Java BRouter route engine.
-- For online route calculation, supply a **separately deployed HTTPS B_Navi Java API** via "オンライン経路計算の接続設定". Endpoints `api/status`, `api/route`, `api/shimanami/island-legs`, `api/shimanami/preview` must implement the current app contract, allow CORS from the Pages origin, and support the original BRF/RD5/Shimanami/Kanmon rules. **No public routing server is deployed or configured in this revision.**
+- **Ordinary online routes:** the same public `brouter.de` API path as the previous PWA is configured by default on Pages when no dedicated API is set. The public server is third-party and not verified to serve our custom BRFs/CORS today. **Shimanami/Kanmon specialized routes:** still require a separately deployed HTTPS B_Navi Java API, with `/api/status`, `/api/route`, `/api/shimanami/island-legs`, `/api/shimanami/preview`. No such dedicated API is deployed in this release.
 - Online map tiles and place search require internet. Cached application assets + IndexedDB-stored GPX/route geometry + client-side GPS and speech synthesis can operate without network while the browser tab remains active and the system voice is available.
 - iOS Safari background/screen-off GPS/TTS are *not guaranteed*. Route lines are still visible offline, but the OSM basemap tiles are not offline-cached.
 - GPX with `<rtept>` turn offsets supports local right/left cues. GPX without turn cues only shows the track; never fabricate instructions.
@@ -14,7 +14,7 @@ See [HANDOFF_CURRENT.md](HANDOFF_CURRENT.md) and [NEXT_STEPS.md](NEXT_STEPS.md).
 
 ## Deployment
 
-Repository Settings → Pages → Source: **Deploy from a branch**, Branch: **main**, Folder: **/(root)**, then Save. This one-time setting needs repository administrator action. The frontend is static; the backend must be deployed independently. Do not publish Java RD5 or Android source as public website files.
+Pages has been enabled by the user. GitHub Actions **pages build and deployment** for `39e89c6` completed successfully. Do not publish Java RD5 or Android source as public website files.
 
 
 ## Cloudflare backend reuse investigation
