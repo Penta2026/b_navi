@@ -1,3 +1,10 @@
+# 2026-11-21 最新優先課題
+1. **音声設定の端末実機確認**：標準1.15倍と1.30倍、音量、声の高さ、端末別日本語音声、ON/OFF・試聴の挙動。Web Speech APIによる速度・声の違いは端末音声エンジン依存。
+2. **音声案内の走行確認**：取得済みGPXに右左折ヒントがあることを確認し、GPS追跡・発話タイミング・終了操作・通信断時の動作を試す。安全な場所で確認。
+3. **地図とUI**：案内中は淡色地図、現在地◎、十字付き⌖、方位切替、案内終了だけを維持。不要な説明は増やさない。
+4. **既存未解決**：場所検索の施設網羅性、外部BRouter依存、しまなみ・関門の専用HTTPS API未接続、完全なオフライン背景地図、iPhone画面OFF問題。
+5. **引継ぎ**：毎回統合ZIP・CHANGELOG・HANDOFF・NEXT_STEPS・検証記録を更新する。
+
 # Next steps / acceptance gates — 2026-11-20
 
 1. **GitHub Pages was enabled and the Pages build/deployment Actions completed successfully** for `b_navi` commit `39e89c6`. Validate actual HTTPS responses and iPhone/Android display in a device browser. Publishing alone does not verify public BRouter routing.

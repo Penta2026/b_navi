@@ -1,6 +1,6 @@
 /* Cache only local static app-shell files, NEVER .rd5, routes, or map tiles. */
-const CACHE='bnavi-pc-pwa-20261121-navigation-focus-v1';
-const FILES=['./','./index.html','./style.css','./app.js','./navigation-heading.js','./public-brouter-client.js','./offline-route-store.js','./place-search-core.js','./mobile-ui.js','./gpx-transfer.js','./ride-radar.js','./android-approaches.js','./shimanami-geometry.js','./map-core.js','./icon.svg','./icon-192.png','./icon-512.png','./manifest.webmanifest'];
+const CACHE='bnavi-pc-pwa-20261121-voice-settings-v1';
+const FILES=['./','./index.html','./style.css','./app.js','./navigation-heading.js','./voice-settings.js','./public-brouter-client.js','./offline-route-store.js','./place-search-core.js','./mobile-ui.js','./gpx-transfer.js','./ride-radar.js','./android-approaches.js','./shimanami-geometry.js','./map-core.js','./icon.svg','./icon-192.png','./icon-512.png','./manifest.webmanifest'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('bnavi-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 const SHARED_CACHE='bnavi-gpx-inbox';

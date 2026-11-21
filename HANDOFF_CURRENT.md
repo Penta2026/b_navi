@@ -1,3 +1,24 @@
+# 2026-11-21 最新引継ぎ：Voice Settings v1
+**この節を現行正本として優先。** ベースGitHub commit `3d84bc20ee1955b57295208ef1bd06b519eacaec` のPWAへ音声設定を追加した。
+
+## 今回
+- `app.js` 内の読み上げ速度固定 `0.85` を廃止。既定は **1.15** (`voice-settings.js` 内の `DEFAULTS.rate`)。
+- `index.html` の「⚙ 設定」から音声ON/OFF、速度・音量・声の高さ・日本語音声選択・テスト・標準に戻す操作が可能。ルートパネルにも設定への入口あり。
+- `localStorage` のキーは `bnavi.voice.v1`。欠損・破損した場合は既定値へ。保存済みGPX/お気に入り/経路のDBは変更しない。
+- 通常画面からiPhone/Androidの説明を撤去。GPS・ルート計算の制約は機種依存説明でなく機能単位で表示する。
+- 指定済み`BNaviPublicBrouter`、しまなみ橋、関門、車種別プロファイル、赤▲・地図回転・案内中全画面は変更なし。
+
+## 検証
+- `node --test tests/*.cjs`：28 PASS。
+- `python tests/browser_smoke.py`：390px UI/GPS/音声模擬 PASS。
+- `python tests/browser_voice_settings.py`：390px 音量/速度/声/設定保持/音声OFF/試聴/初期化 PASS。
+- これらは模擬音声・GPS。iPhone SafariとAndroid Chrome実機での音質/日本語の音量・レート反映/画面OFF継続は **未確認**。
+
+## 次にすること
+- iPhone/Android実機で「設定」→「試しに再生」→案内開始を実走前に確認する。
+- 日本語の声が列挙されない端末のフォールバック、画面ロック時の挙動を確認する。
+- 不具合修正時もルート計算や橋接続の既存テストを必ず実行し、引継ぎ書を更新する。
+
 # B_Navi PWA — 引継ぎ正本 / CURRENT HANDOFF
 
 > **最終更新・2026-11-20:** ユーザーがGitHub Pagesを有効化済み。`Penta2026/b_navi` で commit `39e89c6` の **pages build and deployment** が success。旧GitHub `BikeNavigator` の実装から、経路探索は公開 `https://brouter.de/brouter` に Android BRF を `POST /profile` していたと確定。今回、同じ方式を通常経路の試験用として追加（`public-brouter-client.js`＋10 BRF）。**Cloudflare Workers Paidへの変更はこの方式の試験には不要。** ただし実APIリクエストとiOS/Android GPS音声は未確認。しまなみ・関門の専用処理には従来どおり別Java APIが必要。この更新を、以下の古い『まだPages未設定』『Container前提』の記載より優先する。

@@ -82,3 +82,21 @@ body.navigation-active #navigation-quickbar{bottom:max(14px,env(safe-area-inset-
 body.navigation-active #nav-stop-quick{background:#123a4c;color:#fff;border-color:#123a4c;font-size:13px;min-height:46px}
 body.navigation-active #map-gps-message{left:12px;right:auto;top:90px;max-width:min(300px,calc(100vw - 140px))}
 @media(max-width:800px){body.navigation-active #layout{height:100dvh!important}body.navigation-active #navigation-quickbar{bottom:max(16px,env(safe-area-inset-bottom,0px))}body.navigation-active .map-controls{top:max(12px,env(safe-area-inset-top,0px))}}
+
+/* Settings belong to normal mode; keep the active navigation map uncluttered. */
+.topright .settings-trigger{white-space:nowrap;font-weight:700;min-height:38px}
+.settings-dialog{width:min(480px,calc(100vw - 24px));max-height:84dvh;overflow:auto;padding:20px;box-sizing:border-box}
+.settings-dialog h3{margin:10px 0 8px;font-size:16px;color:#153e4d}
+.voice-settings{display:grid;gap:12px}
+.voice-setting-toggle{display:flex;gap:11px;align-items:center;padding:9px 6px;font-weight:650}
+.voice-setting-toggle input{width:20px;height:20px;accent-color:#0b7690}
+.voice-setting-item{display:grid;gap:8px;padding:10px 12px;background:#f3f8fa;border:1px solid #dfebef;border-radius:12px}
+.voice-setting-item>span{display:flex;justify-content:space-between;align-items:center;font-weight:650;font-size:13px}
+.voice-setting-item output{font-variant-numeric:tabular-nums;color:#0b728b}
+.voice-setting-item input[type=range]{width:100%;min-height:34px;accent-color:#0b7690;touch-action:pan-x}
+.voice-setting-item select{width:100%;min-height:44px;padding:6px;border:1px solid #bfd3db;border-radius:9px;background:white}
+.voice-setting-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.voice-setting-actions button{min-height:45px;border-radius:9px;padding:8px}
+.voice-settings-shortcut{width:100%;min-height:42px;margin:4px 0 8px;border:1px solid #c7dfe5;border-radius:9px}
+@media(max-width:800px){.topright .settings-trigger{display:inline-flex!important;align-items:center;justify-content:center;padding:6px 8px!important;font-size:12px}.topright #help-btn{display:none!important}}
+@media(max-width:460px){.topright #server-status{display:none}}

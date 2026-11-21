@@ -1,3 +1,14 @@
+# B_Navi：音声設定つきPWA（2026-11-21）
+スマホ向けのバイクナビ。出発地と目的地を決めて、ルート検索→案内開始。
+
+**⚙ 設定** で音声のON/OFF・速度・音量・声の高さ・日本語音声を変更できる。既定の読み上げは **1.15倍**。設定は端末に保存される。音声の試聴と初期化も可能。
+
+案内中は淡色地図の全画面表示を維持。案内終了すると通常画面に戻る。
+
+実機音声/GPSは未確認。公開BRouterは第三者サービスで応答と継続性を保証しない。しまなみ・関門の専用計算には別途APIが必要。
+
+→ [HANDOFF_CURRENT.md](HANDOFF_CURRENT.md)、[NEXT_STEPS.md](NEXT_STEPS.md) を参照。
+
 # B_Navi PWA — Online route calculation / offline voice navigation
 
 **Status (2026-11-20): GitHub Pages build & deployment workflow SUCCESS for commit `39e89c6`. Public URL HTTP response and smartphone E2E not directly verified. Public BRouter method is an experimental online routing fallback.**

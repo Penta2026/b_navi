@@ -19,7 +19,7 @@ with sync_playwright() as p:
    Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{cancel(){},speak(u){window.__spoken.push(u.text);},getVoices(){return [{lang:'ja-JP',name:'test'}]}}});
    Object.defineProperty(navigator,'geolocation',{configurable:true,value:{watchPosition(ok){setTimeout(()=>ok({coords:{latitude:34.41003,longitude:132.45006,accuracy:8,heading:90,speed:4}}),150);return 3},clearWatch(){}}});
  }''')
- for fn in ['navigation-heading.js','map-core.js','android-approaches.js','shimanami-geometry.js','offline-route-store.js','public-brouter-client.js','app.js','place-search-core.js','mobile-ui.js','ride-radar.js','gpx-transfer.js']:
+ for fn in ['navigation-heading.js','map-core.js','android-approaches.js','shimanami-geometry.js','offline-route-store.js','public-brouter-client.js','voice-settings.js','app.js','place-search-core.js','mobile-ui.js','ride-radar.js','gpx-transfer.js']:
   page.add_script_tag(content=(base/fn).read_text())
  page.wait_for_timeout(550)
  print('page title',page.title(),'JS errors',errs[:3]);print('initial orientation',page.locator('#orientation-toggle').inner_text())

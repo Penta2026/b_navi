@@ -217,12 +217,44 @@ function setExample(which){clearResult();state.via=[];if(which==='hiroshima'){$(
  if(which==='kanmon'){$('vehicle').value='0';updateModes();$('mode').value='1';updatePolicy();$('start').value='33.975115,130.947556';$('goal').value='33.951385,130.968889';}
  renderVia();refreshMap();fitMarkers();persist();setPick('start');setMessage('テスト地点を設定したよ。計算ボタンで実際のBRouterを試せるよ。');}
 async function refreshServer(){if(usePublicBrouter()){$('server-status').textContent='● 公開BRouter試験モード';$('server-status').classList.remove('bad');return;}try{const r=await fetch(apiUrl('status'),{cache:'no-store'});if(!r.ok)throw Error(`HTTP ${r.status}`);const d=await r.json();$('server-status').textContent=d.routeReady?`● BRouter準備OK / RD5 ${d.segments}件`:'● 道路データがありません';$('server-status').classList.toggle('bad',!d.routeReady);}catch(e){$('server-status').textContent='● サーバーに接続できません';$('server-status').classList.add('bad');setMessage(hostedOnPages()?'オンライン経路サーバーは未接続です。GPXの読み込みとオフライン案内は使えます。':'BRouterサーバーへ接続できません。',true);}}
+// Settings are persisted per device; no GPS or destination data are stored here.
+const VOICE=window.BNaviVoiceSettings;
+let voiceOptions=VOICE.load(localStorage);
+function updateVoiceSettingsUI(){
+ $('voice-on').checked=voiceOptions.enabled;
+ for(const key of ['rate','volume','pitch'])$('voice-'+key).value=String(voiceOptions[key]);
+ $('voice-rate-value').textContent=voiceOptions.rate.toFixed(2)+'倍';
+ $('voice-volume-value').textContent=Math.round(voiceOptions.volume*100)+'%';
+ $('voice-pitch-value').textContent=voiceOptions.pitch===1?'標準':voiceOptions.pitch.toFixed(2)+'倍';
+ $('voice-select').value=voiceOptions.voice;
+ if($('voice-select').selectedIndex<0)$('voice-select').value='auto';
+}
+function setVoiceOptions(p){voiceOptions=VOICE.save(localStorage,{...voiceOptions,...p});updateVoiceSettingsUI();$('voice-setting-message').textContent='設定を保存しました。';}
+function refreshVoices(){
+ const el=$('voice-select'),previous=voiceOptions.voice;
+ el.replaceChildren(new Option('自動で選ぶ','auto'));
+ const choices=window.speechSynthesis?.getVoices?.()||[];
+ for(const v of choices.filter(v=>/^ja(?:-|_)/i.test(v.lang||''))){el.add(new Option(v.name||v.voiceURI,v.voiceURI));}
+ el.value=previous;if(el.selectedIndex<0)el.value='auto';
+}
+function openSettings(){refreshVoices();updateVoiceSettingsUI();$('settings-dialog').showModal();}
+$('settings-btn').addEventListener('click',openSettings);
+$('nav-voice-settings').addEventListener('click',openSettings);
+$('settings-close').addEventListener('click',()=>$('settings-dialog').close());
+$('settings-dialog').addEventListener('click',e=>{if(e.target===$('settings-dialog'))$('settings-dialog').close();});
+for(const key of ['rate','volume','pitch'])$('voice-'+key).addEventListener('input',e=>setVoiceOptions({[key]:Number(e.target.value)}));
+$('voice-on').addEventListener('change',e=>setVoiceOptions({enabled:e.target.checked}));
+$('voice-select').addEventListener('change',e=>setVoiceOptions({voice:e.target.value}));
+$('voice-preview').addEventListener('click',()=>{const ok=speak('音声の速さを確認します。およそ百メートル先、右方向です。',true);$('voice-setting-message').textContent=ok?'テスト音声を再生中です。':'音声を再生できませんでした。';});
+$('voice-reset').addEventListener('click',()=>{voiceOptions=VOICE.save(localStorage,VOICE.DEFAULTS);refreshVoices();updateVoiceSettingsUI();$('voice-setting-message').textContent='標準の設定に戻しました。';});
+window.speechSynthesis?.addEventListener?.('voiceschanged',()=>{if($('settings-dialog').open)refreshVoices();});
+refreshVoices();updateVoiceSettingsUI();
 function speak(text,forced=false){
- if(!forced&&!$('voice-on').checked)return false;
- if(!('speechSynthesis' in window)||!window.SpeechSynthesisUtterance){$('nav-status').textContent='このブラウザは音声合成に対応していません。';return false;}
- try{const synth=window.speechSynthesis;synth.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ja-JP';u.rate=.85;
-  const voices=synth.getVoices?.()||[];const japanese=voices.find(v=>/^ja(-|_)/i.test(v.lang));if(japanese)u.voice=japanese;
-  u.onerror=e=>{$('nav-status').textContent='音声の再生に失敗：'+(e.error||'音声エンジン未準備')+'。端末の日本語音声設定を確認してね。';};
+ if(!forced&&!voiceOptions.enabled)return false;
+ if(!('speechSynthesis' in window)||!window.SpeechSynthesisUtterance){$('nav-status').textContent='音声を再生できません。';return false;}
+ try{const synth=window.speechSynthesis;synth.cancel();const u=new SpeechSynthesisUtterance(text);
+  VOICE.apply(u,voiceOptions,synth.getVoices?.()||[]);
+  u.onerror=e=>{$('nav-status').textContent='音声の再生に失敗：'+(e.error||'音声が使えません')+'。';};
   synth.speak(u);return true;
  }catch(e){$('nav-status').textContent='音声を開始できません：'+e.message;return false;}
 }
@@ -252,12 +284,12 @@ function startVoiceGuidance(){
  if(!canVoiceNavigate()){$('nav-status').textContent='先に通常道路のルートを計算するか、案内用GPXを読み込んでね。';return;}
  if(!window.isSecureContext||!navigator.geolocation){$('nav-status').textContent='音声案内にGPSが必要です。HTTPSと位置情報の許可を確認してね。';return;}
  // Browser/iOS speech begins directly inside the button click, before any geolocation permission prompt.
- $('voice-on').checked=true;state.navActive=true;state.saidCues=new Set();state.followGps=true;
+ state.navActive=true;state.saidCues=new Set();state.followGps=true;
  window.BNaviCloseRouteSheet?.();
  syncNavigationButtons();
  const hasHints=state.routeType==='shimanami'?state.islandLegs.some(x=>x.turnCues?.length):state.turnCues.length>0;
  $('nav-status').textContent=hasHints?'音声案内中。GPS取得後、次の右左折を読み上げるよ。':'音声案内開始。GPXに右左折指示がないため、音声テストと現在位置表示のみ利用できます。';
- speak(hasHints?'音声案内を開始します。':'案内を開始します。右左折の音声情報がない経路です。',true);
+ speak(hasHints?'音声案内を開始します。':'案内を開始します。右左折の音声情報がない経路です。');
  // A single main GPS watch also drives the map arrow / heading and free-running audio cues.
  startGps();
 }
@@ -266,7 +298,7 @@ function stopVoiceGuidance(stopTracking=true){
  if(stopTracking)$('nav-status').textContent='案内終了。';
 }
 function voiceTest(){const ok=speak('音声テストです。およそ100メートル先、右方向です。',true);
- if(ok)$('nav-status').textContent='テスト音声を再生しています。聞こえなければ端末の音量・日本語読み上げ設定を確認してね。';}
+ if(ok)$('nav-status').textContent='テスト音声を再生しています。速さや音量は「設定」で変更できます。';}
 
 function cueText(desc){const name={'start':'出発です','destination':'目的地です','left':'左折です','right':'右折です','slight left':'やや左方向です','slight right':'やや右方向です','sharp left':'大きく左折です','sharp right':'大きく右折です','straight':'直進です','keep left':'左方向です','keep right':'右方向です','u-turn':'Uターンです'};return name[desc]||'この先、曲がり角です';}
 function startDemo(){if(!['normal','imported'].includes(state.routeType)||!state.gpsPoints.length)return;stopVoiceGuidance(false);stopGps();stopDemo();state.demoIndex=0;state.saidCues=new Set();state.gpsAccuracy=0;$('demo-on').disabled=true;$('demo-off').disabled=false;state.demoTimer=setInterval(()=>{state.demoIndex=Math.min(state.gpsPoints.length-1,state.demoIndex+Math.max(1,Math.floor(state.gpsPoints.length/260)));state.location=state.gpsPoints[state.demoIndex];const prev=state.gpsPoints[Math.max(0,state.demoIndex-1)],cur=state.location;if(km(prev,cur)>.002){const r=Math.PI/180,d=(cur[1]-prev[1])*r,la=prev[0]*r,lb=cur[0]*r;const h=(Math.atan2(Math.sin(d)*Math.cos(lb),Math.cos(la)*Math.sin(lb)-Math.sin(la)*Math.cos(lb)*Math.cos(d))/r+360)%360;map.setGpsHeading(h);if(state.orientation==='head')map.setBearing(-h);}map.center(...state.location,Math.max(map.zoom,14));refreshMap();updateGpsProgress(true);if(state.demoIndex>=state.gpsPoints.length-1){stopDemo();$('nav-status').textContent='案内デモ：目的地に到着。';speak('目的地に到着しました');}},175);updateGpsProgress(true);}
