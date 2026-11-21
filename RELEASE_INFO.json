@@ -1,44 +1,63 @@
 {
-  "release": "2026-11-21-address-search-beta",
+  "release": "2026-11-21-riding-feedback-v1",
   "repository": "Penta2026/b_navi",
-  "base_commit": "edd788f855384e92f79532d2ac59a54cb1d8b3e8",
-  "feature": "Japanese address lookup to S/G/via with approximate-location warnings",
+  "base_commit": "d3028abd9882c816e93cb0f8575800e0a2f018ca",
+  "features": [
+    "off-route re-routing for ordinary/imported road route",
+    "20m immediate turn speech",
+    "waypoint and final arrival",
+    "map/radar switch and sequential radar targets",
+    "free ride full-screen",
+    "top-left zoom +/-"
+  ],
   "verified": [
-    "32 node unit/regression tests passed",
-    "Chromium mocked API address-to-goal / menu flow passed",
-    "JS syntax checks"
+    "37 node tests",
+    "5 browser simulated tests",
+    "JavaScript syntax check"
   ],
   "not_verified": [
-    "live GSI/Nominatim address lookup response and CORS",
-    "actual iPhone/Android address lookup and map pin accuracy"
+    "real smartphone GPS and voices",
+    "public BRouter reroute live response",
+    "Shimanami/Kanmon automatic reroute",
+    "iOS background GPS voice"
   ],
   "changed": [
-    "address-search.js",
-    "mobile-ui.js",
+    "app.js",
+    "ride-radar.js",
+    "ride-logic.js",
     "index.html",
     "style.css",
     "sw.js",
-    "tests/test_address_search.cjs",
-    "tests/browser_address_search.py",
-    "README.md",
+    "tests/test_ride_logic.cjs",
+    "tests/test_navigation_focus.cjs",
+    "tests/browser_ride_integration.py",
+    "tests/browser_long_press.py",
+    "tests/browser_smoke.py",
+    "tests/browser_voice_settings.py",
     "HANDOFF_CURRENT.md",
     "NEXT_STEPS.md",
     "CHANGELOG_B_Navi.md",
+    "README.md",
     "RELEASE_VERIFICATION.txt",
     "RELEASE_INFO.json"
   ],
   "sha256": {
-    "address-search.js": "1ffc8b96608f1e5bdfa22371e317e1211f367d03f491ef8e69612426851a8e88",
-    "mobile-ui.js": "bd5f65fe66c3b859f49e440846891d27ce21f171ec7e63e8bcd3cb572c66f372",
-    "index.html": "152364467c341dd0fe353f198e936e32bb7f8532d7071e6b82b61b7ce90883df",
-    "style.css": "7eb16ee1125a89efdcc2688325f02fe194107a232ae0ac3b4b07a6d311486ee7",
-    "sw.js": "bdd20bae8b162375c7be5a9a952fc1a42afd6c4d376d8fa925c4a486d297ebc3",
-    "tests/test_address_search.cjs": "944afa4b9af47f7f7a3885da077a9bae5a377c885f84f6f0915bf6116c4e1bae",
-    "tests/browser_address_search.py": "3dbada46590326c59ee82829362f5081f1d0f1375a86e5941869d0f4b39d2b97",
-    "README.md": "2c4fbe5783faedb59cda901dace2d2d7fea727e65c59905bd2e5a1036cfbcf96",
-    "HANDOFF_CURRENT.md": "efa8cd12588a9146700bdab9a4340a714b56c24c5d73b63ff11e4f039ef75a04",
-    "NEXT_STEPS.md": "cf6f9515a97243f13d4c9a8a349ef392805104716bb6490ab02e5a567265135c",
-    "CHANGELOG_B_Navi.md": "748ae027ed5d0255d54243fa34be9fe6e20b91aa70ac765213e79abdfa4a2df6",
-    "RELEASE_VERIFICATION.txt": "eebeaa0f7a18f6dbc4e1a2caf2777b9070bfa75b1b0911768458c98810b9334f"
+    "app.js": "37d8ae4fafa722c0c44279de76949f26c35fd59f80aeb9bd5db3d5bf63c89360",
+    "ride-radar.js": "f9e1990518baab3d0d310b49ced058e826d5dfbc734f0222301d36b7c4477950",
+    "ride-logic.js": "fdc10dd7b8c3d547d24c5d70c43c96d64f6a19ac5e36c839bfe58faf63e87bf3",
+    "index.html": "0b5b053eaa216e86f00fff82e31b6c5f022ac8aa5d21b7d06a2f2d666ed05420",
+    "style.css": "305afefc7ebbb66c1ac5c24a7c872e48a73f0c3acd853dcb46d17267a844b7c9",
+    "sw.js": "f2a618dd25e2c35d98351db2745b2e094a2f5ca86d4a26fb67e6d5807fbc27f2",
+    "tests/test_ride_logic.cjs": "ff2f54632d9ac258e9532dac15338ee8e79167ff0fd2decbd05b7ac153429080",
+    "tests/test_navigation_focus.cjs": "3214cb093c8d6ea8d9b0f8ffc1e28533f9a610f246653efd432ed24028227dc4",
+    "tests/browser_ride_integration.py": "c7157ea16b9f64e35cad0525dab6324244c29f15e3de31523e73199abfef9109",
+    "tests/browser_long_press.py": "403e715a0cee711b1d3081388ff83b58b5f40d21c7b64b8cbcd03e38eb8fc021",
+    "tests/browser_smoke.py": "8103881a9a599df5f473854b408783c52fd8e8913dba6c099e5db7a342a2a0be",
+    "tests/browser_voice_settings.py": "d7b49722b0e265adb9624f570f1eac4deccdacadcbae23543e3509113c87aa81",
+    "HANDOFF_CURRENT.md": "13c7c100c97c2c8540afd1332215c2093cf45738992ff4625689fd1fb4ed2f61",
+    "NEXT_STEPS.md": "a56b49654d03573096d7eb3bf9a2b82dc9f40a1ef361ddbc534acb650a2d0448",
+    "CHANGELOG_B_Navi.md": "ac46f07943e32500b096fdb3b9694316eda7664e3066136e2c35ebe2ef3d0dd2",
+    "README.md": "647626e4cbd2a408db5d407cee2912cae52815bbc65c0fcd371543c7f73bc82a",
+    "RELEASE_VERIFICATION.txt": "9db680d76257875371d5b940f2f025154ea10377f0dc2ef291fdfd987909bd2a"
   }
 }

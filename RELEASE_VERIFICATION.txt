@@ -1,3 +1,12 @@
+B_Navi PWA riding-feedback 2026-11-21
+
+Node test: 37 passed, 0 failed.
+Browser simulated tests: address, long press, smoke, voice settings, ride integration PASSED.
+GPS/voice/network tests use mocks; NOT a field test or actual public BRouter success proof.
+Android reference: vf1 OffRoutePolicy.java, RouteGuidance.java.
+Files: JS syntax check, ZIP CRC and ASCII paths to be verified prior to publish.
+Reroute scope: normal/imported. Specialized Shimanami/Kanmon not supported by public BRouter.
+
 B_Navi Japanese address search beta | 2026-11-21
 Base: Penta2026/b_navi main edd788f855384e92f79532d2ac59a54cb1d8b3e8
 Changed: address-search.js (new), mobile-ui.js, index.html, style.css, sw.js, tests/test_address_search.cjs (new), tests/browser_address_search.py (new), documentation.

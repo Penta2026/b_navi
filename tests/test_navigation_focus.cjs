@@ -23,5 +23,6 @@ test('navigation status displays existing GPX voice cues, not guessed intersecti
  assert.match(app,/const step=raw\.match\(\/次：/);
  assert.match(app,/new MutationObserver\(syncNavigationHud\)/);
  assert.match(app,/function stopVoiceGuidance\(stopTracking=true\)/);
- assert.match(app,/state\.navActive=false;window\.speechSynthesis/);
+ assert.match(app,/state\.navActive=false;state\.navPaused=false/);
+ assert.match(app,/window\.speechSynthesis\?\.cancel/);
 });

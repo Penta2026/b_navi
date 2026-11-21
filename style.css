@@ -76,7 +76,7 @@ body.navigation-active #map-hint{display:none!important}
 body.navigation-active #layout{display:block!important;width:100%!important;height:100dvh!important;overflow:hidden!important}
 body.navigation-active #workspace,
 body.navigation-active #map-container{height:100%!important;min-height:0!important;width:100%!important}
-body.navigation-active .map-controls button:not(#map-location):not(#center-hiroshima):not(#orientation-toggle){display:none!important}
+body.navigation-active .map-controls button:not(#map-location):not(#center-hiroshima):not(#orientation-toggle):not(#nav-radar-toggle){display:none!important}
 body.navigation-active #voice-test-quick{display:none!important}
 body.navigation-active #navigation-quickbar{bottom:max(14px,env(safe-area-inset-bottom,0px));left:12px;background:#fffffff0;box-shadow:0 3px 14px #193f4940;padding:5px}
 body.navigation-active #nav-stop-quick{background:#123a4c;color:#fff;border-color:#123a4c;font-size:13px;min-height:46px}
@@ -161,3 +161,28 @@ body.navigation-active #map-gps-message{top:14px;left:12px;right:12px;max-width:
 .place-result .address-goal{border:0;border-radius:10px;background:#116f84;color:#fff;font-weight:700;padding:11px 8px;min-width:84px;min-height:44px;white-space:nowrap}
 .place-result:has(.address-goal){align-items:center}
 @media(max-width:380px){.place-result:has(.address-goal){flex-wrap:wrap}.place-result .address-goal{width:100%}}
+
+/* 2026-11-21 actual-ride feedback: top-left zoom, map/radar switch, free-ride focus. */
+#map-zoom-controls{position:absolute;left:12px;top:12px;z-index:9;display:flex;flex-direction:column;gap:7px}
+#map-zoom-controls button{height:44px;width:44px;border:1px solid #bdcfd6;border-radius:11px;background:#fff;color:#185a74;font-weight:800;font-size:27px;box-shadow:0 3px 12px #173c4825;touch-action:manipulation}
+#map-hint{top:114px;max-width:240px}
+#nav-radar-toggle[hidden]{display:none!important}
+#map-controls #nav-radar-toggle{min-width:94px;height:44px;font-size:12px;font-weight:750;padding:0 8px}
+body.navigation-active .map-controls button:not(#map-location):not(#center-hiroshima):not(#orientation-toggle):not(#nav-radar-toggle){display:none!important}
+body.free-ride-active .topbar,body.free-ride-active .mobile-toolbar,body.free-ride-active #sidebar,body.free-ride-active .bottom-bar,body.free-ride-active #map-hint,body.free-ride-active #navigation-quickbar{display:none!important}
+body.free-ride-active #layout{height:100dvh!important;display:block!important;width:100%!important;overflow:hidden}
+body.free-ride-active #workspace,body.free-ride-active #map-container{height:100%!important;width:100%!important;min-height:0!important}
+body.free-ride-active .map-controls button:not(#map-location):not(#center-hiroshima):not(#orientation-toggle){display:none!important}
+body.free-ride-active .map-controls{top:max(12px,env(safe-area-inset-top));right:12px}
+body.free-ride-active #ride-pill{bottom:max(15px,env(safe-area-inset-bottom));left:50%;z-index:110}
+body.free-ride-active #ride-pill button{min-height:42px;border:0;border-radius:22px;background:#fff;color:#123a4c;font-weight:750;padding:4px 15px}
+#navigation-hud{pointer-events:none}
+body.navigation-active #navigation-hud strong{font-size:clamp(24px,6vw,31px)}
+#next-destination-dialog{border:0;border-radius:18px;max-width:min(420px,calc(100vw - 28px));padding:24px 20px;box-shadow:0 15px 65px #15323b66;text-align:center;box-sizing:border-box}
+#next-destination-dialog::backdrop{background:#0618239f}
+#next-destination-dialog h2{font-size:23px;margin:0 0 12px;color:#183b4a}
+#next-destination-dialog p{font-size:16px;margin:0 0 20px;line-height:1.5}
+.next-destination-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.next-destination-actions button{min-height:51px;border:1px solid #b7cbd3;border-radius:10px;font-weight:750;background:#eaf1f4;color:#275364;padding:10px}
+.next-destination-actions .primary{background:#08718c;color:white;border-color:#08718c}
+@media(max-width:800px){#map-zoom-controls{top:max(12px,env(safe-area-inset-top,0px));left:12px}#map-hint{top:112px;left:12px;max-width:53vw}body.navigation-active #map-zoom-controls,body.free-ride-active #map-zoom-controls{top:max(12px,env(safe-area-inset-top,0px))}}

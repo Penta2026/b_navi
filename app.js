@@ -6,7 +6,7 @@
 const $=id=>document.getElementById(id);
 const ROUTE_POLICIES=['ビギナー：狭い道と曲がりを抑え、走りやすい道を優先。信号は多少許容。','一般：適度な道幅と連続性を重視し、登録済み信号を強めに回避。','探索：市街地は走りやすい裏道、郊外は緑や水辺の近さを推定評価。','ファストトラベル：高速・有料道路を優先（126cc以上のみ）。'];
 const MODES=[['ビギナー','一般','探索'],['ビギナー','一般','探索'],['ビギナー','一般','探索','ファストトラベル（高速・有料優先）']];
-const state={navActive:false,followGps:true,heading:{heading:null,at:-Infinity},orientation:'north',pick:'start',via:[],routes:[],currentGpx:null,location:null,watchId:null,routeType:null,gpsPoints:[],lastInputHash:'',turnCues:[],demoTimer:null,demoIndex:0,saidCues:new Set(),cumKm:[],islandLegs:[],islandIndex:0,awaitingBridge:false,gpsAccuracy:Infinity};
+const state={navActive:false,navPaused:false,finishing:false,rerouting:false,targetIndex:0,activeTargets:[],arrivalPolicy:null,offRoutePolicy:null,lastRerouteError:-Infinity,followGps:true,heading:{heading:null,at:-Infinity},orientation:'north',pick:'start',via:[],routes:[],currentGpx:null,location:null,watchId:null,routeType:null,gpsPoints:[],lastInputHash:'',turnCues:[],demoTimer:null,demoIndex:0,saidCues:new Set(),cumKm:[],islandLegs:[],islandIndex:0,awaitingBridge:false,gpsAccuracy:Infinity};
 // A single tap is for map inspection only: it must never move S, G, or waypoints.
 // Coordinates are committed through the long-press action menu (or explicit search/favorite/edit).
 const map=new BNaviMapCore.MapCore($('map-container'),$('tile-layer'),$('map-overlay'),$('path-layer'),$('point-layer'),$('gps-layer'),null);
@@ -51,12 +51,12 @@ function gpxPoints(xml){const doc=new DOMParser().parseFromString(xml,'applicati
 function km(a,b){const rad=Math.PI/180,dLat=(b[0]-a[0])*rad,dLon=(b[1]-a[1])*rad;const t=Math.sin(dLat/2)**2+Math.cos(a[0]*rad)*Math.cos(b[0]*rad)*Math.sin(dLon/2)**2;return 12742*Math.asin(Math.min(1,Math.sqrt(t)));}
 function distance(pts){let sum=0;for(let i=1;i<pts.length;i++)sum+=km(pts[i-1],pts[i]);return sum;}
 function sampled(pts,max=6500){if(pts.length<=max)return pts;const step=Math.ceil(pts.length/max);const a=pts.filter((_,i)=>i%step===0);if(a.at(-1)!==pts.at(-1))a.push(pts.at(-1));return a;}
-function routeView(type,sections,mainGpx,msg){state.islandLegs=[];state.islandIndex=0;state.awaitingBridge=false;state.routeType=type;state.currentGpx=mainGpx||null;state.routes=sections.filter(x=>x.points?.length>=2).map(x=>({...x,points:sampled(x.points)}));state.gpsPoints=['normal','imported'].includes(type)?sections[0]?.points||[]:[];state.turnCues=['normal','imported'].includes(type)&&mainGpx?gpxTurnCues(mainGpx):[];state.saidCues=new Set();state.cumKm=[];for(let i=0;i<state.gpsPoints.length;i++)state.cumKm[i]=(state.cumKm[i-1]||0)+(i?km(state.gpsPoints[i-1],state.gpsPoints[i]):0);$('demo-on').disabled=!['normal','imported'].includes(type);$('demo-off').disabled=true;$('save-gpx').disabled=!mainGpx;$('fit-route').disabled=!state.routes.length;
+function routeView(type,sections,mainGpx,msg,options={}){state.islandLegs=[];state.islandIndex=0;state.awaitingBridge=false;state.routeType=type;state.currentGpx=mainGpx||null;state.routes=sections.filter(x=>x.points?.length>=2).map(x=>({...x,points:sampled(x.points)}));state.gpsPoints=['normal','imported'].includes(type)?sections[0]?.points||[]:[];state.turnCues=['normal','imported'].includes(type)&&mainGpx?gpxTurnCues(mainGpx):[];state.saidCues=new Set();state.cumKm=[];for(let i=0;i<state.gpsPoints.length;i++)state.cumKm[i]=(state.cumKm[i-1]||0)+(i?km(state.gpsPoints[i-1],state.gpsPoints[i]):0);$('demo-on').disabled=!['normal','imported'].includes(type);$('demo-off').disabled=true;$('save-gpx').disabled=!mainGpx;$('fit-route').disabled=!state.routes.length;
  const road=sections.filter(x=>x.type!=='bridge'&&x.type!=='walk'),len=road.reduce((a,b)=>a+distance(b.points),0);const bad=sections.filter(x=>x.type==='bridge'||x.type==='walk').length;
  $('route-label').textContent=type==='normal'?'通常道路':type==='shimanami'?'しまなみ島内':type==='kanmon50'?'関門・人道':'ルート';
  $('metrics').innerHTML='';const metric=document.createElement('div');const bold=document.createElement('strong');bold.textContent=`${len.toFixed(1)} km`;metric.append(bold);const sub=document.createElement('div');sub.textContent=`道路区間 ${road.length} 本　/　参考区間 ${bad} 本`;metric.append(sub);$('metrics').append(metric);
  const list=$('route-segments');list.replaceChildren();sections.forEach((sec,i)=>{const row=document.createElement('div');row.className='segment';const text=document.createElement('div');text.textContent=sec.label||`区間${i+1}`;if(sec.type==='bridge'||sec.type==='walk'){const s=document.createElement('span');s.className='sub';s.textContent=sec.type==='walk'?'押し歩き（走行GPX対象外）':'橋の参考線（走行GPX対象外）';text.append(s);}const btn=document.createElement('button');btn.type='button';btn.textContent=sec.gpx?'GPX':'表示';btn.addEventListener('click',()=>{map.fit(sec.points);if(sec.gpx)downloadGpx(sec.gpx,`B_Navi_${i+1}_${sanitizeName(sec.label||'route')}.gpx`);});row.append(text,btn);list.append(row);});
- refreshMap();fitResult();setMessage(msg);syncNavigationButtons();window.BNaviCloseRouteSheet?.();if(type==='normal'||type==='imported')queueOfflineSave();}
+ refreshMap();if(!options.keepView)fitResult();setMessage(msg);syncNavigationButtons();if(!options.keepView)window.BNaviCloseRouteSheet?.();if(type==='normal'||type==='imported')queueOfflineSave();}
 function sanitizeName(text){return text.replace(/[^\p{L}\p{N}_-]+/gu,'_').slice(0,36);}
 function downloadGpx(xml,name){const blob=new Blob([xml],{type:'application/gpx+xml;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);}
 function fitResult(){const points=state.routes.flatMap(x=>x.points);if(points.length)map.fit(sampled(points,4000));else fitMarkers();}
@@ -290,17 +290,127 @@ function syncNavigationHud(){
  $('navigation-hud-sub').textContent=parts.join(' ／ ');
 }
 new MutationObserver(syncNavigationHud).observe($('nav-status'),{childList:true,characterData:true,subtree:true});
+// The destination order is the user's via list followed by G. Do not edit S/G on arrival.
+function beginTargetSequence(){
+ const targets=[];
+ if(state.routeType!=='imported')for(const v of state.via){try{targets.push(parsePoint(v))}catch{}}
+ let goal=null;
+ if(state.routeType==='imported'&&state.gpsPoints.length)goal=state.gpsPoints.at(-1);
+ else try{goal=inputPoint('goal')}catch{}
+ if(['normal','imported'].includes(state.routeType)&&state.gpsPoints.length){
+   const routeEnd=state.gpsPoints.at(-1);if(!goal||BNaviRideLogic.meters(goal,routeEnd)>150)goal=routeEnd;
+ }
+ if(goal)targets.push(goal);
+ state.activeTargets=targets;state.targetIndex=0;state.navPaused=false;state.finishing=false;state.hasDeparted=false;
+ state.arrivalPolicy=new BNaviRideLogic.ArrivalPolicy();state.offRoutePolicy=new BNaviRideLogic.OffRoutePolicy();state.lastRerouteError=-Infinity;
+}
+function activeTarget(){return state.activeTargets[state.targetIndex]||null;}
+window.BNaviGetActiveDestination=activeTarget;
+window.BNaviActiveTargetLabel=()=>state.targetIndex<state.activeTargets.length-1?'経由地 '+(state.targetIndex+1):'目的地';
+window.BNaviInitRadarTargets=beginTargetSequence;
+// Two accurate GPS fixes within 20m are required, so brief GPS jumps cannot finish a trip.
+function observeDestination(position,accuracy,source='nav'){
+ if(!state.activeTargets.length||state.navPaused||state.finishing)return false;
+ const target=activeTarget();if(!target)return false;
+ // A loop can begin and end at the same coordinate; never announce arrival on departure.
+ if(state.targetIndex===state.activeTargets.length-1&&['normal','imported'].includes(state.routeType)&&state.gpsPoints.length>1){
+   const start=state.gpsPoints[0],end=state.gpsPoints.at(-1);
+   if(BNaviRideLogic.meters(start,end)<40&&(state.cumKm.at(-1)||0)>0.3){
+     if(BNaviRideLogic.meters(position,start)>60)state.hasDeparted=true;
+     if(!state.hasDeparted)return false;
+   }
+ }
+ if(!state.arrivalPolicy)state.arrivalPolicy=new BNaviRideLogic.ArrivalPolicy();
+ if(!state.arrivalPolicy.observe(BNaviRideLogic.meters(position,target),accuracy))return false;
+ const last=state.targetIndex>=state.activeTargets.length-1;
+ if(last){
+   state.finishing=true;
+   $('nav-status').textContent='目的地に到着しました。案内を終了します。';
+   const done=()=>{if(source==='radar'&&!state.navActive)window.BNaviRideMode?.stop?.();else stopVoiceGuidance(true);};
+   // Keep the arrival message audible: stopVoiceGuidance cancels speech.
+   announceArrival('目的地に到着しました。案内を終了します。',done);
+ }else{
+   state.navPaused=true;
+   if(state.navActive){$('nav-status').textContent='経由地に到着しました。次の目的地を案内しますか？';}
+   speak('経由地に到着しました。');
+   const dialog=$('next-destination-dialog');
+   $('next-destination-message').textContent='次の目的地を案内しますか？';
+   if(!dialog.open)dialog.showModal();
+ }
+ return true;
+}
+window.BNaviObserveDestination=observeDestination;
+function announceArrival(message,onDone){
+ if(!voiceOptions.enabled||!window.speechSynthesis||!window.SpeechSynthesisUtterance){onDone();return;}
+ try{const synth=window.speechSynthesis;synth.cancel();const u=new SpeechSynthesisUtterance(message);
+  VOICE.apply(u,voiceOptions,synth.getVoices?.()||[]);
+  let finished=false;const complete=()=>{if(finished)return;finished=true;onDone();};
+  u.onend=complete;u.onerror=complete;
+  synth.speak(u);
+ }catch{onDone()}
+}
+$('next-destination-continue').addEventListener('click',()=>{
+ $('next-destination-dialog').close();
+ if(state.targetIndex<state.activeTargets.length-1){
+   state.targetIndex++;state.arrivalPolicy.reset();state.offRoutePolicy?.reset();state.navPaused=false;
+   if(state.navActive){$('nav-status').textContent='次の目的地を案内します。';speak('次の目的地を案内します。');}
+   else window.BNaviRideMode?.refreshTarget?.();
+ }
+});
+$('next-destination-stop').addEventListener('click',()=>{
+ $('next-destination-dialog').close();state.navPaused=false;
+ if(state.navActive)stopVoiceGuidance(true);else window.BNaviRideMode?.stop?.();
+});
+$('next-destination-dialog').addEventListener('cancel',e=>e.preventDefault());
+async function rerouteFromGps(){
+ if(state.rerouting||!state.navActive||state.navPaused||!state.location||!['normal','imported'].includes(state.routeType))return;
+ const dest=state.activeTargets.slice(state.targetIndex);
+ if(!dest.length)return;
+ const points=[state.location.slice(),...dest];
+ if(needsDedicatedApi(points)&&usePublicBrouter()){
+   $('nav-status').textContent='原付専用区間の再探索には専用経路サーバーが必要です。';return;
+ }
+ state.rerouting=true;
+ const prevZoom=map.zoom,prevPos=state.location.slice();
+ $('nav-status').textContent='ルートを再探索中…';
+ speak('ルートを再探索します。');
+ try{
+  if(usePublicBrouter()){
+   const r=await BNaviPublicBrouter.query(points,$('vehicle').value,$('mode').value,fetch);
+   if(!state.navActive)return;
+   routeView('normal',[{type:'road',points:r.track.points,color:'#06799b',width:5,label:'リルート済み道路経路',gpx:r.gpx}],r.gpx,'GPS現在地から再探索しました。',{keepView:true});
+  }else{
+   const {response,text}=await postApi('route',points);
+   if((response.headers.get('content-type')||'').includes('json'))throw Error('押し歩き・特殊経路は自動リルートできません。');
+   const pts=gpxPoints(text);
+   if(!state.navActive)return;
+   routeView('normal',[{type:'road',points:pts,color:'#06799b',width:5,label:'リルート済み道路経路',gpx:text}],text,'GPS現在地から再探索しました。',{keepView:true});
+  }
+  map.center(...prevPos,prevZoom);refreshMap();state.offRoutePolicy?.reset();
+  $('nav-status').textContent='ルートを更新しました。案内を続けます。';
+  speak('新しいルートで案内を続けます。');
+ }catch(e){state.lastRerouteError=performance.now();$('nav-status').textContent='再探索できません：'+String(e.message||e).slice(0,100)+'。安全な場所で確認してください。';}
+ finally{state.rerouting=false;state.offRoutePolicy?.markAttempt(performance.now());}
+}
+function observeOffRoute(position,accuracy){
+ if(!state.navActive||state.navPaused||state.finishing||state.rerouting||!['normal','imported'].includes(state.routeType))return;
+ if(!Number.isFinite(accuracy)||accuracy>35||!state.gpsPoints.length)return;
+ if(performance.now()-state.lastRerouteError<45000)return;
+ const d=BNaviRideLogic.distanceToPolyline(position,state.gpsPoints);
+ if(state.offRoutePolicy?.observe(d,accuracy,performance.now()))rerouteFromGps();
+}
 function syncNavigationButtons(){const allowed=canVoiceNavigate();for(const id of ['nav-start','nav-start-quick'])$(id).disabled=!allowed||state.navActive;
  for(const id of ['nav-stop','nav-stop-quick'])$(id).disabled=!state.navActive;
  $('nav-start-quick').hidden=state.navActive;$('nav-stop-quick').hidden=!state.navActive;$('navigation-quickbar').hidden=!(allowed||state.navActive);
  document.body.classList.toggle('navigation-active',state.navActive);
+ $('nav-radar-toggle').hidden=!state.navActive;
  syncNavigationHud();
 }
 function startVoiceGuidance(){
  if(!canVoiceNavigate()){$('nav-status').textContent='先に通常道路のルートを計算するか、案内用GPXを読み込んでね。';return;}
  if(!window.isSecureContext||!navigator.geolocation){$('nav-status').textContent='音声案内にGPSが必要です。HTTPSと位置情報の許可を確認してね。';return;}
  // Browser/iOS speech begins directly inside the button click, before any geolocation permission prompt.
- state.navActive=true;state.saidCues=new Set();state.followGps=true;
+ beginTargetSequence();state.navActive=true;state.saidCues=new Set();state.followGps=true;
  window.BNaviCloseRouteSheet?.();
  syncNavigationButtons();
  const hasHints=state.routeType==='shimanami'?state.islandLegs.some(x=>x.turnCues?.length):state.turnCues.length>0;
@@ -310,7 +420,8 @@ function startVoiceGuidance(){
  startGps();
 }
 function stopVoiceGuidance(stopTracking=true){
- state.navActive=false;window.speechSynthesis?.cancel?.();if(stopTracking)stopGps();syncNavigationButtons();
+ if($('next-destination-dialog').open)$('next-destination-dialog').close();
+ state.navActive=false;state.navPaused=false;state.finishing=false;window.BNaviRideMode?.closeNavRadar?.();window.speechSynthesis?.cancel?.();if(stopTracking)stopGps();syncNavigationButtons();
  if(stopTracking)$('nav-status').textContent='案内終了。';
 }
 function voiceTest(){const ok=speak('音声テストです。およそ100メートル先、右方向です。',true);
@@ -326,7 +437,7 @@ function loadIslandGuidance(i){
  for(let j=0;j<leg.points.length;j++)state.cumKm[j]=(state.cumKm[j-1]||0)+(j?km(leg.points[j-1],leg.points[j]):0);
 }
 function updateShimanamiGuidance(){
- if(!state.location||!state.islandLegs.length)return;
+ if(state.navPaused||state.finishing||!state.location||!state.islandLegs.length)return;
  // Ignore low-precision fixes for gate changes. This is not a proof of legal bridge access.
  const goodFix=state.gpsAccuracy<=35;
  const i=state.islandIndex,leg=state.islandLegs[i];
@@ -349,10 +460,11 @@ function updateShimanamiGuidance(){
   if(state.navActive)speak('橋の入口付近です。ここからは現地の原付道標識を確認してください。橋の区間は音声案内を一時停止します');
   $('nav-status').textContent='しまなみ：橋の入口付近。島内音声停止中。次の島に入ったらGPSで自動再開します。';return;
  }
- const next=state.turnCues.find(c=>c.offset>index&&c.desc!=='destination');let info='';
- if(next){const at=Math.min(pts.length-1,Math.max(0,next.offset));const until=Math.max(0,Math.round(1000*((cum[at]||0)-(cum[index]||0))));info=`／次：${cueText(next.desc)} 約${until}m`;
- if(state.navActive&&goodFix&&nearest<.08&&until<=130&&!state.saidCues.has(next.offset)){
- state.saidCues.add(next.offset);speak(`およそ${Math.max(10,Math.round(until/10)*10)}メートル先、${cueText(next.desc)}`);
+ const next=state.turnCues.find(c=>c.offset>=index&&c.desc!=='destination');let info='';
+ if(next){const at=Math.min(pts.length-1,Math.max(0,next.offset));const until=Math.max(0,Math.round(1000*((cum[at]||0)-(cum[index]||0))),Math.round(BNaviRideLogic.meters(state.location,pts[at])));info=`／次：${cueText(next.desc)} 約${until}m`;
+ if(state.navActive&&goodFix&&nearest<.08){
+ if(until<=20&&until>=0&&nearest<.035&&state.gpsAccuracy<=25&&!state.saidCues.has('now-'+next.offset)){state.saidCues.add('now-'+next.offset);state.saidCues.add(next.offset);speak(cueText(next.desc));}
+ else if(until<=130&&!state.saidCues.has(next.offset)){state.saidCues.add(next.offset);speak(`およそ${Math.max(10,Math.round(until/10)*10)}メートル先、${cueText(next.desc)}`);}
  }}
  $('nav-status').textContent=`しまなみ島内 ${state.islandIndex+1}/${state.islandLegs.length}：${active.name}／島内残り約${Math.round(remaining)}m／道路から約${Math.round(nearest*1000)}m${info}${!goodFix?'（GPS精度不足のため自動切替保留）':''}`;
 }
@@ -364,19 +476,22 @@ function startGps(){
  if(!window.isSecureContext){showGpsMessage('現在地を取得できません。スマホではHTTPSが必要です（PCのlocalhostは例外）。');$('gps-status').textContent='HTTPS接続が必要';return;}
  if(!navigator.geolocation){showGpsMessage('このブラウザでは位置情報を利用できません。');$('gps-status').textContent='GPS非対応';return;}
  state.followGps=true;state.gpsNotified=false;state.heading={heading:null,at:-Infinity};map.setGpsHeading(null);showGpsMessage('現在地を取得中…位置情報の許可を確認してね。');
- const ok=pos=>{state.location=[pos.coords.latitude,pos.coords.longitude];state.gpsAccuracy=pos.coords.accuracy;updateHeadingFromPosition(pos);$('gps-status').textContent=`位置取得 ±${Math.round(pos.coords.accuracy)}m${Number.isFinite(state.heading.heading)?'・進行方位あり':'・方位待ち'}`;if(state.followGps)map.center(...state.location,Math.max(map.zoom,16));refreshMap();updateGpsProgress();if(!state.gpsNotified){showGpsMessage(`現在地を表示中（精度 ±${Math.round(pos.coords.accuracy)}m）`,3300);state.gpsNotified=true;}};
+ const ok=pos=>{state.location=[pos.coords.latitude,pos.coords.longitude];state.gpsAccuracy=pos.coords.accuracy;updateHeadingFromPosition(pos);$('gps-status').textContent=`位置取得 ±${Math.round(pos.coords.accuracy)}m${Number.isFinite(state.heading.heading)?'・進行方位あり':'・方位待ち'}`;if(state.followGps)map.center(...state.location,Math.max(map.zoom,16));refreshMap();window.BNaviRideMode?.updateNavigationRadar?.(state.location,state.heading.heading);const arrived=(state.navActive&&!state.navPaused)?observeDestination(state.location,state.gpsAccuracy,'nav'):false;if(!arrived&&!state.navPaused&&!state.finishing)updateGpsProgress();if(!arrived)observeOffRoute(state.location,state.gpsAccuracy);if(!state.gpsNotified){showGpsMessage(`現在地を表示中（精度 ±${Math.round(pos.coords.accuracy)}m）`,3300);state.gpsNotified=true;}};
  const err=x=>{const msg=x.code===1?'位置情報が拒否されています。ブラウザのサイト設定で許可してね。':x.code===2?'位置を取得できません。GPS・通信・端末の位置情報設定を確認してね。':'取得が時間切れです。屋外などで再試行してね。';$('gps-status').textContent='GPS失敗';showGpsMessage(msg);if(state.navActive){stopVoiceGuidance(false);$('nav-status').textContent='GPSエラー：'+msg;}stopGps();};
  $('gps-on').disabled=true;$('gps-off').disabled=false;state.watchId=navigator.geolocation.watchPosition(ok,err,{enableHighAccuracy:true,maximumAge:2000,timeout:15000});
 }
 function stopGps(){if(state.watchId!=null)navigator.geolocation.clearWatch(state.watchId);state.watchId=null;state.location=null;map.setGpsHeading(null);refreshMap();$('gps-on').disabled=false;$('gps-off').disabled=true;$('gps-status').textContent='追従停止';}
-function updateGpsProgress(demo=false){if(!state.location)return;if(state.routeType==='shimanami'){updateShimanamiGuidance();return;}if(!['normal','imported'].includes(state.routeType)||state.gpsPoints.length<2){$('nav-status').textContent='現在地を表示中。橋の参考線・人道はGPS走行案内に利用しません。';return;}let nearest=Infinity,index=0;const pts=state.gpsPoints;for(let i=0;i<pts.length;i++){const d=km(state.location,pts[i]);if(d<nearest){nearest=d;index=i;}}const cum=state.cumKm,remaining=(cum.at(-1)||0)-(cum[index]||0);const next=state.turnCues.find(c=>c.offset>index&&c.desc!=='destination');let instruction='';if(next){const nextIndex=Math.min(pts.length-1,Math.max(0,next.offset));const until=Math.max(0,Math.round(1000*((cum[nextIndex]||0)-(cum[index]||0))));instruction=`／次：${cueText(next.desc)} 約${until}m`;if((state.navActive||demo)&&state.gpsAccuracy<=35&&until<=130&&!state.saidCues.has(next.offset)&&nearest<.08){state.saidCues.add(next.offset);speak(`およそ${Math.max(10,Math.round(until/10)*10)}メートル先、${cueText(next.desc)}`);}}$('nav-status').textContent=`${demo?'案内デモ':'GPS'}：経路まで約${Math.round(nearest*1000)}m／残り約${remaining.toFixed(1)}km${instruction}${nearest>.08?'（経路から離れています）':''}。GPX指示に基づく概算案内。`;}
+function updateGpsProgress(demo=false){if(!state.location||state.navPaused||state.finishing)return;if(state.routeType==='shimanami'){updateShimanamiGuidance();return;}if(!['normal','imported'].includes(state.routeType)||state.gpsPoints.length<2){$('nav-status').textContent='現在地を表示中。橋の参考線・人道はGPS走行案内に利用しません。';return;}let nearest=Infinity,index=0;const pts=state.gpsPoints;for(let i=0;i<pts.length;i++){const d=km(state.location,pts[i]);if(d<nearest){nearest=d;index=i;}}const cum=state.cumKm,remaining=(cum.at(-1)||0)-(cum[index]||0);const next=state.turnCues.find(c=>c.offset>=index&&c.desc!=='destination');let instruction='';if(next){const nextIndex=Math.min(pts.length-1,Math.max(0,next.offset));const until=Math.max(0,Math.round(1000*((cum[nextIndex]||0)-(cum[index]||0))),Math.round(BNaviRideLogic.meters(state.location,pts[nextIndex])));instruction=`／次：${cueText(next.desc)} 約${until}m`;if((state.navActive||demo)&&state.gpsAccuracy<=35&&nearest<.08){
+ if(until<=20&&until>=0&&nearest<.035&&state.gpsAccuracy<=25&&!state.saidCues.has('now-'+next.offset)){state.saidCues.add('now-'+next.offset);state.saidCues.add(next.offset);speak(cueText(next.desc));}
+ else if(until<=130&&!state.saidCues.has(next.offset)){state.saidCues.add(next.offset);speak(`およそ${Math.max(10,Math.round(until/10)*10)}メートル先、${cueText(next.desc)}`);}
+ }}$('nav-status').textContent=`${demo?'案内デモ':'GPS'}：経路まで約${Math.round(nearest*1000)}m／残り約${remaining.toFixed(1)}km${instruction}${nearest>.08?'（経路から離れています）':''}。GPX指示に基づく概算案内。`;}
 $('vehicle').addEventListener('change',()=>{updateModes();persist();});$('mode').addEventListener('change',()=>{updatePolicy();persist();});
 for(const b of document.querySelectorAll('.pick'))b.addEventListener('click',()=>setPick(b.dataset.pick));$('start-pick').addEventListener('click',()=>setPick('start'));$('goal-pick').addEventListener('click',()=>setPick('goal'));
 $('start').addEventListener('input',()=>{updatePointSummaries();refreshMap();persist();});$('goal').addEventListener('input',()=>{updatePointSummaries();refreshMap();persist();});
 $('add-via').addEventListener('click',()=>{if(state.via.length>=50){setMessage('経由地は50件まで。',true);return;}setPick('via');setMessage('地図を長押しし、表示されたメニューから「経由地に追加」を選んでね。');});$('clear-vias').addEventListener('click',()=>{state.via=[];renderVia();refreshMap();persist();});
 $('calculate').addEventListener('click',calculate);$('clear-route').addEventListener('click',()=>{clearResult();setMessage('結果を消したよ。地点は残してあります。');});$('fit-route').addEventListener('click',fitResult);$('save-gpx').addEventListener('click',()=>{if(state.currentGpx)downloadGpx(state.currentGpx,'B_Navi_route.gpx');});
 for(const id of ['hiroshima','shimanami','kanmon'])$(`sample-${id}`).addEventListener('click',()=>setExample(id));
-$('zoom-in').addEventListener('click',()=>map.setZoom(map.zoom+1));$('zoom-out').addEventListener('click',()=>map.setZoom(map.zoom-1));$('center-hiroshima').addEventListener('click',()=>map.center(34.4,132.46,11));$('map-location').addEventListener('click',startGps);$('compass-reset').addEventListener('click',()=>setOrientationMode('north'));$('help-btn').addEventListener('click',()=>$('help-dialog').showModal());$('gps-on').addEventListener('click',startGps);$('gps-off').addEventListener('click',stopGps);$('demo-on').addEventListener('click',startDemo);$('demo-off').addEventListener('click',stopDemo);for(const id of ['nav-start','nav-start-quick'])$(id).addEventListener('click',startVoiceGuidance);for(const id of ['nav-stop','nav-stop-quick'])$(id).addEventListener('click',()=>stopVoiceGuidance(true));for(const id of ['voice-test','voice-test-quick'])$(id).addEventListener('click',voiceTest);
+$('zoom-in').addEventListener('click',()=>map.setZoom(map.zoom+1));$('zoom-out').addEventListener('click',()=>map.setZoom(map.zoom-1));$('center-hiroshima').addEventListener('click',()=>map.center(34.4,132.46,11));$('map-location').addEventListener('click',startGps);$('nav-radar-toggle').addEventListener('click',()=>window.BNaviRideMode?.openNavRadar?.());$('compass-reset').addEventListener('click',()=>setOrientationMode('north'));$('help-btn').addEventListener('click',()=>$('help-dialog').showModal());$('gps-on').addEventListener('click',startGps);$('gps-off').addEventListener('click',stopGps);$('demo-on').addEventListener('click',startDemo);$('demo-off').addEventListener('click',stopDemo);for(const id of ['nav-start','nav-start-quick'])$(id).addEventListener('click',startVoiceGuidance);for(const id of ['nav-stop','nav-stop-quick'])$(id).addEventListener('click',()=>stopVoiceGuidance(true));for(const id of ['voice-test','voice-test-quick'])$(id).addEventListener('click',voiceTest);
 let restoringOffline=false;
 let offlineSaveTimer=null;
 function offlinePayload(){return {type:state.routeType,sections:state.routes.map(x=>({type:x.type,points:x.points,color:x.color,width:x.width,dash:x.dash,label:x.label,gpx:x.gpx})),mainGpx:state.currentGpx,islandLegs:state.islandLegs.map(x=>({name:x.name,points:x.points,turnCues:x.turnCues,bridgeAfter:x.bridgeAfter}))}}

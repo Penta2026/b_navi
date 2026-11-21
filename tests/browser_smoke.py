@@ -19,7 +19,7 @@ with sync_playwright() as p:
    Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{cancel(){},speak(u){window.__spoken.push(u.text);},getVoices(){return [{lang:'ja-JP',name:'test'}]}}});
    Object.defineProperty(navigator,'geolocation',{configurable:true,value:{watchPosition(ok){setTimeout(()=>ok({coords:{latitude:34.41003,longitude:132.45006,accuracy:8,heading:90,speed:4}}),150);return 3},clearWatch(){}}});
  }''')
- for fn in ['navigation-heading.js','map-core.js','android-approaches.js','shimanami-geometry.js','offline-route-store.js','public-brouter-client.js','voice-settings.js','app.js','place-search-core.js','mobile-ui.js','ride-radar.js','gpx-transfer.js']:
+ for fn in ['ride-logic.js','navigation-heading.js','map-core.js','android-approaches.js','shimanami-geometry.js','offline-route-store.js','public-brouter-client.js','voice-settings.js','app.js','place-search-core.js','mobile-ui.js','ride-radar.js','gpx-transfer.js']:
   page.add_script_tag(content=(base/fn).read_text())
  page.wait_for_timeout(550)
  print('page title',page.title(),'JS errors',errs[:3]);print('initial orientation',page.locator('#orientation-toggle').inner_text())
@@ -43,7 +43,7 @@ with sync_playwright() as p:
  assert not page.locator('#sidebar').is_visible()
  assert not page.locator('#voice-test-quick').is_visible()
  assert all(page.locator('#'+i).is_visible() for i in ('map-location','center-hiroshima','orientation-toggle','nav-stop-quick'))
- assert not page.locator('#zoom-in').is_visible()
+ assert page.locator('#zoom-in').is_visible() # user requested top-left zoom buttons
  assert page.evaluate('''() => {const r=document.querySelector('#map-container').getBoundingClientRect();return r.width===390 && r.height===844}''')
  print('geometry',page.evaluate('''() => Object.fromEntries(['map-container','map-overlay','gps-layer','navigation-quickbar','orientation-toggle','sidebar','workspace'].map(id=>{const e=document.getElementById(id);const r=e.getBoundingClientRect();return [id,{x:r.x,y:r.y,w:r.width,h:r.height,hidden:e.hidden,visibility:getComputedStyle(e).visibility,z:getComputedStyle(e).zIndex}]}))'''))
  print('scrolls',page.evaluate('''() => ({scrollY:window.scrollY,bodyY:document.body.scrollTop,htmlY:document.documentElement.scrollTop,layoutY:document.getElementById('layout').getBoundingClientRect().y,layoutScroll:document.getElementById('layout').scrollTop,bodyRect:document.body.getBoundingClientRect().y})'''))
