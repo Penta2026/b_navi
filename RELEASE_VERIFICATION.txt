@@ -52,3 +52,15 @@ Previous-PWA public BRouter trial
 - Browser test simulated GPS/TTS and no OSM basemap. iOS Safari and Android Chrome device hardware, actual speaker audio, true GPS course, screen-off guidance: NOT VERIFIED.
 - Public BRouter online live request: NOT RETESTED in this release. Routing and vehicle profile files unchanged.
 - Saved GPX audio offline field test: NOT VERIFIED. Japanese system TTS voice availability may depend on OS and downloaded voices.
+
+
+2026-11-21 Navigation Focus UI
+- Source baseline: B_Navi_PWA_Heading_RedArrow_Voice_2026-11-21.zip; GitHub main 5ead969bbd29d2ac334f2f5a3e007f25dbe74cdd
+- Node --test tests/*.cjs: PASS 24/24
+- Node --check app.js, map-core.js, mobile-ui.js, sw.js: PASS
+- Chromium Playwright 390x844 mocked GPS/TTS: PASS (fullscreen on voice guidance, 3 retained map buttons, stop control, restore normal layout, heading still works)
+- Basemap switching button: REMOVED; formerly stored standard choice ignored; same OSM attribution intact
+- Existing profiles/bridge geometry/route calculation source unchanged: SHA256 MATCH vs prior ZIP (7 critical files, listed in RELEASE_INFO.json)
+- Actual smartphone GPS and spoken audio: NOT TESTED
+- Background navigation on iPhone/Android: NOT GUARANTEED
+- Live public BRouter request or paid Cloudflare service: NOT TESTED/NOT CHANGED

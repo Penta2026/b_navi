@@ -8,16 +8,9 @@ const ROUTE_POLICIES=['ビギナー：狭い道と曲がりを抑え、走りや
 const MODES=[['ビギナー','一般','探索'],['ビギナー','一般','探索'],['ビギナー','一般','探索','ファストトラベル（高速・有料優先）']];
 const state={navActive:false,followGps:true,heading:{heading:null,at:-Infinity},orientation:'north',pick:'start',via:[],routes:[],currentGpx:null,location:null,watchId:null,routeType:null,gpsPoints:[],lastInputHash:'',turnCues:[],demoTimer:null,demoIndex:0,saidCues:new Set(),cumKm:[],islandLegs:[],islandIndex:0,awaitingBridge:false,gpsAccuracy:Infinity};
 const map=new BNaviMapCore.MapCore($('map-container'),$('tile-layer'),$('map-overlay'),$('path-layer'),$('point-layer'),$('gps-layer'),handleMapClick);
-// Default to a calmer OSM raster style; keep the original detailed view one tap away.
-// Only display styling changes: road eligibility, GPS accuracy and routes are untouched.
-const MAP_STYLE_KEY='bnavi.mapStyle.v1';
-function setMapStyle(style){const mode=style==='standard'?'standard':'simple';document.body.dataset.mapStyle=mode;
- const b=$('map-style-toggle');b.textContent=mode==='simple'?'標準へ':'淡色へ';b.setAttribute('aria-pressed',String(mode==='simple'));
- try{localStorage.setItem(MAP_STYLE_KEY,mode)}catch{}
-}
-let rememberedStyle='simple';try{rememberedStyle=localStorage.getItem(MAP_STYLE_KEY)||'simple'}catch{}
-setMapStyle(rememberedStyle);
-$('map-style-toggle').addEventListener('click',()=>setMapStyle(document.body.dataset.mapStyle==='simple'?'standard':'simple'));
+// Basemap is calm-only for both route planning and live guidance.
+// Ignore previously saved 'standard' preferences, without erasing any user data.
+document.body.dataset.mapStyle='simple';
 
 // The existing search/favorites action dialog is also used for a map long-press.
 map.onLongPress=point=>window.BNaviSelectMapPoint?.(point);
@@ -234,15 +227,33 @@ function speak(text,forced=false){
  }catch(e){$('nav-status').textContent='音声を開始できません：'+e.message;return false;}
 }
 function canVoiceNavigate(){return (['normal','imported'].includes(state.routeType)&&state.gpsPoints.length>1)||(state.routeType==='shimanami'&&state.routes.some(s=>s.type==='road'));}
+// Show a deliberately small navigation-only panel, rather than the route editor.
+// GPS progress remains in the original #nav-status for normal editing and tests.
+function syncNavigationHud(){
+ const hud=$('navigation-hud');if(!hud)return;
+ hud.hidden=!state.navActive;
+ if(!state.navActive)return;
+ const raw=$('nav-status').textContent||'';
+ const next=raw.match(/次：([^／（。]+)/);
+ const remain=raw.match(/(?:島内)?残り約\s*([0-9.]+\s*(?:km|m))/);
+ const bridge=/橋の入口|橋区間|橋の区間|橋渡り|橋の参考線/.test(raw);
+ const failure=/GPSエラー|音声の再生に失敗|音声を開始できません/.test(raw);
+ $('navigation-hud-main').textContent=failure?'位置情報・音声を確認':bridge?'橋付近：現地標識を確認':next?next[1].trim():'音声案内中';
+ $('navigation-hud-sub').textContent=remain?'残り '+remain[1]:!state.location?'GPS取得中…':state.turnCues.length?'GPS追従中':'右左折情報なし';
+}
+new MutationObserver(syncNavigationHud).observe($('nav-status'),{childList:true,characterData:true,subtree:true});
 function syncNavigationButtons(){const allowed=canVoiceNavigate();for(const id of ['nav-start','nav-start-quick'])$(id).disabled=!allowed||state.navActive;
  for(const id of ['nav-stop','nav-stop-quick'])$(id).disabled=!state.navActive;
  $('nav-start-quick').hidden=state.navActive;$('nav-stop-quick').hidden=!state.navActive;$('navigation-quickbar').hidden=!allowed;
+ document.body.classList.toggle('navigation-active',state.navActive);
+ syncNavigationHud();
 }
 function startVoiceGuidance(){
  if(!canVoiceNavigate()){$('nav-status').textContent='先に通常道路のルートを計算するか、案内用GPXを読み込んでね。';return;}
  if(!window.isSecureContext||!navigator.geolocation){$('nav-status').textContent='音声案内にGPSが必要です。HTTPSと位置情報の許可を確認してね。';return;}
  // Browser/iOS speech begins directly inside the button click, before any geolocation permission prompt.
  $('voice-on').checked=true;state.navActive=true;state.saidCues=new Set();state.followGps=true;
+ window.BNaviCloseRouteSheet?.();
  syncNavigationButtons();
  const hasHints=state.routeType==='shimanami'?state.islandLegs.some(x=>x.turnCues?.length):state.turnCues.length>0;
  $('nav-status').textContent=hasHints?'音声案内中。GPS取得後、次の右左折を読み上げるよ。':'音声案内開始。GPXに右左折指示がないため、音声テストと現在位置表示のみ利用できます。';

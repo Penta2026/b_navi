@@ -41,9 +41,6 @@
 /* 2026-11-20: calm basemap for route visibility, without changing OSM tile source or hiding attribution. */
 body[data-map-style="simple"] #map-container{background:#f6f8f7}
 body[data-map-style="simple"] #tile-layer{opacity:.62}
-body[data-map-style="standard"] #tile-layer{filter:none;opacity:1}
-#map-style-toggle{font-size:11px;font-weight:700;letter-spacing:-.01em;line-height:1.2}
-@media(max-width:800px){#map-style-toggle{min-width:44px;min-height:44px}}
 
 /* Android vf1 navigation controls: north-up / course-up and red GPS direction arrow. */
 #orientation-toggle{font-weight:700;font-size:12px;min-width:92px;max-width:none;padding:0 9px;white-space:nowrap}
@@ -63,5 +60,25 @@ body[data-map-style="standard"] #tile-layer{filter:none;opacity:1}
 @media(max-width:800px){#map-container{overflow:clip}}
 /* One clear orientation toggle replaces the older redundant compass-reset control. */
 #compass-reset{display:none!important}
-#map-style-toggle{min-width:72px!important;white-space:nowrap;padding:0 8px}
 @media(max-width:800px){#navigation-quickbar{bottom:52px}}
+
+/* 2026-11-21: navigation-only map. Three existing controls stay available:
+   location ◎, map-center ⌖, and north/heading orientation toggle. */
+#navigation-hud[hidden]{display:none!important}
+#navigation-hud{position:absolute;z-index:9;top:max(12px,env(safe-area-inset-top,0px));left:12px;max-width:min(255px,calc(100% - 158px));min-width:118px;display:flex;flex-direction:column;gap:3px;padding:9px 11px;background:#fffffff2;border:1px solid #c6d9de;border-radius:12px;box-shadow:0 3px 15px #1d3b4726;color:#153744;pointer-events:none}
+#navigation-hud strong{font-size:13px;line-height:1.35;overflow-wrap:anywhere}
+#navigation-hud small{font-size:11px;color:#4d6e79}
+body.navigation-active .topbar,
+body.navigation-active .mobile-toolbar,
+body.navigation-active #sidebar,
+body.navigation-active .bottom-bar,
+body.navigation-active #map-hint{display:none!important}
+body.navigation-active #layout{display:block!important;width:100%!important;height:100dvh!important;overflow:hidden!important}
+body.navigation-active #workspace,
+body.navigation-active #map-container{height:100%!important;min-height:0!important;width:100%!important}
+body.navigation-active .map-controls button:not(#map-location):not(#center-hiroshima):not(#orientation-toggle){display:none!important}
+body.navigation-active #voice-test-quick{display:none!important}
+body.navigation-active #navigation-quickbar{bottom:max(14px,env(safe-area-inset-bottom,0px));left:12px;background:#fffffff0;box-shadow:0 3px 14px #193f4940;padding:5px}
+body.navigation-active #nav-stop-quick{background:#123a4c;color:#fff;border-color:#123a4c;font-size:13px;min-height:46px}
+body.navigation-active #map-gps-message{left:12px;right:auto;top:90px;max-width:min(300px,calc(100vw - 140px))}
+@media(max-width:800px){body.navigation-active #layout{height:100dvh!important}body.navigation-active #navigation-quickbar{bottom:max(16px,env(safe-area-inset-bottom,0px))}body.navigation-active .map-controls{top:max(12px,env(safe-area-inset-top,0px))}}

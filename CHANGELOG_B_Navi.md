@@ -66,3 +66,12 @@
 - Added real "start voice guidance / stop voice guidance" and no-route speech test. Avoid automatic speech when navigation is off; preserve existing original GPX cue metadata. No fake turns.
 - Map-floating controls remain usable after route calculation: route panel closes, avoids clipped controls on mobile. Free ride uses the same course-up handling.
 - Did not change routes/BRF/map tile source/search. 21 Node tests PASS; Chromium phone-size mock GPS/TTS path PASS. Field audio unverified.
+
+
+## 2026-11-21 navigation-focus-v1
+- 音声案内を開始したら自動で地図全画面へ切替。終了で通常UI復帰。
+- 淡色/標準の切替UIを撤去し、淡色固定（以前のユーザー設定は参照せず、保存データは消さない）。
+- GPS現在地◎、地図位置十字、進行方向⇔北切替はそのまま維持。
+- 案内中の余分なタブ/ヘッダー/ルート編集/音声テストを非表示にして案内終了ボタンは常時表示。
+- 小型案内HUDは既存のGPX指示または残距離を表示。音声や経路の計算そのものは未変更。
+- キャッシュ更新、Node 24テスト、Chromiumモバイル疑似GPS/疑似音声の表示試験を実施。

@@ -44,3 +44,10 @@ Old `BikeNavigator` Cloudflare Worker `bikenavigator-map-relay` is a map-data st
 - GPS map tracking + speech happen client side, without contacting BRouter for each turn. Saving and reopening a route without connectivity is supported in code; map background tiles, realtime rerouting and offscreen/background iOS audio are not guaranteed offline.
 - **Tests:** `node --test tests/*.cjs` → 21 passing; Chromium mobile-size smoke test (mock GPS and mock TTS) passed navigation start, switch, direction transform, stop, voice test. *This does not prove real iPhone or Android speech sounds or heading sensor accuracy.*
 - These changes do not edit BRF profiles, public BRouter parameters, Kanmon/Shimanami route geometry, location search or user favorites.
+
+
+## 2026-11-21: シンプル音声案内画面
+- 走行ルート計算・GPX読み込み → 「音声案内を開始」：淡色固定の全画面地図に移行。
+- 地図右側は現在地◎、十字ボタン、進行方向/北の切替を維持。小さな案内情報と「案内終了」のみを見せる。
+- 「案内終了」を押すと検索・お気に入り・経由地編集を含む通常メニューが戻る。
+- 実機のGPS・日本語音声・端末バックグラウンド継続は未検証。走行時は現地の標識・周囲の安全を優先。

@@ -25,6 +25,10 @@ with sync_playwright() as p:
  print('page title',page.title(),'JS errors',errs[:3]);print('initial orientation',page.locator('#orientation-toggle').inner_text())
  page.evaluate('''() => routeView('normal',[{type:'road',points:[[34.41,132.45],[34.41003,132.45006],[34.411,132.451],[34.412,132.452]],label:'TEST'}], `<?xml version="1.0"?><gpx xmlns="http://www.topografix.com/GPX/1/1"><trk><trkseg><trkpt lat="34.41" lon="132.45"/><trkpt lat="34.41003" lon="132.45006"/><trkpt lat="34.411" lon="132.451"/><trkpt lat="34.412" lon="132.452"/></trkseg></trk><rte><rtept lat="34.411" lon="132.451"><desc>right</desc><extensions><offset>2</offset></extensions></rtept></rte></gpx>`,'UI TEST ROUTE')''')
  assert page.locator('#navigation-quickbar').is_visible()
+ assert not page.locator('#map-style-toggle').count()
+ assert page.evaluate('document.body.dataset.mapStyle')=='simple'
+ page.locator('#voice-test-quick').click()
+ assert any('音声テスト' in s for s in page.evaluate('window.__spoken'))
  page.locator('#orientation-toggle').click()
  assert page.locator('#orientation-toggle').inner_text()=='北を上'
  page.locator('#nav-start-quick').click()
@@ -33,14 +37,23 @@ with sync_playwright() as p:
  print('state',result)
  assert result['navActive'] and result['heading']==90 and result['bearing']==270 and result['gpsArrow']==1
  assert result['spoken']
+ assert page.locator('#navigation-hud').is_visible()
+ assert not page.locator('.topbar').is_visible()
+ assert not page.locator('.mobile-toolbar').is_visible()
+ assert not page.locator('#sidebar').is_visible()
+ assert not page.locator('#voice-test-quick').is_visible()
+ assert all(page.locator('#'+i).is_visible() for i in ('map-location','center-hiroshima','orientation-toggle','nav-stop-quick'))
+ assert not page.locator('#zoom-in').is_visible()
+ assert page.evaluate('''() => {const r=document.querySelector('#map-container').getBoundingClientRect();return r.width===390 && r.height===844}''')
  print('geometry',page.evaluate('''() => Object.fromEntries(['map-container','map-overlay','gps-layer','navigation-quickbar','orientation-toggle','sidebar','workspace'].map(id=>{const e=document.getElementById(id);const r=e.getBoundingClientRect();return [id,{x:r.x,y:r.y,w:r.width,h:r.height,hidden:e.hidden,visibility:getComputedStyle(e).visibility,z:getComputedStyle(e).zIndex}]}))'''))
  print('scrolls',page.evaluate('''() => ({scrollY:window.scrollY,bodyY:document.body.scrollTop,htmlY:document.documentElement.scrollTop,layoutY:document.getElementById('layout').getBoundingClientRect().y,layoutScroll:document.getElementById('layout').scrollTop,bodyRect:document.body.getBoundingClientRect().y})'''))
  print('ctrl',page.evaluate('''() => [...document.querySelectorAll('.map-controls button')].map(x=>({id:x.id,hidden:x.hidden,y:x.getBoundingClientRect().y,visible:getComputedStyle(x).display}))'''))
  print('render',page.evaluate('''() => ({lat:map.lat,lon:map.lon,zoom:map.zoom,gps:map.gps,heading:map.gpsHeading,bearing:map.bearing,point:map.screenPos(state.location)})'''))
  # Screenshot is optional; do not write generated files into the source repo.
- page.locator('#voice-test-quick').click()
- assert any('音声テスト' in s for s in page.evaluate('window.__spoken'))
  page.locator('#nav-stop-quick').click()
  assert not page.evaluate('state.navActive')
+ assert page.locator('.mobile-toolbar').is_visible()
+ assert page.locator('.topbar').is_visible()
+ assert not page.locator('#navigation-hud').is_visible()
  print('PASS browser simulated phone UI and voice lifecycle',errs[:10]);assert not errs
  browser.close()
