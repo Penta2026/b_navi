@@ -100,3 +100,58 @@ body.navigation-active #map-gps-message{left:12px;right:auto;top:90px;max-width:
 .voice-settings-shortcut{width:100%;min-height:42px;margin:4px 0 8px;border:1px solid #c7dfe5;border-radius:9px}
 @media(max-width:800px){.topright .settings-trigger{display:inline-flex!important;align-items:center;justify-content:center;padding:6px 8px!important;font-size:12px}.topright #help-btn{display:none!important}}
 @media(max-width:460px){.topright #server-status{display:none}}
+
+
+/* 2026-11-21 follow-up: closer to Android offline nav.
+   - Route menu remains clearly reachable in normal mode.
+   - During guidance, the map becomes full-screen and the next instruction is a large bottom card. */
+@media(max-width:800px){
+  #sheet-handle{display:flex!important;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:700;color:#5a7782}
+  #sidebar{transform:translateY(calc(100% - 40px))}
+}
+#navigation-hud{transition:all .18s ease}
+body.navigation-active #navigation-hud{
+  top:auto;
+  left:12px;
+  right:12px;
+  bottom:calc(72px + env(safe-area-inset-bottom,0px));
+  max-width:none;
+  min-width:0;
+  padding:14px 16px 13px;
+  border-radius:18px;
+  background:#fffffff6;
+  box-shadow:0 8px 28px #17364233;
+}
+body.navigation-active #navigation-hud strong{
+  display:block;
+  font-size:24px;
+  line-height:1.22;
+  letter-spacing:.01em;
+}
+body.navigation-active #navigation-hud small{
+  display:block;
+  margin-top:5px;
+  font-size:15px;
+  line-height:1.35;
+  color:#456771;
+}
+body.navigation-active #navigation-quickbar{
+  left:auto;
+  right:12px;
+  bottom:max(14px,env(safe-area-inset-bottom,0px));
+  padding:4px;
+  border-radius:14px;
+}
+body.navigation-active #nav-stop-quick{
+  min-width:118px;
+  min-height:48px;
+  border-radius:12px;
+  font-size:14px;
+}
+body.navigation-active .attribution{bottom:8px;right:8px;font-size:9px;opacity:.95}
+body.navigation-active #map-gps-message{top:14px;left:12px;right:12px;max-width:none}
+@media(max-width:800px){
+  body.navigation-active #navigation-hud{bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+  body.navigation-active .map-controls{top:max(12px,env(safe-area-inset-top,0px));right:12px}
+  body.navigation-active .map-controls button{width:48px;height:48px}
+}

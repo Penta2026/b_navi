@@ -13,7 +13,7 @@ function makeSvg(tag,attributes){const n=document.createElementNS(svgNS,tag);for
 class MapCore{
   constructor(container,tiles,svg,pathLayer,pointLayer,gpsLayer,onClick){this.el=container;this.tiles=tiles;this.svg=svg;this.pathLayer=pathLayer;this.pointLayer=pointLayer;this.gpsLayer=gpsLayer;this.onClick=onClick;this.lat=34.40;this.lon=132.46;this.zoom=11;this.paths=[];this.markers=[];this.gps=null;this.gpsHeading=null;this.tileNodes=new Map();this.drag=null;this.raf=0;this.hasTileLoaded=false;this.failedTiles=0;this.bearing=0;this._pathCache=null;this.init();}
   init(){
-    const pointers=new Map();let holdTimer=null,holdFired=false,drag=null,gesture=null;
+    const pointers=new Map();let holdTimer=null,holdFired=false,drag=null,gesture=null,pendingLongPress=null;
     const cancelHold=()=>{if(holdTimer!==null){clearTimeout(holdTimer);holdTimer=null;}};
     const skip=ev=>Boolean(ev.target.closest('button,a'));
     const local=ev=>{const r=this.el.getBoundingClientRect();return {x:ev.clientX-r.left,y:ev.clientY-r.top};};
@@ -22,12 +22,18 @@ class MapCore{
     this.el.addEventListener('pointerdown',ev=>{
       if(skip(ev))return;
       ev.preventDefault();this.el.setPointerCapture?.(ev.pointerId);pointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});
-      if(pointers.size===2){cancelHold();holdFired=true;drag=null;const a=snapshot();gesture={lastLength:a.length,lastAngle:a.angle,startAngle:a.angle,rotationIntent:0,rotationEnabled:false,zoomAccum:0};return;}
+      if(pointers.size===2){cancelHold();pendingLongPress=null;holdFired=true;drag=null;const a=snapshot();gesture={lastLength:a.length,lastAngle:a.angle,startAngle:a.angle,rotationIntent:0,rotationEnabled:false,zoomAccum:0};return;}
       if(pointers.size!==1)return;
-      holdFired=false;drag={x:ev.clientX,y:ev.clientY,center:project(this.lat,this.lon,this.zoom),moved:false};
+      holdFired=false;pendingLongPress=null;drag={x:ev.clientX,y:ev.clientY,center:project(this.lat,this.lon,this.zoom),moved:false};
       if(ev.pointerType==='touch'||ev.pointerType==='pen'){
         cancelHold();const xy={x:ev.clientX,y:ev.clientY};
-        holdTimer=setTimeout(()=>{holdTimer=null;if(!drag||drag.moved||pointers.size!==1)return;holdFired=true;drag=null;this.onLongPress?.(this.screenToLatLon(local({clientX:xy.x,clientY:xy.y}).x,local({clientX:xy.x,clientY:xy.y}).y));navigator.vibrate?.(20);},550);
+        holdTimer=setTimeout(()=>{
+          holdTimer=null;if(!drag||drag.moved||pointers.size!==1)return;
+          // Recognize the hold now, but OPEN THE MODAL AFTER touchend.
+          // Otherwise the release tap can land on a modal action under the finger
+          // and silently move S/G (observed on Chromium touch devices).
+          holdFired=true;drag=null;pendingLongPress=xy;navigator.vibrate?.(20);
+        },550);
       }
     });
     this.el.addEventListener('pointermove',ev=>{
@@ -55,6 +61,10 @@ class MapCore{
         gesture.lastLength=a.length;gesture.lastAngle=a.angle;
         return;
       }
+      if(pendingLongPress&&pointers.size===1){
+        if(Math.hypot(ev.clientX-pendingLongPress.x,ev.clientY-pendingLongPress.y)>12)pendingLongPress=null;
+        return;
+      }
       if(!drag||pointers.size!==1)return;
       const dx=ev.clientX-drag.x,dy=ev.clientY-drag.y;
       if(Math.hypot(dx,dy)>9){if(!drag.moved)this.onUserPan?.();drag.moved=true;cancelHold();}
@@ -64,15 +74,25 @@ class MapCore{
       this.lat=clamp(c.lat,-85,85);this.lon=clamp(c.lon,-179.99,179.99);this.schedule();
     });
     const end=ev=>{if(!pointers.has(ev.pointerId))return;const wasSingle=pointers.size===1;const moved=drag?.moved??false;
-      cancelHold();pointers.delete(ev.pointerId);
+      const releasePoint=wasSingle&&ev.type==='pointerup'?pendingLongPress:null;
+      cancelHold();pointers.delete(ev.pointerId);pendingLongPress=null;
       if(wasSingle&&!moved&&!holdFired&&!skip(ev))this.onClick?.(point(ev));
       if(pointers.size===0){drag=null;gesture=null;holdFired=false;}
       else{drag=null;gesture=null;holdFired=true;}
+      if(releasePoint){
+        // Run after the browser's synthetic click for this release, never beneath the finger.
+        setTimeout(()=>{const a=local({clientX:releasePoint.x,clientY:releasePoint.y});this.onLongPress?.(this.screenToLatLon(a.x,a.y));},30);
+      }
     };
     this.el.addEventListener('pointerup',end);
     this.el.addEventListener('pointercancel',end);
     this.el.addEventListener('lostpointercapture',end);
-    this.el.addEventListener('contextmenu',ev=>{if(skip(ev))return;ev.preventDefault();cancelHold();drag=null;holdFired=true;this.onLongPress?.(point(ev));});
+    this.el.addEventListener('contextmenu',ev=>{
+      if(skip(ev))return;ev.preventDefault();
+      // Touch contextmenu can fire BEFORE the finger lifts; defer to pointerup.
+      if(pointers.size&&ev.button!==2)return;
+      cancelHold();pendingLongPress=null;drag=null;holdFired=true;this.onLongPress?.(point(ev));
+    });
     this.el.addEventListener('wheel',ev=>{ev.preventDefault();const r=this.el.getBoundingClientRect();this.setZoom(this.zoom+(ev.deltaY<0?1:-1),ev.clientX-r.left,ev.clientY-r.top);},{passive:false});
     this.el.addEventListener('keydown',ev=>{if(ev.key==='+'||ev.key==='='){this.setZoom(this.zoom+1);ev.preventDefault();}if(ev.key==='-'){this.setZoom(this.zoom-1);ev.preventDefault();}});
     new ResizeObserver(()=>this.schedule()).observe(this.el);this.schedule();

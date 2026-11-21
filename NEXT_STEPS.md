@@ -54,3 +54,16 @@
 3. 利用者が希望する場合にのみ追加の案内表示（次の右左折方向を大きく表示する等）を検討。現段階で速度制限表示や多機能な操作パネルは増やさない。
 4. 通常施設検索の網羅性、しまなみ/関門の専用HTTPS経路計算サーバー未接続は従来の未解決課題。公開BRouterの試験利用制限も継続確認する。
 5. すべてのZIPにHANDOFF_CURRENT、CHANGELOG、NEXT_STEPS、RELEASE_VERIFICATION、完全ソースとテストを引き続き同梱する。
+
+## 次の優先課題（更新）
+1. 実機で長押し地点登録メニューが安定して出るか再確認。
+2. ナビ開始中の案内カード文言（例: 「120m先 右折です」）が好みに合うか確認。
+3. 必要なら案内カードに道路名・到着予想到着側を追加。
+4. ルート計算の体感速度改善、地図タイル簡素化の継続調整。
+
+## Next steps after 2026-11-21 long-press-only update
+1. Real Android Chrome and iPhone Safari: verify 0.55s hold opens action menu AFTER finger lift; ordinary tap/pan/pinch/rotation do not change S/G/via; accidental finger-release registration never occurs.
+2. Confirm route sheet handle visibility and large bottom maneuver instruction in real riding UI, portrait/landscape. Preserve no header/no bottom 5 tabs during voice guidance.
+3. Check GPS bearing and Japanese voice output from a real device; compare routing legality with current Android vf1, especially Shimanami/Kanmon and 50cc profiles.
+4. Improve online place search coverage without relying on unrelated results; continue mobile performance profiling.
+5. Deploy as a single atomic GitHub commit (avoid intermediate deployment workflows); confirm latest GitHub Pages build success and test smartphone refresh.

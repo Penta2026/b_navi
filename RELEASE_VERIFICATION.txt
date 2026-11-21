@@ -1,10 +1,10 @@
-B_Navi Voice Settings v1 | 2026-11-21
-Based on GitHub main commit: 3d84bc20ee1955b57295208ef1bd06b519eacaec
-Implementation: default speech rate 1.15x; settings UI for on/off/rate/volume/pitch/voice; local persistence; simple public-facing copy.
-Static tests: node --test tests/*.cjs => 28 PASS
-Browser simulation: python tests/browser_smoke.py => PASS (390px; GPS/voice mocked)
-Browser simulation: python tests/browser_voice_settings.py => PASS (390px; voice rate 1.15 to 1.40, volume, pitch, selection, restore, mute, reset)
-JavaScript syntax checks: node --check app.js, voice-settings.js => PASS
-Unchanged: BRF profiles, GPS direction core, bridge routing and BRouter client.
-NOT VERIFIED: real iPhone/Android audio quality or speech-engine support; actual GPS field test, live BRouter response in this revision.
-Deployment status: must be checked after GitHub push; do not infer from local tests.
+B_Navi Tap-safe registration / Navigation HUD follow-up | 2026-11-21
+Base remote main (before this update): a2d29ecfaf3111aa06193583f9a0ce7ecec40fc5
+Changes: map tap no longer mutates S/G/via; hold 550ms and finger release opens explicit registration menu; touch ghost click on release prevented. Carry forward previous unpushed navigation bottom HUD, visible normal-mode route sheet, and dialog display robustness.
+Unit checks: node --test tests/*.cjs => 31 PASS / 0 FAIL.
+Browser simulated Android-size Chromium (390x844): python tests/browser_long_press.py => PASS (tap unchanged; hold 690ms; no dialog before lift; after lift modal stays open, no automatic S/G mutation; explicit Goal action updates only G).
+Browser regression: python tests/browser_smoke.py => PASS (GPS/voice mocked, full screen navigation and return).
+Browser voice settings: python tests/browser_voice_settings.py => PASS (mock playback, rate/volume/pitch, persistence).
+Syntax: node --check app.js map-core.js mobile-ui.js sw.js => PASS.
+UNCHANGED: route profiles, specialized bridge geometry, public BRouter request code, saved GPX/route database, Android travel restrictions, favorite storage schema.
+NOT VERIFIED: Android/iPhone real touch; real moving GPS, speaker output, route engine production response. Remote Pages status to be checked after single atomic push.

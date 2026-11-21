@@ -20,7 +20,7 @@ test('live guidance hides editor but keeps GPS, target, heading toggle and stop 
 });
 test('navigation status displays existing GPX voice cues, not guessed intersections',()=>{
  const app=read('app.js');
- assert.match(app,/const next=raw\.match\(\/次：/);
+ assert.match(app,/const step=raw\.match\(\/次：/);
  assert.match(app,/new MutationObserver\(syncNavigationHud\)/);
  assert.match(app,/function stopVoiceGuidance\(stopTracking=true\)/);
  assert.match(app,/state\.navActive=false;window\.speechSynthesis/);

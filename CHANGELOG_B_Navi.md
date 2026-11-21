@@ -85,3 +85,16 @@
 - 案内中の余分なタブ/ヘッダー/ルート編集/音声テストを非表示にして案内終了ボタンは常時表示。
 - 小型案内HUDは既存のGPX指示または残距離を表示。音声や経路の計算そのものは未変更。
 - キャッシュ更新、Node 24テスト、Chromiumモバイル疑似GPS/疑似音声の表示試験を実施。
+
+## 2026-11-21 フォローアップ（オフラインナビUI寄せ）
+- 音声案内開始後はヘッダー・下部メニュー・ルートシートを隠し、地図を全画面化。
+- 右上の操作は「◎ 現在地」「進行方向/北」「⌖ 中心」に絞り、オフラインナビ寄りの見た目に整理。
+- 進行案内HUDを画面下の大きなカードへ変更し、次の曲がり角を大きな文字で表示。
+- 通常時はルートシートのハンドル表示を強め、「メニューが消えた」印象を抑制。
+- 長押し/検索/お気に入り共通の地点登録メニューを安全に再表示できるよう、dialog表示処理を堅牢化。
+
+## 2026-11-21 — Tap-safe S/G/via editing (longpress-only-v1)
+- Removed ordinary map-tap registration to prevent accidental relocation of S/G or via points while examining the map.
+- Kept explicit map long-press (550ms) → action menu → set start/goal/via/favorite; search/favorites/manual coordinates still work.
+- Fixed ghost click: on touch hardware, releasing a long press could hit the newly opened menu button by accident. Menu now opens only after finger release, with native touch context menu handled safely.
+- Preserved previous mobile navigation HUD/route sheet improvements and updated help text, service worker cache version, automated/browser regression tests, and handoff docs.

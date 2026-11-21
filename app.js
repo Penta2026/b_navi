@@ -7,7 +7,9 @@ const $=id=>document.getElementById(id);
 const ROUTE_POLICIES=['ビギナー：狭い道と曲がりを抑え、走りやすい道を優先。信号は多少許容。','一般：適度な道幅と連続性を重視し、登録済み信号を強めに回避。','探索：市街地は走りやすい裏道、郊外は緑や水辺の近さを推定評価。','ファストトラベル：高速・有料道路を優先（126cc以上のみ）。'];
 const MODES=[['ビギナー','一般','探索'],['ビギナー','一般','探索'],['ビギナー','一般','探索','ファストトラベル（高速・有料優先）']];
 const state={navActive:false,followGps:true,heading:{heading:null,at:-Infinity},orientation:'north',pick:'start',via:[],routes:[],currentGpx:null,location:null,watchId:null,routeType:null,gpsPoints:[],lastInputHash:'',turnCues:[],demoTimer:null,demoIndex:0,saidCues:new Set(),cumKm:[],islandLegs:[],islandIndex:0,awaitingBridge:false,gpsAccuracy:Infinity};
-const map=new BNaviMapCore.MapCore($('map-container'),$('tile-layer'),$('map-overlay'),$('path-layer'),$('point-layer'),$('gps-layer'),handleMapClick);
+// A single tap is for map inspection only: it must never move S, G, or waypoints.
+// Coordinates are committed through the long-press action menu (or explicit search/favorite/edit).
+const map=new BNaviMapCore.MapCore($('map-container'),$('tile-layer'),$('map-overlay'),$('path-layer'),$('point-layer'),$('gps-layer'),null);
 // Basemap is calm-only for both route planning and live guidance.
 // Ignore previously saved 'standard' preferences, without erasing any user data.
 document.body.dataset.mapStyle='simple';
@@ -26,7 +28,7 @@ $('orientation-toggle').addEventListener('click',()=>{setOrientationMode(state.o
 updateOrientationButton();
 
 function setMessage(message,error=false){$('message').textContent=message;$('message').classList.toggle('error',error);}
-function setPick(kind){state.pick=kind;for(const btn of document.querySelectorAll('.pick'))btn.classList.toggle('active',btn.dataset.pick===kind);$('map-hint').textContent=kind==='start'?'地図をクリック → 出発地':kind==='goal'?'地図をクリック → 目的地':'地図をクリック → 経由地を追加';}
+function setPick(kind){state.pick=kind;for(const btn of document.querySelectorAll('.pick'))btn.classList.toggle('active',btn.dataset.pick===kind);$('map-hint').textContent='地点を登録するには地図を長押し';}
 const placeLabels={};
 function rememberPlaceLabel(coord,name){if(coord&&name){placeLabels[coord]=String(name).slice(0,100);try{localStorage.setItem('bnavi.placeLabels.v1',JSON.stringify(placeLabels))}catch{}}updatePointSummaries();}
 function pointLabel(coord){return placeLabels[coord]||'地図で指定した地点';}
@@ -35,7 +37,6 @@ try{Object.assign(placeLabels,JSON.parse(localStorage.getItem('bnavi.placeLabels
 function fmt(p){return `${Number(p[0]).toFixed(6)},${Number(p[1]).toFixed(6)}`;}
 function parsePoint(s){const arr=s.trim().split(',').map(x=>Number(x.trim()));if(arr.length!==2||!arr.every(Number.isFinite)||arr[0]<20||arr[0]>46||arr[1]<122||arr[1]>154)throw new Error('地点は「緯度,経度」で入力してね（日本国内の座標）。');return arr;}
 function inputPoint(id){return $(id).value.trim()?parsePoint($(id).value):null;}
-function handleMapClick(p){const point=[p.lat,p.lon];if(state.pick==='via'){if(state.via.length>=50){setMessage('経由地は50件までだよ。',true);return;}state.via.push(fmt(point));rememberPlaceLabel(fmt(point),'地図で指定した地点');renderVia();}else{$(state.pick).value=fmt(point);rememberPlaceLabel(fmt(point),'地図で指定した地点');if(state.pick==='start'&&!$('goal').value.trim())setPick('goal');}refreshMap();updatePointSummaries();persist();}
 function updatePolicy(){const el=$('route-policy');if(el)el.textContent=ROUTE_POLICIES[Number($('mode').value)]||'';}
 function updateModes(){const i=Number($('vehicle').value),sel=$('mode'),prev=sel.value;sel.replaceChildren();MODES[i].forEach((m,n)=>{const o=document.createElement('option');o.value=String(n);o.textContent=m;sel.append(o);});sel.value=Number(prev)<MODES[i].length?prev:'1';updatePolicy();}
 function renderVia(){const el=$('via-list');el.replaceChildren();state.via.forEach((v,i)=>{const row=document.createElement('div');row.className='via-row';const info=document.createElement('div');info.className='via-info';const label=document.createElement('strong');label.textContent=(i+1)+'. '+pointLabel(v);info.append(label);const details=document.createElement('details');details.className='coordinate-details';const summary=document.createElement('summary');summary.textContent='座標を確認・編集';details.append(summary);const input=document.createElement('input');input.setAttribute('aria-label',`経由地${i+1}の座標`);input.value=v;input.placeholder='緯度,経度';input.addEventListener('input',()=>{state.via[i]=input.value;label.textContent=(i+1)+'. '+pointLabel(input.value);refreshMap();persist();});details.append(input);info.append(details);row.append(info);for(const [sym,title,action] of [['↑','上へ',()=>swapVia(i,i-1)],['↓','下へ',()=>swapVia(i,i+1)],['×','削除',()=>{state.via.splice(i,1);renderVia();refreshMap();persist();}]]){const b=document.createElement('button');b.textContent=sym;b.type='button';b.title=title;b.setAttribute('aria-label',`経由地${i+1}を${title}`);b.disabled=(sym==='↑'&&i===0)||(sym==='↓'&&i===state.via.length-1);b.addEventListener('click',action);row.append(b);}el.append(row);});$('via-count').textContent=String(state.via.length);updatePointSummaries();}
@@ -44,7 +45,7 @@ function getMarkers(){const markers=[];try{const p=inputPoint('start');if(p)mark
 function refreshMap(){map.setData(state.routes,getMarkers(),state.location);}
 function persist(){try{localStorage.setItem('bnavi.pc.v1',JSON.stringify({start:$('start').value,goal:$('goal').value,via:state.via,vehicle:$('vehicle').value,mode:$('mode').value}));}catch{}}
 function restore(){try{const x=JSON.parse(localStorage.getItem('bnavi.pc.v1')||'null');if(!x)return;$('start').value=x.start||'';$('goal').value=x.goal||'';state.via=Array.isArray(x.via)?x.via.slice(0,50).map(String):[];$('vehicle').value=['0','1','2'].includes(x.vehicle)?x.vehicle:'1';updateModes();$('mode').value=x.mode||'1';updatePolicy();}catch{}}
-function getRequestPoints(){if(!$('start').value.trim()||!$('goal').value.trim())throw new Error('出発地と目的地を、地図で指定してね。');const a=[parsePoint($('start').value)];for(const text of state.via)a.push(parsePoint(text));a.push(parsePoint($('goal').value));if(a.length>52)throw new Error('地点が多すぎます。');return a;}
+function getRequestPoints(){if(!$('start').value.trim()||!$('goal').value.trim())throw new Error('出発地と目的地は、地図の長押しメニューや検索から登録してね。');const a=[parsePoint($('start').value)];for(const text of state.via)a.push(parsePoint(text));a.push(parsePoint($('goal').value));if(a.length>52)throw new Error('地点が多すぎます。');return a;}
 function gpxTurnCues(xml){const doc=new DOMParser().parseFromString(xml,'application/xml');return [...doc.getElementsByTagNameNS('*','rtept')].map(n=>{const d=n.getElementsByTagNameNS('*','desc')[0]?.textContent||'';const offsetNode=n.getElementsByTagNameNS('*','offset')[0];return {desc:d,offset:offsetNode?Number(offsetNode.textContent):NaN,lat:Number(n.getAttribute('lat')),lon:Number(n.getAttribute('lon'))};}).filter(x=>Number.isFinite(x.offset)&&Number.isFinite(x.lat)&&Number.isFinite(x.lon));}
 function gpxPoints(xml){const doc=new DOMParser().parseFromString(xml,'application/xml');if(doc.getElementsByTagName('parsererror').length)throw new Error('GPXの解析に失敗しました');let nodes=[...doc.getElementsByTagNameNS('*','trkpt')];if(!nodes.length)nodes=[...doc.getElementsByTagNameNS('*','rtept')];const pts=nodes.map(x=>[Number(x.getAttribute('lat')),Number(x.getAttribute('lon'))]).filter(x=>x.every(Number.isFinite));if(pts.length<2)throw new Error('GPXに道路の軌跡点がありません。');return pts;}
 function km(a,b){const rad=Math.PI/180,dLat=(b[0]-a[0])*rad,dLon=(b[1]-a[1])*rad;const t=Math.sin(dLat/2)**2+Math.cos(a[0]*rad)*Math.cos(b[0]*rad)*Math.sin(dLon/2)**2;return 12742*Math.asin(Math.min(1,Math.sqrt(t)));}
@@ -265,18 +266,33 @@ function syncNavigationHud(){
  const hud=$('navigation-hud');if(!hud)return;
  hud.hidden=!state.navActive;
  if(!state.navActive)return;
- const raw=$('nav-status').textContent||'';
- const next=raw.match(/次：([^／（。]+)/);
+ const raw=($('nav-status').textContent||'').replace(/\s+/g,' ').trim();
+ const step=raw.match(/次：([^約／（。]+)\s*約\s*([0-9.]+\s*(?:km|m))/);
+ const stepLoose=raw.match(/次：([^／（。]+)/);
  const remain=raw.match(/(?:島内)?残り約\s*([0-9.]+\s*(?:km|m))/);
+ const offRoute=raw.match(/経路まで約\s*([0-9.]+\s*(?:km|m))/);
+ const island=raw.match(/しまなみ島内\s*([0-9]+\/[0-9]+)/);
  const bridge=/橋の入口|橋区間|橋の区間|橋渡り|橋の参考線/.test(raw);
  const failure=/GPSエラー|音声の再生に失敗|音声を開始できません/.test(raw);
- $('navigation-hud-main').textContent=failure?'位置情報・音声を確認':bridge?'橋付近：現地標識を確認':next?next[1].trim():'音声案内中';
- $('navigation-hud-sub').textContent=remain?'残り '+remain[1]:!state.location?'GPS取得中…':state.turnCues.length?'GPS追従中':'右左折情報なし';
+ let main='音声案内中';
+ if(failure)main='位置情報・音声を確認';
+ else if(bridge)main='橋区間：現地標識を確認';
+ else if(step)main=`${step[2].trim()}先 ${step[1].trim()}`;
+ else if(stepLoose)main=stepLoose[1].trim();
+ else if(/目的地に到着/.test(raw))main='目的地に到着';
+ else if(!state.location)main='GPS取得中…';
+ const parts=[];
+ if(remain)parts.push('残り '+remain[1].trim());
+ if(offRoute)parts.push('経路まで '+offRoute[1].trim());
+ if(island)parts.push('島内 '+island[1]);
+ if(!parts.length)parts.push(!state.location?'現在地を取得中':state.turnCues.length?'GPS追従中':'右左折情報なし');
+ $('navigation-hud-main').textContent=main;
+ $('navigation-hud-sub').textContent=parts.join(' ／ ');
 }
 new MutationObserver(syncNavigationHud).observe($('nav-status'),{childList:true,characterData:true,subtree:true});
 function syncNavigationButtons(){const allowed=canVoiceNavigate();for(const id of ['nav-start','nav-start-quick'])$(id).disabled=!allowed||state.navActive;
  for(const id of ['nav-stop','nav-stop-quick'])$(id).disabled=!state.navActive;
- $('nav-start-quick').hidden=state.navActive;$('nav-stop-quick').hidden=!state.navActive;$('navigation-quickbar').hidden=!allowed;
+ $('nav-start-quick').hidden=state.navActive;$('nav-stop-quick').hidden=!state.navActive;$('navigation-quickbar').hidden=!(allowed||state.navActive);
  document.body.classList.toggle('navigation-active',state.navActive);
  syncNavigationHud();
 }
@@ -357,7 +373,7 @@ function updateGpsProgress(demo=false){if(!state.location)return;if(state.routeT
 $('vehicle').addEventListener('change',()=>{updateModes();persist();});$('mode').addEventListener('change',()=>{updatePolicy();persist();});
 for(const b of document.querySelectorAll('.pick'))b.addEventListener('click',()=>setPick(b.dataset.pick));$('start-pick').addEventListener('click',()=>setPick('start'));$('goal-pick').addEventListener('click',()=>setPick('goal'));
 $('start').addEventListener('input',()=>{updatePointSummaries();refreshMap();persist();});$('goal').addEventListener('input',()=>{updatePointSummaries();refreshMap();persist();});
-$('add-via').addEventListener('click',()=>{if(state.via.length>=50){setMessage('経由地は50件まで。',true);return;}setPick('via');setMessage('地図上で経由地をクリックしてね。');});$('clear-vias').addEventListener('click',()=>{state.via=[];renderVia();refreshMap();persist();});
+$('add-via').addEventListener('click',()=>{if(state.via.length>=50){setMessage('経由地は50件まで。',true);return;}setPick('via');setMessage('地図を長押しし、表示されたメニューから「経由地に追加」を選んでね。');});$('clear-vias').addEventListener('click',()=>{state.via=[];renderVia();refreshMap();persist();});
 $('calculate').addEventListener('click',calculate);$('clear-route').addEventListener('click',()=>{clearResult();setMessage('結果を消したよ。地点は残してあります。');});$('fit-route').addEventListener('click',fitResult);$('save-gpx').addEventListener('click',()=>{if(state.currentGpx)downloadGpx(state.currentGpx,'B_Navi_route.gpx');});
 for(const id of ['hiroshima','shimanami','kanmon'])$(`sample-${id}`).addEventListener('click',()=>setExample(id));
 $('zoom-in').addEventListener('click',()=>map.setZoom(map.zoom+1));$('zoom-out').addEventListener('click',()=>map.setZoom(map.zoom-1));$('center-hiroshima').addEventListener('click',()=>map.center(34.4,132.46,11));$('map-location').addEventListener('click',startGps);$('compass-reset').addEventListener('click',()=>setOrientationMode('north'));$('help-btn').addEventListener('click',()=>$('help-dialog').showModal());$('gps-on').addEventListener('click',startGps);$('gps-off').addEventListener('click',stopGps);$('demo-on').addEventListener('click',startDemo);$('demo-off').addEventListener('click',stopDemo);for(const id of ['nav-start','nav-start-quick'])$(id).addEventListener('click',startVoiceGuidance);for(const id of ['nav-stop','nav-stop-quick'])$(id).addEventListener('click',()=>stopVoiceGuidance(true));for(const id of ['voice-test','voice-test-quick'])$(id).addEventListener('click',voiceTest);

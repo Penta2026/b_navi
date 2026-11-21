@@ -168,3 +168,30 @@
 - 経路探索、専用BRF、しまなみ・関門、既存音声指示とGPS位置追従の数値処理は変更なし。
 - 静的Nodeテスト24/24成功、Chromiumの390×844模擬スマホで案内開始/全画面/3ボタン残存/案内終了で画面復帰成功。実機GPS、スピーカー、屋外走行、iPhone Safariの背面継続は未確認。
 - 注意：淡色表示はOSMラスタータイルの不透明度低下。地図タイルを独自軽量ベクタースタイルに変えたわけではない。
+
+## 2026-11-21 フォローアップ（今回の追加）
+### 実施内容
+1. ナビ開始時の画面をオフラインAndroid版に近づけるため、全画面地図+下部大文字案内カードへ変更。
+2. 画面上部の `B_Navi` ヘッダーは `navigation-active` 時に非表示。
+3. 地点登録メニューは `safeShowModal()` を介して開くようにし、showModal失敗時も `open` 属性で表示させるフォールバックを追加。
+4. ルートシートの見え方を調整し、閉じた状態でも「━ ルート」ハンドルが見えるようにした。
+
+### 主な対象ファイル
+- `app.js` : ナビHUD文言生成、クイックバー表示条件
+- `mobile-ui.js` : 地点登録メニュー表示の堅牢化
+- `style.css` : 全画面ナビUI、下部案内カード、ルートシートハンドル
+- `index.html` : ルートシートハンドル文言
+
+### 未確認
+- 実機で「音声案内開始」押下後の縦画面レイアウト最終確認
+- 長押し地点登録メニューの再発確認
+
+## 2026-11-21 latest — S/G/waypoint registration is long-press only
+- User field report: ordinary map taps moved S and G unexpectedly; must require deliberate long press. Do **not** use one-tap map selection for any S/G/via mutation.
+- `app.js`: MapCore `onClick` intentionally `null` (not a no-op handler which might inadvertently mutate state). Old `handleMapClick` direct-write path removed. Map hint and waypoint instructions now say long press. Search/favorite and explicitly expanded coordinate fields remain supported.
+- `map-core.js`: retain touch pan/pinch/rotation, long-press 550ms. IMPORTANT: on a touchscreen, opening a `<dialog>` before finger lift can let the release click fall on a dialog action under that finger and *silently overwrite S*. Now confirm the long press at 550ms but open the menu just after `pointerup` (30ms delay), never while finger is still touching. Suppress touch-native contextmenu while pressed; desktop right-click remains supported. Movement over 12px after hold cancels the pending menu. Explicit `pointercancel` does not open a menu.
+- `mobile-ui.js`: previously added safe modal opening preserved, actual S/G/via values are updated only from `[data-apply]` controls in the dialog.
+- `index.html`: map instructions reflect long-press, not tap. `sw.js`: unique new app shell cache version; no deletion of stored coordinates, GPX, favorites, or IndexedDB routes.
+- Previous unpushed follow-up is bundled in THIS release as well: active guidance hides header/normal tabs, large bottom next-turn HUD, stronger normal-mode route sheet handle, modal robustness. Do not lose these edits when rebasing or packaging.
+- Verification: `node --test tests/*.cjs` 31/31 PASS; Chromium 390x844 `tests/browser_long_press.py` PASS (short tap no mutation, 690ms hold then lift opens menu, menu action only updates G); `browser_smoke.py` and `browser_voice_settings.py` PASS with mocked GPS/speech.
+- Not verified: actual Android Chrome/iOS Safari long press, real GPS/voice, live routing API availability. Do not describe as road-tested.

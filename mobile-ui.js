@@ -13,12 +13,13 @@
  $('go-location').onclick=()=>{startGps();toggleSheet(false)};
  $('swap-endpoints').onclick=()=>{const a=$('start').value;$('start').value=$('goal').value;$('goal').value=a;state.via.reverse();renderVia();refreshMap();fitMarkers();persist();updatePointSummaries();setMessage('出発地と目的地を交換したよ。経由地も逆順にしたよ。')};
  $('place-dialog-close').onclick=()=>$('place-dialog').close();$('place-action-close').onclick=()=>$('place-action-dialog').close();
- function showPlaces(tab){$('place-dialog').showModal();switchTab(tab);if(tab==='search')setTimeout(()=>$('place-query').focus(),100)}
+ function safeShowModal(dialog){if(!dialog)return;try{if(dialog.open)dialog.close();dialog.showModal()}catch{dialog.setAttribute('open','open')}}
+ function showPlaces(tab){safeShowModal($('place-dialog'));switchTab(tab);if(tab==='search')setTimeout(()=>$('place-query').focus(),100)}
  function switchTab(tab){const fav=tab==='favorites';$('search-panel').hidden=fav;$('favorites-panel').hidden=!fav;$('tab-search').classList.toggle('selected',!fav);$('tab-favorites').classList.toggle('selected',fav);if(fav)renderFavorites()}
  $('tab-search').onclick=()=>switchTab('search');$('tab-favorites').onclick=()=>switchTab('favorites');
  function favorites(){try{const x=JSON.parse(localStorage.getItem('bnavi.favorites.v1')||'[]');return Array.isArray(x)?x.filter(f=>f&&typeof f.name==='string'&&typeof f.coord==='string').slice(0,300):[]}catch{return []}}
  function saveFavorites(data){try{localStorage.setItem('bnavi.favorites.v1',JSON.stringify(data));return true}catch{alert('端末への保存に失敗したよ。空き容量やブラウザの設定を確認してね。');return false}}
- function selectPlace(name,coord){picked={name,coord};$('selected-place-name').textContent=name;$('selected-place-coord').textContent=coord;$('place-dialog').close();$('place-action-dialog').showModal()}
+ function selectPlace(name,coord){picked={name,coord};$('selected-place-name').textContent=name;$('selected-place-coord').textContent=coord;if($('place-dialog').open)$('place-dialog').close();safeShowModal($('place-action-dialog'))}
  // Share a single point-action menu between place search, favorites and map long-press.
  window.BNaviSelectMapPoint=(point)=>{
    if(!point||!Number.isFinite(point.lat)||!Number.isFinite(point.lon))return;
