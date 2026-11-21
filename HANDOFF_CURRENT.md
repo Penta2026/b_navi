@@ -124,3 +124,14 @@
 - `tests/test_fast_map_render.cjs` + added public BRouter progress test: 17/17 Node tests PASS incl 6 bridge round trips, GPS handoff, ordering, raster coverage, cached GPX path redraw, and public API request mocks. Browser screenshot / real mobile frame rate / public BRouter real response NOT VERIFIED.
 - Deployed frontend source to `Penta2026/b_navi`, GitHub Pages build must be checked separately after commit; last deployed status is not inferred from source upload.
 - **Version source**: `B_Navi_PWA_Smooth_Map_2026-11-20.zip`. This supersedes the earlier experimental public BRouter ZIP for UI and rendering. Android `vf1` remains feature source; old `BikeNavigator` remains external BRouter implementation reference.
+
+
+## 2026-11-21 最新正本 — Android vf1 方位表示・赤▲・案内開始
+- **正本比較**: ユーザー添付 `B_Navi_Android vf1.zip` の `MainActivity.java` を再読込。Androidは `guidanceRotationButton.setText(headUp?"北↑":"進行方向↑")`、GPS bearing/speedを使用し停止中は直前の安定した方位を保持。フリー走行で2m/s、8度、1秒、通常案内で約9度/1.5秒の閾値。PWAでは共通値2m/s、精度35m以内、8度/1.2秒で初期実装。実機感度は未確定。
+- `navigation-heading.js`：ブラウザ/Node両用のGPS方位フィルタ。`map-core.js`：現在地を赤い三角、方位不明時は `?` を表示。地図北上/進行方向上の回転と2本指手動回転を分離。
+- `app.js`：方位ボタン（現在のモードでなく次のアクションを表す）、GPS位置追従、音声テスト・案内開始/終了・GPX案内指示のみの右左折通知。**音声を自動開始せず明示タップ時のみ開始**。GPS停止後の位置は消し、古い位置を現在地と誤認させない。
+- `ride-radar.js`：フリー走行も同じGPS矢印/方位を使用。レーダーの距離ロジックは維持。道路制限速度の表示追加なし。
+- `mobile-ui.js`：ルート表示後に下部編集シートを畳み、地図の案内ボタンを押せるように。`style.css`：スマホでスクロールにより操作ボタンが画面外へ出ないようclip。
+- `sw.js`：アプリシェルキャッシュ更新。`navigation-heading.js` をオフラインキャッシュ対象へ追加。保存済み地図・経路・お気に入りDBの削除なし。
+- **検証**: `node --check` 対象JSすべてPASS; `node --test tests/*.cjs` 21 PASS; モバイル画面（Chromium＋モックGPS/モックTTS）の操作フローPASS。実端末GPS/音声/画面OFF中は未確認。外部BRouterへの実オンライン計算は今回未試行（コードとBRFは変更なし）。
+- **次版優先**: iPhone Safari/Android ChromeでGPS精度・停止時の方位保持、音声合成と画面ON中の案内、GPX指示正確さ、通信オフで保存ルート再案内。速度閾値は必要なら実機で調整。

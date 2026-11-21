@@ -44,3 +44,24 @@ body[data-map-style="simple"] #tile-layer{opacity:.62}
 body[data-map-style="standard"] #tile-layer{filter:none;opacity:1}
 #map-style-toggle{font-size:11px;font-weight:700;letter-spacing:-.01em;line-height:1.2}
 @media(max-width:800px){#map-style-toggle{min-width:44px;min-height:44px}}
+
+/* Android vf1 navigation controls: north-up / course-up and red GPS direction arrow. */
+#orientation-toggle{font-weight:700;font-size:12px;min-width:92px;max-width:none;padding:0 9px;white-space:nowrap}
+#navigation-quickbar{position:absolute;left:12px;bottom:18px;z-index:9;display:flex;align-items:center;gap:7px;background:#f9fcfdee;padding:7px;border:1px solid #bfd9de;border-radius:14px;box-shadow:0 3px 14px #13324040}
+#navigation-quickbar[hidden],#navigation-quickbar button[hidden]{display:none!important}
+#navigation-quickbar button{min-height:44px;border-radius:10px;border:1px solid #bcd1d5;padding:0 12px;background:#edf5f7;color:#12536b;font-weight:750;touch-action:manipulation}
+#nav-start-quick,#nav-start{background:#0b7690!important;color:white!important;border-color:#0b7690!important}
+#nav-start:disabled,#nav-start-quick:disabled{opacity:.55}
+.nav-start-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.nav-start-controls #voice-test{grid-column:1/-1;min-height:43px}
+.nav-start-controls button{min-height:48px;border-radius:10px}
+@media(max-width:800px){#navigation-quickbar{bottom:13px;left:10px;max-width:calc(100% - 20px)}#navigation-quickbar button{font-size:12px;padding:0 9px}#orientation-toggle{min-width:83px;height:44px;font-size:11px}}
+
+/* Prevent WebKit/Chromium focus scrolling the map controls out of view. */
+@media(max-width:800px){html,body{overscroll-behavior:none}body{position:fixed;inset:0;width:100%;height:100dvh;overflow:hidden}}
+@media(max-width:800px){#layout{overflow:clip;overflow-clip-margin:0}}
+@media(max-width:800px){#map-container{overflow:clip}}
+/* One clear orientation toggle replaces the older redundant compass-reset control. */
+#compass-reset{display:none!important}
+#map-style-toggle{min-width:72px!important;white-space:nowrap;padding:0 8px}
+@media(max-width:800px){#navigation-quickbar{bottom:52px}}

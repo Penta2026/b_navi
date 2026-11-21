@@ -30,3 +30,12 @@
 3. If a truly sparse map is desired (labels/POIs actually omitted), evaluate a licensed, adequately attributed low-detail vector or raster basemap respecting tile provider policy. This revision only reduces OSM raster contrast/visual emphasis.
 4. Keep off-line saved route, GPS and TTS tests separate: no promise of screen-off background guidance or offline OSM base tiles.
 5. Maintain identical 6 bridge route behavior, correct via ordering, Android vf1 BRF rules, and updated docs with each ZIP / GitHub revision.
+
+
+## 2026-11-21 次の実機確認（最優先）
+1. Android Chromeで既存ルート（BRouter実計算）を表示し、赤い▲の位置を確認。2本指拡大縮小、進行方向ボタン（走行時のみ回転）→「北を上」へ戻す→手動回転後の動作を確認。停車中に方向が振れないこと。
+2. iPhone Safariでも同じ画面・GPX/地点編集・GPS許可・赤▲を確認。iPhoneの`coords.heading`が返らない場合は `?` のままでよい。方位センサー磁北を無断で代替しない。
+3. まずルート無しの「音声テスト」で日本語音声を聞けるか、その後ルート検索→「音声案内開始」→案内終了を確認。外部GPXには右左折が入っていないこともある。明確に区別。
+4. 通信ありでルート保存後、通信OFFで「保存済み経路を開く」→画面ON・GPS許可下でルート線と音声案内の試験。iPhoneの画面ロック中の継続や音声エンジンのオフライン可否は保証しない。
+5. ルート計算自体は旧PWA準拠の公開BRouter。実サーバーの受け入れ可否/負荷/適法性は未確認のまま。しまなみ・関門の専用ルートを公開汎用BRouterへ置換しない。
+6. 今後も統合ZIPへソース・CHANGELOG・HANDOFF_CURRENT・NEXT_STEPS・RELEASE_VERIFICATION・テストを同梱し、GitHubに同じファイルを反映する。

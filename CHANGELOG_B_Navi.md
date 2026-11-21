@@ -59,3 +59,10 @@
 - Public BRouter progress now distinguishes profile upload, route computation and automatic retry, and reports elapsed duration.
 - No changes to BRF contents, Shimanami/Kanmon navigation, GPX turn metadata, search or local offline route storage.
 - 17/17 offline Node tests pass; no real smartphone performance or production API timing proof.
+
+
+### 2026-11-21 — Navigation heading and audio trial
+- Compared Android vf1 orientation and GPS bearing handling. Replaced blue GPS dot with red GPS direction triangle (question mark when heading unknown). Added a single north-up/course-up action toggle.
+- Added real "start voice guidance / stop voice guidance" and no-route speech test. Avoid automatic speech when navigation is off; preserve existing original GPX cue metadata. No fake turns.
+- Map-floating controls remain usable after route calculation: route panel closes, avoids clipped controls on mobile. Free ride uses the same course-up handling.
+- Did not change routes/BRF/map tile source/search. 21 Node tests PASS; Chromium phone-size mock GPS/TTS path PASS. Field audio unverified.

@@ -11,7 +11,7 @@ function unproject(x,y,z){const scale=TILE*2**z;return {lat:Math.atan(Math.sinh(
 const svgNS='http://www.w3.org/2000/svg';
 function makeSvg(tag,attributes){const n=document.createElementNS(svgNS,tag);for(const [k,v] of Object.entries(attributes))n.setAttribute(k,String(v));return n;}
 class MapCore{
-  constructor(container,tiles,svg,pathLayer,pointLayer,gpsLayer,onClick){this.el=container;this.tiles=tiles;this.svg=svg;this.pathLayer=pathLayer;this.pointLayer=pointLayer;this.gpsLayer=gpsLayer;this.onClick=onClick;this.lat=34.40;this.lon=132.46;this.zoom=11;this.paths=[];this.markers=[];this.gps=null;this.tileNodes=new Map();this.drag=null;this.raf=0;this.hasTileLoaded=false;this.failedTiles=0;this.bearing=0;this._pathCache=null;this.init();}
+  constructor(container,tiles,svg,pathLayer,pointLayer,gpsLayer,onClick){this.el=container;this.tiles=tiles;this.svg=svg;this.pathLayer=pathLayer;this.pointLayer=pointLayer;this.gpsLayer=gpsLayer;this.onClick=onClick;this.lat=34.40;this.lon=132.46;this.zoom=11;this.paths=[];this.markers=[];this.gps=null;this.gpsHeading=null;this.tileNodes=new Map();this.drag=null;this.raf=0;this.hasTileLoaded=false;this.failedTiles=0;this.bearing=0;this._pathCache=null;this.init();}
   init(){
     const pointers=new Map();let holdTimer=null,holdFired=false,drag=null,gesture=null;
     const cancelHold=()=>{if(holdTimer!==null){clearTimeout(holdTimer);holdTimer=null;}};
@@ -50,14 +50,14 @@ class MapCore{
         gesture.rotationIntent+=da;
         // Do not rotate on small, unintended finger twists during pinch.
         // After a clear 25-degree twist, rotate at 70% sensitivity.
-        if(!gesture.rotationEnabled && Math.abs(gesture.rotationIntent)>=25)gesture.rotationEnabled=true;
+        if(!gesture.rotationEnabled && Math.abs(gesture.rotationIntent)>=25){gesture.rotationEnabled=true;this.onManualRotate?.();}
         if(gesture.rotationEnabled && Math.abs(da)>=0.15)this.setBearing(this.bearing+da*0.70);
         gesture.lastLength=a.length;gesture.lastAngle=a.angle;
         return;
       }
       if(!drag||pointers.size!==1)return;
       const dx=ev.clientX-drag.x,dy=ev.clientY-drag.y;
-      if(Math.hypot(dx,dy)>9){drag.moved=true;cancelHold();}
+      if(Math.hypot(dx,dy)>9){if(!drag.moved)this.onUserPan?.();drag.moved=true;cancelHold();}
       if(!drag.moved)return;
       const theta=-this.bearing*DEG,ux=dx*Math.cos(theta)-dy*Math.sin(theta),uy=dx*Math.sin(theta)+dy*Math.cos(theta);
       const c=unproject(drag.center.x-ux,drag.center.y-uy,this.zoom);
@@ -81,6 +81,7 @@ class MapCore{
   toUnrotated(sx,sy){const x=sx-this.el.clientWidth/2,y=sy-this.el.clientHeight/2,theta=-this.bearing*DEG;return {x:x*Math.cos(theta)-y*Math.sin(theta)+this.el.clientWidth/2,y:x*Math.sin(theta)+y*Math.cos(theta)+this.el.clientHeight/2};}
   screenToLatLon(sx,sy){const p=this.toUnrotated(sx,sy),c=project(this.lat,this.lon,this.zoom);return unproject(c.x+p.x-this.el.clientWidth/2,c.y+p.y-this.el.clientHeight/2,this.zoom);}
   screenPos(p){const c=project(this.lat,this.lon,this.zoom),q=project(p[0],p[1],this.zoom);return [q.x-c.x+this.el.clientWidth/2,q.y-c.y+this.el.clientHeight/2];}
+  setGpsHeading(degrees){const next=Number.isFinite(degrees)?((degrees%360)+360)%360:null;if(this.gpsHeading===next)return;this.gpsHeading=next;this.schedule();}
   setBearing(v){this.bearing=((v%360)+360)%360;this.tiles.style.transform=`rotate(${this.bearing}deg)`;this.svg.style.transform=`rotate(${this.bearing}deg)`;const btn=document.getElementById('compass-reset');if(btn){btn.hidden=Math.min(this.bearing,360-this.bearing)<2;btn.style.transform=`rotate(${this.bearing}deg)`;}this.schedule();}
   center(lat,lon,zoom=this.zoom){this.lat=clamp(lat,-85,85);this.lon=clamp(lon,-179.99,179.99);this.zoom=clamp(zoom,3,18);this.schedule();}
   setZoom(zoom,x=this.el.clientWidth/2,y=this.el.clientHeight/2){zoom=clamp(zoom,3,18);if(this.zoom===zoom)return;const before=this.screenToLatLon(x,y);this.zoom=zoom;const c=project(before.lat,before.lon,this.zoom);const anchor=this.toUnrotated(x,y);const offsetX=anchor.x-this.el.clientWidth/2,offsetY=anchor.y-this.el.clientHeight/2;const n=unproject(c.x-offsetX,c.y-offsetY,this.zoom);this.lat=n.lat;this.lon=n.lon;this.schedule();}
@@ -109,7 +110,7 @@ class MapCore{
    }
    this.pathLayer.setAttribute('transform',`translate(${(cache.cx-c.x).toFixed(2)} ${(cache.cy-c.y).toFixed(2)})`);
    this.pointLayer.replaceChildren();for(const m of this.markers){const [x,y]=this.screenPos(m.point);if(x<-60||x>w+60||y<-60||y>h+60)continue;const g=makeSvg('g',{transform:`translate(${x},${y})`});g.append(makeSvg('circle',{r:12,fill:m.color||'#1785a0',stroke:'#fff','stroke-width':2.5}));const num=makeSvg('text',{'text-anchor':'middle','dominant-baseline':'middle',y:0,'font-size':11,fill:'#fff','font-weight':'bold'});num.textContent=m.symbol||'•';g.append(num);const lab=makeSvg('text',{x:17,y:4,fill:'#27424d',class:'point-label'});lab.textContent=m.label||'';g.append(lab);this.pointLayer.append(g);}
-   this.gpsLayer.replaceChildren();if(this.gps){const [x,y]=this.screenPos(this.gps);this.gpsLayer.append(makeSvg('circle',{cx:x,cy:y,r:10,fill:'#3470dc',stroke:'#fff','stroke-width':4}));this.gpsLayer.append(makeSvg('circle',{cx:x,cy:y,r:3,fill:'#fff'}));}
+   this.gpsLayer.replaceChildren();if(this.gps){const [x,y]=this.screenPos(this.gps);const arrow=makeSvg('path',{d:'M0 -18 L-11 11 L0 6 L11 11 Z',transform:`translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${(this.gpsHeading??0).toFixed(1)})`,fill:'#e33b32',stroke:'#fff','stroke-width':3,'stroke-linejoin':'round'});this.gpsLayer.append(arrow);if(this.gpsHeading===null){const unknown=makeSvg('text',{x:x+14,y:y-9,fill:'#b72a22',stroke:'#fff','stroke-width':3,'paint-order':'stroke','font-size':13,'font-weight':'bold'});unknown.textContent='?';this.gpsLayer.append(unknown);}}
   }
 }
 root.BNaviMapCore={MapCore,project,unproject};

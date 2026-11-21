@@ -42,3 +42,13 @@ Previous-PWA public BRouter trial
 - Real iPhone/Android frame rate, real internet API timing: NOT TESTED
 - Map design note: Simple mode only mutes the existing OSM raster. It does not remove map labels.
 - Route geometry/GPX/BRF/routing permissions remain unchanged; cached SVG is display-only.
+
+
+2026-11-21 GPS heading/navigation voice revision
+- Android vf1 MainActivity.java source: inspected toggle/button + GPS speed/bearing thresholds (source comparison).
+- node --check app.js, map-core.js, navigation-heading.js, mobile-ui.js, ride-radar.js, sw.js: PASS
+- node --test tests/*.cjs: 21 PASS / 0 FAIL; Android bridge 12 directions and GPS handoff retained.
+- Playwright Chromium viewport 390x844 using mocked geolocation.heading=90/speed=4 and mocked speech synthesis: PASS; course-up map bearing=270, red arrow, start/stop and Japanese speech text recorded.
+- Browser test simulated GPS/TTS and no OSM basemap. iOS Safari and Android Chrome device hardware, actual speaker audio, true GPS course, screen-off guidance: NOT VERIFIED.
+- Public BRouter online live request: NOT RETESTED in this release. Routing and vehicle profile files unchanged.
+- Saved GPX audio offline field test: NOT VERIFIED. Japanese system TTS voice availability may depend on OS and downloaded voices.

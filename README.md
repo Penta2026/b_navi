@@ -34,3 +34,13 @@ Old `BikeNavigator` Cloudflare Worker `bikenavigator-map-relay` is a map-data st
 - GPX geometry is no longer rebuilt every time the map pans, rotates, or a new GPS location arrives. Visible OSM tile requests better match the viewport; no bulk caching has been added.
 - If route calculation feels slow, the display now reports whether it is uploading a profile or waiting for public BRouter, and reports the network/compute elapsed time after success. This is diagnostic; third-party server latency remains beyond our control.
 - The original OSM text is still embedded in raster tiles. For an actually low-label basemap a separate licensing/provider decision is needed.
+
+
+## 2026-11-21 — Android vf1 course-up, red GPS ▲ and voice trial
+- **Current position** is a red ▲ on the map. On GPS devices reporting reliable speed/course, ▲ points in the actual direction of travel. Unknown heading is shown with a **?**, rather than pretending that north is the motorcycle direction.
+- The map's one orientation button is **進行方向** in north-up mode (tap to follow course), **北を上** in course-up mode (tap to return to north). A deliberate two-finger manual rotation temporarily pauses course-up until the user selects it again. GPS course requires speed at least 2 m/s and accuracy at most 35 m. It updates for meaningful changes (at least 8° and about 1.2 s); stationary holds the last reliable course, based on Android `vf1`.
+- On a calculated normal route, or an imported GPX with a road track, the map shows **▶ 音声案内開始 / ■ 案内終了 / 🔈 テスト**. The route sheet also has the same control. After calculating a route the phone UI returns to the map instead of keeping the route sheet over the start button.
+- **音声テスト** can be used without a route and triggers Japanese speech from a direct button tap. **音声案内開始** turns on speech and requests GPS, using only GPX voice cues (including native BRouter `timode=3` voicehints). GPX without turn metadata does *not* invent turn-by-turn instructions. Existing simulation button provides a browser-only route playback test.
+- GPS map tracking + speech happen client side, without contacting BRouter for each turn. Saving and reopening a route without connectivity is supported in code; map background tiles, realtime rerouting and offscreen/background iOS audio are not guaranteed offline.
+- **Tests:** `node --test tests/*.cjs` → 21 passing; Chromium mobile-size smoke test (mock GPS and mock TTS) passed navigation start, switch, direction transform, stop, voice test. *This does not prove real iPhone or Android speech sounds or heading sensor accuracy.*
+- These changes do not edit BRF profiles, public BRouter parameters, Kanmon/Shimanami route geometry, location search or user favorites.

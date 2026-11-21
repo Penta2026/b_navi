@@ -12,9 +12,9 @@
  function goal(){try{return inputPoint('goal')}catch{return null}}
  function tone(ctx,freq,when,duration){const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(0.0001,when);g.gain.linearRampToValueAtTime(.17,when+.012);g.gain.exponentialRampToValueAtTime(.0001,when+duration);o.connect(g).connect(ctx.destination);o.start(when);o.stop(when+duration+.012)}
  function chime(){try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const t=audio.currentTime+.015;for(const shift of [0,.46]){tone(audio,740,t+shift,.095);tone(audio,990,t+shift+.115,.155);}}catch(e){console.warn('Radar audio unavailable',e)}}
- function stop(silent=false){if(watch!==null){navigator.geolocation.clearWatch(watch);watch=null}mode='off';screen.hidden=true;$('ride-pill').hidden=true;$('ride-free').textContent='🏍 フリー走行開始';$('ride-radar').textContent='📡 レーダー開始';$('ride-free').classList.remove('active');$('ride-radar').classList.remove('active');if(!silent)status('停止中');}
+ function stop(silent=false){if(watch!==null){navigator.geolocation.clearWatch(watch);watch=null}if(mode==='free'){state.location=null;map.setGpsHeading(null);refreshMap();}mode='off';screen.hidden=true;$('ride-pill').hidden=true;$('ride-free').textContent='🏍 フリー走行開始';$('ride-radar').textContent='📡 レーダー開始';$('ride-free').classList.remove('active');$('ride-radar').classList.remove('active');if(!silent)status('停止中');}
  function start(which){if(mode===which){stop();return}if(which==='radar'&&!goal()){status('先に目的地を設定してね');panel.hidden=false;return}if(!window.isSecureContext){status('スマホGPSにはHTTPS接続が必要です（PC localhost は例外）');panel.hidden=false;return}if(!navigator.geolocation){status('このブラウザではGPSを使えません');return}
-  stop(true);if(typeof stopGps==='function'&&state.watchId!=null)stopGps();if(which==='radar'){try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{});}catch(e){console.warn(e)}}mode=which;heading=NaN;scale=-1;lastChange=0;fix=null;
+  stop(true);if(typeof stopGps==='function'&&state.watchId!=null)stopGps();if(which==='free'){state.heading={heading:null,at:-Infinity};map.setGpsHeading(null);setOrientationMode('head');}if(which==='radar'){try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{});}catch(e){console.warn(e)}}mode=which;heading=NaN;scale=-1;lastChange=0;fix=null;
   if(which==='radar'){screen.hidden=false;$('ride-radar').textContent='📡 レーダー終了';$('ride-radar').classList.add('active');draw();}
   else{$('ride-free').textContent='■ フリー走行終了';$('ride-free').classList.add('active');$('ride-pill').hidden=false;panel.hidden=true;}
   status('GPSを取得中…');
@@ -26,8 +26,8 @@
   const at=[c.latitude,c.longitude];fix=at;
   if(Number.isFinite(c.heading)&&c.speed>=2)heading=c.heading;
   if(mode==='free'){
-   state.location=at;state.gpsAccuracy=c.accuracy;refreshMap();
-   // North-up map: do not pretend to provide Android native rotation without map transform support.
+   state.location=at;state.gpsAccuracy=c.accuracy;updateHeadingFromPosition(pos);refreshMap();
+   // Reuse the same Android-inspired red course arrow and head-up map mode.
    let latitude=at[0],longitude=at[1];if(Number.isFinite(heading)){const rad=heading*Math.PI/180;latitude+=35*Math.cos(rad)/111132;longitude+=35*Math.sin(rad)/(111320*Math.max(.2,Math.cos(at[0]*Math.PI/180)));}
    map.center(latitude,longitude,Math.max(map.zoom,15));status('フリー走行中｜GPS ±'+Math.round(c.accuracy)+'m・地図追従');return;
   }
