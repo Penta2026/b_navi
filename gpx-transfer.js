@@ -3,6 +3,42 @@
 (()=>{
 const el=id=>document.getElementById(id);
 const MAX_BYTES=12*1024*1024;
+const itineraryBox=el('gpx-itinerary-panel');
+const itineraryNames=el('gpx-itinerary-list');
+const itineraryCalcButton=el('gpx-itinerary-calculate');
+let itineraryImport=false;
+function routePointList(itinerary){
+ const names=itinerary.points.map((p,i)=>`${i===0?'S':i===itinerary.points.length-1?'G':`経由${i}`}: ${p.name||p.coords.map(n=>n.toFixed(5)).join(', ')}`);
+ itineraryNames.replaceChildren();
+ for(const name of names){const li=document.createElement('li');li.textContent=name;itineraryNames.append(li);}
+}
+async function calculateImportedItinerary(){
+ if(!itineraryImport)return;
+ itineraryCalcButton.disabled=true;
+ el('gpx-import-status').textContent='指定した中継地点を順番に通る道路ルートを計算中…';
+ try{
+  await calculate();
+  if(state.routeType&&state.routes.length){
+   const viaCount=state.via.length;
+   el('gpx-import-status').textContent=`道路ルートを計算しました。経由地${viaCount}件を指定順に通るルートです。`;}
+  else{el('gpx-import-status').textContent='中継地点は登録済み。'+(el('message').textContent||'道路計算ができませんでした。')+' 必要なら再計算してね。';}
+ }catch(error){el('gpx-import-status').textContent='中継地点は登録済み。道路計算エラー：'+String(error?.message||error);}
+ finally{itineraryCalcButton.disabled=false;}
+}
+itineraryCalcButton.addEventListener('click',calculateImportedItinerary);
+function applyItinerary(itinerary,fileName){
+ clearResult();
+ const coords=p=>fmt(p.coords);
+ el('start').value=coords(itinerary.start);
+ el('goal').value=coords(itinerary.goal);
+ state.via=itinerary.via.map(coords);
+ for(const p of itinerary.points){
+  if(p.name)rememberPlaceLabel(coords(p),p.name);
+ }
+ renderVia();updatePointSummaries();refreshMap();fitMarkers();persist();
+ itineraryImport=true;itineraryBox.hidden=false;routePointList(itinerary);
+ el('gpx-import-status').textContent=`${fileName}：S・経由地${itinerary.via.length}件・Gを読み込んだよ。道路ルートを計算します。`;
+}
 async function ingestFile(file){
  if(!file) return;
  if(file.size>MAX_BYTES)throw Error('GPXは12MB以下のファイルを選んでね。');
@@ -10,10 +46,14 @@ async function ingestFile(file){
  if(!/<(?:[A-Za-z0-9_]+:)?gpx(?:\s|>)/i.test(xml.slice(0,500)))throw Error('GPXファイルとして認識できなかったよ。');
  const doc=new DOMParser().parseFromString(xml,'application/xml');
  if(doc.getElementsByTagName('parsererror').length)throw Error('GPXのXML形式が正しくありません。');
+ // An ordered itinerary is NOT a road track: preserve every intermediate stop.
+ const itinerary=BNaviGpxItinerary.parse(doc);
+ if(itinerary){applyItinerary(itinerary,file.name||'GPX');await calculateImportedItinerary();return;}
+ itineraryImport=false;itineraryBox.hidden=true;
  let track=[];
  const trks=[...doc.getElementsByTagNameNS('*','trkseg')];
  if(trks.length){for(const seg of trks){const pts=[...seg.getElementsByTagNameNS('*','trkpt')].map(node=>[Number(node.getAttribute('lat')),Number(node.getAttribute('lon'))]).filter(p=>p.every(Number.isFinite));if(pts.length>1)track.push(pts)}}
- else{const pts=[...doc.getElementsByTagNameNS('*','rtept')].map(node=>[Number(node.getAttribute('lat')),Number(node.getAttribute('lon'))]).filter(p=>p.every(Number.isFinite));if(pts.length>1)track.push(pts)}
+ else{const pts=[...doc.getElementsByTagNameNS('*','trkpt')].map(node=>[Number(node.getAttribute('lat')),Number(node.getAttribute('lon'))]).filter(p=>p.every(Number.isFinite));if(pts.length>1)track.push(pts)}
  if(!track.length){const waypoints=[...doc.getElementsByTagNameNS('*','wpt')].map(node=>[Number(node.getAttribute('lat')),Number(node.getAttribute('lon'))]).filter(p=>p.every(Number.isFinite));if(waypoints.length>=2){el('start').value=fmt(waypoints[0]);el('goal').value=fmt(waypoints.at(-1));state.via=waypoints.slice(1,-1).map(fmt).slice(0,50);renderVia();refreshMap();fitMarkers();persist();el('gpx-import-status').textContent='地点だけのGPXを読み込んだよ。道路ルートは「ルート検索」で計算してね。';return;}throw Error('軌跡または2点以上の地点が見つからないGPXだったよ。')}
  const sections=track.map((points,i)=>({type:'road',points,color:'#06799b',width:5,label:`読み込みGPX ${i+1}区間`,gpx:xml}));
  // Multiple trkseg: preserve segmentation and prevent fictitious lines across gaps.
@@ -38,7 +78,7 @@ async function ingestClipboardText(text){
  const file=new File([xml],'Clipboard_route.gpx',{type:'application/gpx+xml;charset=utf-8'});
  if(file.size>MAX_BYTES)throw Error('GPXが12MBを超えているよ。ファイル読み込みを使ってね。');
  await ingestFile(file);
- gpxPasteStatus.textContent='GPXを受け取ったよ。地図上に表示したので確認してね。';
+ gpxPasteStatus.textContent='GPXを受け取ったよ。中継地点または走行軌跡を確認してね。';
  gpxPasteField.value='';
 }
 el('gpx-paste-import').addEventListener('click',async()=>{

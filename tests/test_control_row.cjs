@@ -21,7 +21,7 @@ test('CSS keeps zoom buttons visible in active guidance and free ride', () => {
 });
 test('new service worker cache name activates the new markup and CSS', () => {
  const sw=read('sw.js');
- assert.match(sw,/bnavi-pc-pwa-20261121-radar-voice-mute-v5/);
+ assert.match(sw,/bnavi-pc-pwa-20261121-itinerary-fix-v6/);
  assert.match(sw,/'.\/index.html'/);
  assert.match(sw,/'.\/style.css'/);
 });

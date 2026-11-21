@@ -215,3 +215,10 @@ body.free-ride-active #map-gps-message{
   max-width:min(340px,calc(100% - 24px));
   z-index:8;
 }
+
+/* Ordered GPX itinerary: visible stop order and explicit retry, not a fake straight-line route. */
+#gpx-itinerary-panel[hidden]{display:none!important}
+.gpx-itinerary-panel{margin-top:12px;padding:12px;border:1px solid #c0dce1;border-radius:12px;background:#f3f9fa;color:#234c5c}
+.gpx-itinerary-panel ol{padding-left:23px;margin:8px 0;line-height:1.7;font-size:13px}
+.gpx-itinerary-panel .primary{width:100%;min-height:46px;margin:5px 0}
+.gpx-itinerary-panel .smallprint{margin:6px 0 0}

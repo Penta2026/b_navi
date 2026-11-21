@@ -1,20 +1,21 @@
-B_Navi 2026-11-21 radar speech mute (v5)
-
-Based on verified GitHub Penta2026/b_navi main: 0c379b06fb0f9a5454c471f670bc38dac86d39b9
+B_Navi PWA GPX waypoint itinerary importer — 2026-11-21
+Base repository: Penta2026/b_navi at 49e112eea7d180504fc1dfbb06ee0f562e3cfc15
 
 CONFIRMED IN LOCAL TESTS:
-- Node tests: 55 PASS, 0 FAIL (node --test tests/*.cjs).
-- Browser mock for radar voice: PASS. Entering navigation radar cancels active TTS; turning/arrival announcements do not speak in radar; on map return TTS resumes; shared GPS watch is unchanged; standalone radar also mutes narration.
-- Other browser mocks: 10 PASS (address search, control row, GPS notice, long-press, ride integration, Shimanami payload/via/web flow, smoke, voice settings).
-- Navigation state remains active when radar is displayed, including destination progress and waypoint dialog.
-- PWA service worker shell cache version bumped to radar-voice-mute-v5.
+- Node.js: 58 tests passed, 0 failed (node --test tests/test_*.cjs).
+- Chromium headless, DOM+app integration (simulated BRouter): a synthetic 4-point GPX auto-imports start, 2 vias and goal, preserves order/names, passes 4 points to route calculation, and permits retry.
+- A normal GPX <trkseg>/<trkpt> still uses the existing track importer without route recalculation.
+- A simulated BRouter result bypassing an intermediate stop is rejected; imported points remain.
+- The user's attached GPX was inspected and tested LOCALLY using a separate private script: it has one start, two intermediate stops, one end, and no drivable geometry. The private GPX itself and coordinates are NOT included in this public distribution.
+- JS syntax checked: app.js, gpx-transfer.js, gpx-itinerary-core.js.
 
-NOT VERIFIED / BLOCKED:
-- Shimanami IndexedDB offline route restore browser script was BLOCKED by local 127.0.0.1 HTTP restriction (net::ERR_BLOCKED_BY_ADMINISTRATOR). Not marked PASS.
-- Real mobile speaker, GPS, offline stored route and radar audio have NOT been tested on devices.
-- GitHub Pages publishing must be verified separately after push.
+NOT VERIFIED:
+- Real brouter.de response for the supplied 4-point route: network not available from this test environment.
+- Real mobile device GPX Share Target, GPS arrivals, Japanese TTS, and offline restore (existing scope).
+- GitHub commit / Pages deployment: check only after publishing.
 
-SCOPE:
-- Speech-only mute while mode is radar or navigation radar.
-- Radar's independent proximity chime is retained; GPS, routing, active target, waypoint dialog, completion remain active.
-- User's global voice settings and favorite/route data are not modified.
+SAFETY:
+- No invented road track is generated from itinerary points.
+- No route is claimed successful if BRouter fails or goes more than 300 m from a waypoint.
+- No private uploaded route in repo/ZIP; mock tests use synthetic coordinates.
+- Existing Shimanami/Kanmon special references, vehicle BRFs, and radar voice remain unchanged.

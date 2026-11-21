@@ -79,6 +79,12 @@ async function calculatePublicRoute(points){
  if(typeof BNaviPublicBrouter==='undefined')throw Error('旧PWAのBRouterクライアントを読み込めません');
  setMessage('公開BRouter：経路計算の準備中…');
  const result=await BNaviPublicBrouter.query(points,$('vehicle').value,$('mode').value,fetch,progress=>{setMessage(progress.message);});
+ // Verify that the remote route actually passes every requested intermediate stop.
+ // A matching start/end alone is not sufficient for an ordered itinerary.
+ if(points.length>2){
+  const missed=points.slice(1,-1).map((p,i)=>({n:i+1,d:BNaviRideLogic.distanceToPolyline(p,result.track.points)})).filter(v=>v.d>300);
+  if(missed.length)throw Error('経由地'+missed.map(x=>x.n).join('、')+'を通る道路経路が取得できません（300m以上離れています）。場所とルートを確認してね。');
+ }
  routeView('normal',[{type:'road',points:result.track.points,color:'#06799b',width:5,label:'公開BRouter・旧PWA方式（試験）',gpx:result.gpx}],result.gpx,
    '公開BRouter試験計算：'+result.profile+'（通信・計算 '+(result.elapsedMs/1000).toFixed(1)+'秒）。GPXと案内指示を端末に保存。道路規制・適法性は未検証。'+(!result.track.cues.length?'今回は音声用右左折指示が返りませんでした。':''));
 }
@@ -438,6 +444,10 @@ async function rerouteFromGps(){
  try{
   if(usePublicBrouter()){
    const r=await BNaviPublicBrouter.query(points,$('vehicle').value,$('mode').value,fetch);
+   if(points.length>2){
+    const missed=points.slice(1,-1).map((p,i)=>({n:i+1,d:BNaviRideLogic.distanceToPolyline(p,r.track.points)})).filter(v=>v.d>300);
+    if(missed.length)throw Error('リルートで経由地を通れません。残りの中継地点を維持します。');
+   }
    if(!state.navActive)return;
    routeView('normal',[{type:'road',points:r.track.points,color:'#06799b',width:5,label:'リルート済み道路経路',gpx:r.gpx}],r.gpx,'GPS現在地から再探索しました。',{keepView:true});
   }else{
