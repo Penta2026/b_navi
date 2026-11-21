@@ -21,7 +21,7 @@ test('arrival finalization in radar bypasses TTS and does not hang navigation', 
  assert.match(app, /\{onDone\(\);return;\}/);
 });
 test('PWA cache revision includes new radar voice control code without purging route data', () => {
- assert.match(sw, /gpx-status-bottom-v1/);
+ assert.match(sw, /track-gpx-filename-v1/);
  assert.match(sw, /'\.\/app\.js'/);
  assert.match(sw, /'\.\/ride-radar\.js'/);
  assert.doesNotMatch(sw, /indexedDB\.deleteDatabase/);

@@ -1,14 +1,13 @@
 {
-  "release": "2026-11-21-gpx-status-bottom-v1",
-  "basis_archive": "B_Navi_PWA_MyRoute_Library_2026-11-21.zip",
+  "release": "2026-11-22-track-gpx-local-filename-v1",
+  "basis_archive": "B_Navi_PWA_GPX_Status_Bottom_2026-11-21.zip",
   "deployment_target": "Penta2026/b_navi main / GitHub Pages https://penta2026.github.io/b_navi/",
   "change_summary": [
-    "Relocate idle actual GPX tracking indicator into bottom of scrollable route sheet, instead of fixed overlay",
-    "Idle display is a quiet single line; save/share/discard actions appear when recorded points exist",
-    "Preserve recording, GPX export, LINE share, navigation and reroute behavior",
-    "Version PWA service worker cache so phones receive the new layout"
+    "Use 実走GPX-YYYY-MM-DD-HH-mm.gpx for actual track GPX download and file sharing",
+    "Use device-local time captured at the first save/share, then retain the filename across reload",
+    "Bump PWA cache while retaining existing GPS track points and GPX XML"
   ],
-  "tested_node": "74/74 PASS",
+  "tested_node": "77/77 PASS",
   "tested_browser_simulation": [
     "tests/browser_track_panel_bottom.py at 390px and 320px (idle, recorded, discard and sheet placement)",
     "tests/browser_route_presets.py",
@@ -16,18 +15,16 @@
     "tests/browser_ride_integration.py"
   ],
   "not_verified": [
-    "Physical Android/iPhone touch UX",
-    "Actual LINE file sharing",
+    "Android/iPhone actual GPX file naming",
+    "LINE actual file sharing",
     "Live GPS recording on device",
     "Live BRouter service"
   ],
   "changed_sha256": {
-    "index.html": "ed12a439540e5a32fc664025bebff4ce786c67648280df80b4596f00513d682f",
-    "style.css": "7e1c73f23bb9c182c1fe4f9a08f2bd51e015c5bc9b7216c06ed4543e7f63e1fd",
-    "track-recorder.js": "1f6053d964a23459996dcbf02f345b5e8750f57d070d34a0ac17c193aabfbde1",
-    "sw.js": "753c7183542de61fd3d62dbdb267b69d2523aca9f743ab1e638bccbec5abfbfd",
-    "tests/browser_track_panel_bottom.py": "76cae4b118e7c69bf83c0a714615af0b4dd1d2a99b5863fabed8a85f6132e183",
-    "tests/test_control_row.cjs": "71337c6e6428bcc69165e901dbb98584e4a68308bd88e9cfe196f247f5313f09",
-    "tests/test_radar_voice_mute.cjs": "3a1c669419753c3fbf6bebf48b9481aad613e815b6867578402a50b58dc601b1"
+    "track-recorder.js": "8a7f89bf3b1eccc62389d2e93fd20e63e6833226500f756543633bcb58539f1d",
+    "sw.js": "ae56568f220d8759e92ce486c814ac64b6338d507d2b4b835bebf3c9dc918a6f",
+    "tests/test_control_row.cjs": "fe842c5e830bbd5e11bd3433dc2188e91e9ae1b4e3e7f503c0da0bf3bfe2dfcb",
+    "tests/test_radar_voice_mute.cjs": "76d46017a9631394562f339336879878077a17a1466d2add97c435d5035118df",
+    "tests/test_track_filename.cjs": "44213b03e379c7492f49d125c9d545ba1dbd9a42dc1355533d391328473c19c4"
   }
 }

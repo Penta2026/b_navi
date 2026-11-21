@@ -1,3 +1,12 @@
+# B_Navi PWA GitHub Pages反映 — 2026-11-22 実走GPX日時ファイル名
+
+GitHub Pages: https://penta2026.github.io/b_navi/
+リポジトリ: https://github.com/Penta2026/b_navi
+
+この版は `track-recorder.js` の保存/共有ファイル名と `sw.js` キャッシュ名を更新し、テスト/引継ぎ文書を追加したもの。リポジトリ `main` に配置してPagesのビルドが成功すると反映される。PWAの古い表示が残る場合は一度閉じて再読み込みする。
+
+注意：最初の保存・共有時の端末ローカル時刻を使うため、未保存の走行開始時刻と異なることがある。実機GPS・LINEは未検証。
+
 # B_Navi PWA 公開版への反映（マイルート集）
 
 1. 先に既存の `Penta2026/b_navi` リポジトリのバックアップを確保してください。`main` は今回のZIPより古いため、単独ファイルだけの上書きでは動きません。

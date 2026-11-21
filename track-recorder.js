@@ -12,11 +12,15 @@
  record.points.push({lat,lon,t,accuracy,ele:Number.isFinite(c.altitude)?c.altitude:null});lastStamp=t;persist();render();return true}
  function stop(){if(!active)return;active=false;if(record)record.ended=new Date().toISOString();persist();render()}
  function xml(){if(!record?.points.length)throw Error('保存するGPS軌跡がありません');const name='B_Navi 実走 '+record.started;return '<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="B_Navi PWA" xmlns="http://www.topografix.com/GPX/1/1"><metadata><name>'+safe(name)+'</name></metadata><trk><name>'+safe(name)+'</name><trkseg>'+record.points.map(p=>`<trkpt lat="${p.lat.toFixed(7)}" lon="${p.lon.toFixed(7)}">${p.ele===null?'':`<ele>${p.ele.toFixed(2)}</ele>`}<time>${new Date(p.t).toISOString()}</time></trkpt>`).join('')+'</trkseg></trk></gpx>'}
- function save(){if(!record?.points.length)return;const blob=new Blob([xml()],{type:'application/gpx+xml;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='B_Navi_actual_'+record.started.replace(/[:.]/g,'-')+'.gpx';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);/* Retain until explicitly discarded to avoid accidental loss. */}
+ // Use the phone's LOCAL date/time at the first export, not the UTC time in record.started.
+ // Keep this filename for subsequent save/share of the same recording, even after reloading.
+ // A colon is forbidden in Windows filenames; use a hyphen between hours and minutes.
+ function formatFilename(value){const d=new Date(value);if(!Number.isFinite(d.getTime()))throw Error('保存日時が不正です');const pad=n=>String(n).padStart(2,'0');return `実走GPX-${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}-${pad(d.getHours())}-${pad(d.getMinutes())}.gpx`}
+ function filename(){if(!record?.points.length)throw Error('保存するGPS軌跡がありません');if(!record.exportedAt){record.exportedAt=new Date().toISOString();persist()}return formatFilename(record.exportedAt)}
+ function save(){if(!record?.points.length)return;const blob=new Blob([xml()],{type:'application/gpx+xml;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename();document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);/* Retain until explicitly discarded to avoid accidental loss. */}
  async function share(){
   if(!record?.points.length)return;
-  const filename='B_Navi_actual_'+record.started.replace(/[:.]/g,'-')+'.gpx';
-  const file=new File([xml()],filename,{type:'application/gpx+xml'});
+  const file=new File([xml()],filename(),{type:'application/gpx+xml'});
   try{
    if(!navigator.share||!navigator.canShare||!navigator.canShare({files:[file]})){
     alert('この端末・ブラウザではGPXファイルの直接共有に対応していません。先に「実走GPXを保存」で保存し、LINEのファイル送信から選んでね。');return;
@@ -26,5 +30,5 @@
  }
  function discard(){if(active){alert('走行記録中です。先に走行を終了してね。');return}if(!confirm('保存待ちの走行記録を破棄しますか？'))return;record=null;lastStamp=0;localStorage.removeItem(KEY);render()}
  try{const old=JSON.parse(localStorage.getItem(KEY)||'null');if(old&&Array.isArray(old.points)){record=old;active=false;lastStamp=old.points.at(-1)?.t||0}}catch{}
- el('track-save').addEventListener('click',save);el('track-share').addEventListener('click',share);el('track-discard').addEventListener('click',discard);render();window.BNaviTrack={start,add,stop,xml,getState:()=>({active,count:record?.points.length||0})};
+ el('track-save').addEventListener('click',save);el('track-share').addEventListener('click',share);el('track-discard').addEventListener('click',discard);render();window.BNaviTrack={start,add,stop,xml,formatFilename,getFilename:filename,getState:()=>({active,count:record?.points.length||0})};
 })();
