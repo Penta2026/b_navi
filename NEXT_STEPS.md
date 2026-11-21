@@ -67,3 +67,9 @@
 3. Check GPS bearing and Japanese voice output from a real device; compare routing legality with current Android vf1, especially Shimanami/Kanmon and 50cc profiles.
 4. Improve online place search coverage without relying on unrelated results; continue mobile performance profiling.
 5. Deploy as a single atomic GitHub commit (avoid intermediate deployment workflows); confirm latest GitHub Pages build success and test smartphone refresh.
+
+## 次回: 住所検索の現地検証
+1. スマホから `東京都港区芝公園4-2-8` などの一般的な住所で実検索し、GSI検索APIのCORS/レスポンスと検索精度を確認。
+2. 番地まで表示されても町丁目代表位置に設定されていないか地図で確認。必要なら正確な番地まで対応する住所ジオコーダを選定。
+3. `広島市西区上天満町` 等も都道府県有無で試し、予想外の別地域候補が紛れないか確認。
+4. 実機で長押し登録、GPX、ナビ音声、方位切替への回帰がないか確認。

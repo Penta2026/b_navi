@@ -195,3 +195,12 @@
 - Previous unpushed follow-up is bundled in THIS release as well: active guidance hides header/normal tabs, large bottom next-turn HUD, stronger normal-mode route sheet handle, modal robustness. Do not lose these edits when rebasing or packaging.
 - Verification: `node --test tests/*.cjs` 31/31 PASS; Chromium 390x844 `tests/browser_long_press.py` PASS (short tap no mutation, 690ms hold then lift opens menu, menu action only updates G); `browser_smoke.py` and `browser_voice_settings.py` PASS with mocked GPS/speech.
 - Not verified: actual Android Chrome/iOS Safari long press, real GPS/voice, live routing API availability. Do not describe as road-tested.
+
+## 2026-11-21: 住所検索ルート追加 (GitHub Pages)
+**目的**: POI未登録でも住所から出発地/目的地/経由地を登録できる入り口を用意する。施設検索を置き換えるのではなく併設。
+**変更**: `address-search.js` を新規。`mobile-ui.js` は住所らしいクエリを自動判定し、外部住所検索→候補照合→同一地点登録メニューの経路を実装。「住所で探す」明示ボタン、「目的地にする」直接登録ボタン。`index.html`, `style.css`, `sw.js` を更新。
+**位置精度**: 住所APIで得た位置は町丁目中心などの代表点の場合がある。返された結果の住所名は地図上で確認する。住所末尾の番地まで特定できたとは表示しない。入力住所と異なる地域は候補除外する。
+**外部検索**: `https://msearch.gsi.go.jp/address-search/AddressSearch?q=...` を第一候補、町名まで再検索、Nominatim を二次候補。サービス側のCORS/安定性/利用条件は実機と公開サイトから未確認。**住所検索が実機で成功したとは記録しない。**
+**既存保持**: S/Gを単純タップでは動かさない規則、長押し地点登録、地図移動、GPS、音声、BRF、しまなみ/関門の特別計算、GPX、localStorage/IndexedDB保存形式は不変。
+**検証**: `node --test tests/*.cjs` 32件 PASS。Chromium の in-memory DOM + 模擬住所API でスマホ幅の検索結果、地域除外、G登録、共通メニュー開閉 PASS。外部地理院住所検索の実HTTPレスポンスは本環境から直接確認できず。
+**GitHub**: `Penta2026/b_navi` main に expected SHA による 1コミットで反映し、Pages build の結果を別途確認する。

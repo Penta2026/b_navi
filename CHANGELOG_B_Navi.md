@@ -98,3 +98,9 @@
 - Kept explicit map long-press (550ms) → action menu → set start/goal/via/favorite; search/favorites/manual coordinates still work.
 - Fixed ghost click: on touch hardware, releasing a long press could hit the newly opened menu button by accident. Menu now opens only after finger release, with native touch context menu handled safely.
 - Preserved previous mobile navigation HUD/route sheet improvements and updated help text, service worker cache version, automated/browser regression tests, and handoff docs.
+
+## 2026-11-21: 住所検索対応
+- 施設名だけの検索に加え、住所入力から候補の緯度経度を取得する経路を追加。
+- 住所らしい入力での自動判定と、「住所で探す」明示ボタンを追加。
+- 住所の候補は所在地照合・重複排除・概略位置注記を行い、「目的地にする」ボタンと共通登録メニューに接続。
+- 道路計算、BRF、しまなみ島渡り、タップ事故防止、音声を変更しない。
