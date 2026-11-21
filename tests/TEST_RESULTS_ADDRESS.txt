@@ -1,0 +1,221 @@
+TAP version 13
+# Address search pure tests passed 14
+# Subtest: tests/test_address_search.cjs
+ok 1 - tests/test_address_search.cjs
+  ---
+  duration_ms: 72.529978
+  type: 'test'
+  ...
+# 因島大橋 forward: JOIN 186 pts
+# 因島大橋 reverse: JOIN 186 pts
+# 生口橋 forward: JOIN 220 pts
+# 生口橋 reverse: JOIN 220 pts
+# 多々羅大橋 forward: JOIN 308 pts
+# 多々羅大橋 reverse: JOIN 183 pts
+# 大三島橋 forward: JOIN 41 pts
+# 大三島橋 reverse: JOIN 41 pts
+# 伯方・大島大橋 forward: JOIN 166 pts
+# 伯方・大島大橋 reverse: JOIN 166 pts
+# 来島海峡大橋 forward: JOIN 227 pts
+# 来島海峡大橋 reverse: JOIN 227 pts
+# Connected 12/12 bridge directions. Unjoined are intentionally not fabricated.
+# Subtest: tests/test_all_six_android_bridge_join.cjs
+ok 2 - tests/test_all_six_android_bridge_join.cjs
+  ---
+  duration_ms: 116.056992
+  type: 'test'
+  ...
+# PASS: Android 1.1.31 exact asset hash; 6 bridges forward/reverse; 13 approach/deck shapes; no false navigation; tampering rejected
+# Subtest: tests/test_android_approaches.cjs
+ok 3 - tests/test_android_approaches.cjs
+  ---
+  duration_ms: 85.465343
+  type: 'test'
+  ...
+# PASS: preview clipping + clearly distinct visual-only 100m gap connectors; no GPS/GPX modification
+# Subtest: tests/test_bridge_preview_clip.cjs
+ok 4 - tests/test_bridge_preview_clip.cjs
+  ---
+  duration_ms: 33.901649
+  type: 'test'
+  ...
+# Subtest: GPS and panning translate cached route SVG instead of regenerating each GPX point
+ok 5 - GPS and panning translate cached route SVG instead of regenerating each GPX point
+  ---
+  duration_ms: 53.256454
+  type: 'test'
+  ...
+# Subtest: viewport tile requests are bounded for phone portrait at north-up
+ok 6 - viewport tile requests are bounded for phone portrait at north-up
+  ---
+  duration_ms: 2.554388
+  type: 'test'
+  ...
+# Subtest: course arrow rotates relative to north and heading-up map
+ok 7 - course arrow rotates relative to north and heading-up map
+  ---
+  duration_ms: 0.72953
+  type: 'test'
+  ...
+# Subtest: only reliable moving GPS bearings update, stationary holds previous heading
+ok 8 - only reliable moving GPS bearings update, stationary holds previous heading
+  ---
+  duration_ms: 0.463321
+  type: 'test'
+  ...
+# Subtest: offline voice is started only by user action and GPS update cannot talk with guidance off
+ok 9 - offline voice is started only by user action and GPS update cannot talk with guidance off
+  ---
+  duration_ms: 1.875098
+  type: 'test'
+  ...
+# Subtest: red GPS course arrow rotates inside map and touch rotation disables head-up auto
+ok 10 - red GPS course arrow rotates inside map and touch rotation disables head-up auto
+  ---
+  duration_ms: 0.766325
+  type: 'test'
+  ...
+# PASS: Innoshima Android moped-shared reference connects both directions; no 69m synthetic link; display only
+# Subtest: tests/test_innoshima_android_join.cjs
+ok 7 - tests/test_innoshima_android_join.cjs
+  ---
+  duration_ms: 41.120086
+  type: 'test'
+  ...
+# Subtest: single map tap never updates S, G, or waypoints
+ok 12 - single map tap never updates S, G, or waypoints
+  ---
+  duration_ms: 1.650315
+  type: 'test'
+  ...
+# Subtest: long press still opens a menu and explicit action writes S, G or waypoint
+ok 13 - long press still opens a menu and explicit action writes S, G or waypoint
+  ---
+  duration_ms: 1.399433
+  type: 'test'
+  ...
+# Subtest: help texts describe long press rather than tap
+ok 14 - help texts describe long press rather than tap
+  ---
+  duration_ms: 0.315651
+  type: 'test'
+  ...
+# Subtest: single calm basemap: the old standard toggle is removed, prior preferences ignored
+ok 15 - single calm basemap: the old standard toggle is removed, prior preferences ignored
+  ---
+  duration_ms: 2.063408
+  type: 'test'
+  ...
+# Subtest: live guidance hides editor but keeps GPS, target, heading toggle and stop reachable
+ok 16 - live guidance hides editor but keeps GPS, target, heading toggle and stop reachable
+  ---
+  duration_ms: 2.115154
+  type: 'test'
+  ...
+# Subtest: navigation status displays existing GPX voice cues, not guessed intersections
+ok 17 - navigation status displays existing GPX voice cues, not guessed intersections
+  ---
+  duration_ms: 0.81053
+  type: 'test'
+  ...
+# Subtest: 地域つき入力を施設と地域に分ける
+ok 18 - 地域つき入力を施設と地域に分ける
+  ---
+  duration_ms: 1.929918
+  type: 'test'
+  ...
+# Subtest: 指定地域と施設名が合う候補だけを返す
+ok 19 - 指定地域と施設名が合う候補だけを返す
+  ---
+  duration_ms: 0.759609
+  type: 'test'
+  ...
+# Subtest: 無関係な社名や別地方の候補を返さない
+ok 20 - 無関係な社名や別地方の候補を返さない
+  ---
+  duration_ms: 0.327361
+  type: 'test'
+  ...
+# Subtest: Photon/Nominatim候補を共通の採用判定へ変換
+ok 21 - Photon/Nominatim候補を共通の採用判定へ変換
+  ---
+  duration_ms: 0.564839
+  type: 'test'
+  ...
+# Subtest: 重複座標と不正座標を除去
+ok 22 - 重複座標と不正座標を除去
+  ---
+  duration_ms: 1.403667
+  type: 'test'
+  ...
+# Subtest: Android B_Navi profile mapping matches Java server vehicle/mode indices
+ok 23 - Android B_Navi profile mapping matches Java server vehicle/mode indices
+  ---
+  duration_ms: 1.386756
+  type: 'test'
+  ...
+# Subtest: parses BRouter timode 3 voicehints from server, does not fabricate unmatched turns
+ok 24 - parses BRouter timode 3 voicehints from server, does not fabricate unmatched turns
+  ---
+  duration_ms: 1.221733
+  type: 'test'
+  ...
+# Subtest: sends original /profile POST and BRouter geojson + timode=3 GET, with via order
+ok 25 - sends original /profile POST and BRouter geojson + timode=3 GET, with via order
+  ---
+  duration_ms: 3.051419
+  type: 'test'
+  ...
+# Subtest: BRouter client reports upload and routing phases for user-facing wait diagnosis
+ok 26 - BRouter client reports upload and routing phases for user-facing wait diagnosis
+  ---
+  duration_ms: 1.032669
+  type: 'test'
+  ...
+# PASS: Shimanami GPS pause/resume (65m/160m/90m)
+# Subtest: tests/test_shimanami_gps_handoff.cjs
+ok 12 - tests/test_shimanami_gps_handoff.cjs
+  ---
+  duration_ms: 36.708349
+  type: 'test'
+  ...
+# PASS: waypoint order respected across standard road + two island crossings
+# Subtest: tests/test_shimanami_via_order.cjs
+ok 13 - tests/test_shimanami_via_order.cjs
+  ---
+  duration_ms: 34.491075
+  type: 'test'
+  ...
+# Subtest: voice default is a slightly faster 1.15× and keeps reasonable ranges
+ok 29 - voice default is a slightly faster 1.15× and keeps reasonable ranges
+  ---
+  duration_ms: 1.342205
+  type: 'test'
+  ...
+# Subtest: settings remain local and support recovery from corrupt storage
+ok 30 - settings remain local and support recovery from corrupt storage
+  ---
+  duration_ms: 0.441812
+  type: 'test'
+  ...
+# Subtest: SpeechSynthesisUtterance uses stored rate, pitch, volume, Japanese voice
+ok 31 - SpeechSynthesisUtterance uses stored rate, pitch, volume, Japanese voice
+  ---
+  duration_ms: 0.375094
+  type: 'test'
+  ...
+# Subtest: compact shared settings UI is available with no device-specific explanatory text
+ok 32 - compact shared settings UI is available with no device-specific explanatory text
+  ---
+  duration_ms: 1.737309
+  type: 'test'
+  ...
+1..32
+# tests 32
+# suites 0
+# pass 32
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 351.059364
