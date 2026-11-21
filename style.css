@@ -223,7 +223,21 @@ body.free-ride-active #map-gps-message{
 .gpx-itinerary-panel .primary{width:100%;min-height:46px;margin:5px 0}
 .gpx-itinerary-panel .smallprint{margin:6px 0 0}
 
-.track-panel{position:fixed;z-index:25;bottom:12px;left:12px;max-width:calc(100vw - 24px);display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding:8px 10px;border-radius:12px;background:rgba(15,34,40,.94);color:#fff;box-shadow:0 2px 12px #0005;font-size:12px}.track-panel button{padding:6px 9px;font-size:12px}.track-panel strong{white-space:nowrap}.track-panel [disabled]{opacity:.45}
+/* The GPX status lives at the very bottom of the scrollable route sheet, not over the map.
+   Keep the idle state quiet and expose export actions only when there is a recorded track. */
+.track-panel{position:static;z-index:auto;margin:8px 0 0;padding:10px 5px 2px;border-top:1px solid #edf1f2;background:transparent;color:#82959c;font-size:11px;box-shadow:none}
+.track-summary{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;line-height:1.4}
+.track-summary strong{font-size:11px;font-weight:600;white-space:nowrap}
+.track-summary #track-status{font-size:11px}
+.track-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.track-actions button{border:1px solid #d0e0e4;border-radius:8px;background:#eef6f8;color:#285866;padding:8px 10px;min-height:40px;font-size:12px;font-weight:650}
+.track-actions [disabled]{opacity:.45}
+.track-panel[data-state="idle"] .track-actions,.track-panel[data-state="recording"] .track-actions{display:none}
+.track-panel[data-state="recording"] #track-status{color:#1c7685;font-weight:700}
+.track-panel[data-state="ready"]{margin-top:12px;padding:12px 9px;border:1px solid #cbdfe4;border-radius:10px;background:#f4fafb;color:#245767}
+.track-panel[data-state="ready"] #track-status{font-weight:750;color:#116a81}
+@media(max-width:800px){.track-panel{margin-bottom:8px}.track-actions button{flex:1 1 115px}}
+
 
 /* 2026-11-21: per-displacement BRouter 3-axis route tuning */
 .route-tuning-panel{margin:9px 0 12px;border:1px solid #c6dce0;border-radius:13px;background:#f8fcfd;padding:10px 12px;color:#194456}
@@ -259,9 +273,6 @@ body.navigation-active #track-panel,body.free-ride-active #track-panel{display:n
 .preset-backup{margin-top:11px;padding-top:10px;border-top:1px solid #d9e6e9}
 #preset-status{margin:10px 0 3px;color:#315e68}
 #preset-status.error{color:#aa3333}
-/* Keep the fixed post-ride GPX action strip from blocking mobile preset controls.
- * Closing this settings panel restores the strip immediately. */
-body:has(#route-preset-panel[open]) #track-panel{display:none!important}
 
 /* Named route geometry + parameter library */
 .my-route-panel{margin:13px 0 12px;padding:11px;background:#f1f7f5;border:1px solid #b6d2c6;border-radius:12px}
@@ -271,4 +282,3 @@ body:has(#route-preset-panel[open]) #track-panel{display:none!important}
 .my-route-panel button{min-height:42px;font-size:13px;padding:9px 10px;border:1px solid #b6cfd5;border-radius:9px}
 #my-route-save{width:100%;margin-top:9px}
 #my-route-status.error{color:#aa3333}
-body:has(#my-route-panel[open]) #track-panel{display:none!important}

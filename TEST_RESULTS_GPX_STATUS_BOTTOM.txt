@@ -1,0 +1,11 @@
+B_Navi PWA 2026-11-21 GPX status bottom panel
+
+Existing Node tests: 74/74 PASS (node --test tests/test_*.cjs)
+Browser Chromium mock: PASS
+ - tests/browser_track_panel_bottom.py: 390px and 320px
+ - tests/browser_route_presets.py
+ - tests/browser_my_route_library.py
+ - tests/browser_ride_integration.py
+
+New UX: idle actual-track status is a muted single line at the bottom of the route sheet; GPS track save/share/discard controls become visible only with recorded points.
+Unverified: device UI and actual LINE transfer; browser simulation is not a live GPS test.

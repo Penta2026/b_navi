@@ -1,66 +1,33 @@
 {
-  "release": "2026-11-21-my-route-library-v1",
-  "basis_archive": "B_Navi_PWA_Named_Route_Presets_2026-11-21.zip",
-  "deployment": "not deployed; deploy-ready root-level static PWA ZIP only",
-  "features": [
-    "named calculated routes with coordinates, waypoints, original active routing parameters and GPX hints in IndexedDB",
-    "save/open/delete 30 routes",
-    "preserves named tuning presets and recorded GPX save/share"
+  "release": "2026-11-21-gpx-status-bottom-v1",
+  "basis_archive": "B_Navi_PWA_MyRoute_Library_2026-11-21.zip",
+  "deployment_target": "Penta2026/b_navi main / GitHub Pages https://penta2026.github.io/b_navi/",
+  "change_summary": [
+    "Relocate idle actual GPX tracking indicator into bottom of scrollable route sheet, instead of fixed overlay",
+    "Idle display is a quiet single line; save/share/discard actions appear when recorded points exist",
+    "Preserve recording, GPX export, LINE share, navigation and reroute behavior",
+    "Version PWA service worker cache so phones receive the new layout"
   ],
   "tested_node": "74/74 PASS",
   "tested_browser_simulation": [
-    "browser_my_route_library.py (mock IndexedDB)",
-    "browser_route_presets.py",
-    "browser_route_tuning.py",
-    "browser_smoke.py",
-    "browser_gpx_itinerary.py",
-    "browser_ride_integration.py",
-    "browser_radar_voice_mute.py",
-    "browser_control_row.py",
-    "browser_gps_message_layout.py",
-    "browser_voice_settings.py",
-    "browser_long_press.py"
+    "tests/browser_track_panel_bottom.py at 390px and 320px (idle, recorded, discard and sheet placement)",
+    "tests/browser_route_presets.py",
+    "tests/browser_my_route_library.py (mock IndexedDB)",
+    "tests/browser_ride_integration.py"
   ],
   "not_verified": [
-    "Actual native IndexedDB persistence (local HTTP blocked)",
-    "Physical Android/iPhone devices and LINE",
-    "Real BRouter service",
-    "GitHub Pages deployment",
-    "Full Shimanami live route calculation"
+    "Physical Android/iPhone touch UX",
+    "Actual LINE file sharing",
+    "Live GPS recording on device",
+    "Live BRouter service"
   ],
-  "changed": [
-    "my-route-library.js",
-    "app.js",
-    "index.html",
-    "style.css",
-    "sw.js",
-    "tests/test_my_route_library.cjs",
-    "tests/browser_my_route_library.py",
-    "tests/test_control_row.cjs",
-    "tests/test_radar_voice_mute.cjs",
-    "README.md",
-    "HANDOFF_CURRENT.md",
-    "CHANGELOG_B_Navi.md",
-    "NEXT_STEPS.md",
-    "DEPLOY_GITHUB_PAGES.md",
-    "TEST_RESULTS_MY_ROUTES.txt",
-    "RELEASE_INFO.json"
-  ],
-  "sha256": {
-    "my-route-library.js": "c185a8b0bebcbf979c9482833f325980d9b2945212975cbf000f3049f57ac879",
-    "app.js": "9b9e7f5c10ae91f733a49b1888715a1ec924a798e0ca79fe2acd1a8f58b4e543",
-    "index.html": "012ce11bbd35f8c1da32723bfaa0e07690fb49f9e38cb2d0030c109289e31f40",
-    "style.css": "cfdbfdc0bf2efdadd38efd901e890d9bbbc0c195767014530ba75673919e882e",
-    "sw.js": "715e9024e0eff530ca132a2599de5c5d8312d5a803b792ef4843b9ddd5556b49",
-    "tests/test_my_route_library.cjs": "2c87406d34e18a0fc56e894370558e91524eae56e26161eb06152e424aaf2937",
-    "tests/browser_my_route_library.py": "c9d70a8f784236455ec17f518df45d4b9efac0baeddb36aace84795451d88a92",
-    "tests/test_control_row.cjs": "437e90ee957c89877ddcc9524ddc21b0cb971e7ab8a72be3aa7dc8e7cd57aa40",
-    "tests/test_radar_voice_mute.cjs": "fa49aa0ddf7be5f678f4daa19076c92ed9f0496355216e012a43911d8ee3a119",
-    "README.md": "88082963a9ae261f01d92eee464221aadbe97944280a1b430f99a00eb44e0332",
-    "HANDOFF_CURRENT.md": "09b15e6e210481013f94477419bc11c20e6952964895e4d10330ccda0fcec67d",
-    "CHANGELOG_B_Navi.md": "5f9d34fcd0f3dd108636a34a9b8e82142f669bc997e26ff365d76623996f8e1c",
-    "NEXT_STEPS.md": "aa085174bd9325e046f7efd581e973f353bc180a8614cdee3f18821d84143f48",
-    "DEPLOY_GITHUB_PAGES.md": "43f9306be28e6d49c7363eb44de477b71f3b26c5075a491d80a1acddf4ce930d",
-    "TEST_RESULTS_MY_ROUTES.txt": "5586b58f26e523d2c9bc5da145a6bcf462834009d4f0b81944db91780631e0ee"
+  "changed_sha256": {
+    "index.html": "ed12a439540e5a32fc664025bebff4ce786c67648280df80b4596f00513d682f",
+    "style.css": "7e1c73f23bb9c182c1fe4f9a08f2bd51e015c5bc9b7216c06ed4543e7f63e1fd",
+    "track-recorder.js": "1f6053d964a23459996dcbf02f345b5e8750f57d070d34a0ac17c193aabfbde1",
+    "sw.js": "753c7183542de61fd3d62dbdb267b69d2523aca9f743ab1e638bccbec5abfbfd",
+    "tests/browser_track_panel_bottom.py": "76cae4b118e7c69bf83c0a714615af0b4dd1d2a99b5863fabed8a85f6132e183",
+    "tests/test_control_row.cjs": "71337c6e6428bcc69165e901dbb98584e4a68308bd88e9cfe196f247f5313f09",
+    "tests/test_radar_voice_mute.cjs": "3a1c669419753c3fbf6bebf48b9481aad613e815b6867578402a50b58dc601b1"
   }
 }
