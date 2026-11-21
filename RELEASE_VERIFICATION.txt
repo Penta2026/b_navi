@@ -1,15 +1,20 @@
-B_Navi 2026-11-21 GPS notification position hotfix
-Based on GitHub Penta2026/b_navi main: 6dd8b64e306e29357ce9fe71a3e44a3b36965648
+B_Navi 2026-11-21 radar speech mute (v5)
 
-VERIFIED LOCAL:
-- Node tests: 51 PASS, 0 FAIL (`node --test tests/*.cjs`).
-- Browser geometry: 12 PASS, 0 FAIL (widths 320/360/390/430 x normal/navigation-active/free-ride-active).
-- In all 12 cases notice top >= end of six-button row + 9px.
-- Existing waypoint/heading/reroute test suite remains passing.
-- Only styling and service-worker cache ID changed at runtime; notification timeout code unmodified.
+Based on verified GitHub Penta2026/b_navi main: 0c379b06fb0f9a5454c471f670bc38dac86d39b9
 
-NOT VERIFIED:
-- Real phone browser screenshot after Pages deployment.
-- Device GPS or real speech; public BRouter.
+CONFIRMED IN LOCAL TESTS:
+- Node tests: 55 PASS, 0 FAIL (node --test tests/*.cjs).
+- Browser mock for radar voice: PASS. Entering navigation radar cancels active TTS; turning/arrival announcements do not speak in radar; on map return TTS resumes; shared GPS watch is unchanged; standalone radar also mutes narration.
+- Other browser mocks: 10 PASS (address search, control row, GPS notice, long-press, ride integration, Shimanami payload/via/web flow, smoke, voice settings).
+- Navigation state remains active when radar is displayed, including destination progress and waypoint dialog.
+- PWA service worker shell cache version bumped to radar-voice-mute-v5.
 
-GitHub Pages status must be checked separately after commit.
+NOT VERIFIED / BLOCKED:
+- Shimanami IndexedDB offline route restore browser script was BLOCKED by local 127.0.0.1 HTTP restriction (net::ERR_BLOCKED_BY_ADMINISTRATOR). Not marked PASS.
+- Real mobile speaker, GPS, offline stored route and radar audio have NOT been tested on devices.
+- GitHub Pages publishing must be verified separately after push.
+
+SCOPE:
+- Speech-only mute while mode is radar or navigation radar.
+- Radar's independent proximity chime is retained; GPS, routing, active target, waypoint dialog, completion remain active.
+- User's global voice settings and favorite/route data are not modified.

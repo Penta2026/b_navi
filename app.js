@@ -281,6 +281,9 @@ $('voice-reset').addEventListener('click',()=>{voiceOptions=VOICE.save(localStor
 window.speechSynthesis?.addEventListener?.('voiceschanged',()=>{if($('settings-dialog').open)refreshVoices();});
 refreshVoices();updateVoiceSettingsUI();
 function speak(text,forced=false){
+ // Radar shows position/distance silently. The user voice setting is preserved;
+ // leaving radar restores ordinary guidance, without restarting GPS.
+ if(!forced&&window.BNaviRideMode?.isRadarVisible?.())return false;
  if(!forced&&!voiceOptions.enabled)return false;
  if(!('speechSynthesis' in window)||!window.SpeechSynthesisUtterance){$('nav-status').textContent='音声を再生できません。';return false;}
  try{const synth=window.speechSynthesis;synth.cancel();const u=new SpeechSynthesisUtterance(text);
@@ -371,7 +374,8 @@ function observeDestination(position,accuracy,source='nav'){
 }
 window.BNaviObserveDestination=observeDestination;
 function announceArrival(message,onDone){
- if(!voiceOptions.enabled||!window.speechSynthesis||!window.SpeechSynthesisUtterance){onDone();return;}
+ // Completion must not wait on muted TTS: final arrival still ends guidance.
+ if(window.BNaviRideMode?.isRadarVisible?.()||!voiceOptions.enabled||!window.speechSynthesis||!window.SpeechSynthesisUtterance){onDone();return;}
  try{const synth=window.speechSynthesis;synth.cancel();const u=new SpeechSynthesisUtterance(message);
   VOICE.apply(u,voiceOptions,synth.getVoices?.()||[]);
   let finished=false;const complete=()=>{if(finished)return;finished=true;onDone();};

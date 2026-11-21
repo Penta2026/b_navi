@@ -1,41 +1,49 @@
 {
-  "release": "2026-11-21-gps-notice-v4",
+  "release": "2026-11-21-radar-voice-mute-v5",
   "repository": "Penta2026/b_navi",
-  "base_commit": "6dd8b64e306e29357ce9fe71a3e44a3b36965648",
+  "base_commit": "0c379b06fb0f9a5454c471f670bc38dac86d39b9",
   "changes": [
-    "move transient GPS messages below six map control buttons",
-    "keep navigation/free ride/normal modes aligned",
-    "bump PWA service-worker cache name"
+    "mute navigation voice while radar is visible; cancel speech in progress upon radar entry",
+    "restore voice automatically upon return to map; keep radar range chime",
+    "final arrival completes without waiting on muted speech",
+    "bump PWA service worker cache"
   ],
   "verified": [
-    "51 Node tests",
-    "12 mock browser geometry checks at 320/360/390/430px in 3 modes"
+    "55 Node tests pass",
+    "11 browser mock scripts pass including radar speech mute"
   ],
   "not_verified": [
-    "real device screenshot after release",
-    "real GPS and routing"
+    "Shimanami offline-restoration browser script blocked by local HTTP access policy",
+    "mobile device speech and real GPS",
+    "GitHub Pages deployment until independently checked"
   ],
   "changed": [
-    "style.css",
+    "app.js",
+    "ride-radar.js",
     "sw.js",
     "tests/test_control_row.cjs",
-    "tests/browser_gps_message_layout.py",
+    "tests/test_radar_voice_mute.cjs",
+    "tests/browser_radar_voice_mute.py",
     "README.md",
     "HANDOFF_CURRENT.md",
     "NEXT_STEPS.md",
     "CHANGELOG_B_Navi.md",
     "RELEASE_VERIFICATION.txt",
+    "TEST_RESULTS_RADAR_VOICE_MUTE.txt",
     "RELEASE_INFO.json"
   ],
   "sha256": {
-    "style.css": "0d582ec038e16277cbfdd180ce27a667aef12b57ed76ccec8970a9b538418081",
-    "sw.js": "9182a24b7da41aa250ae6bf4e8e7a20be2e0986e1c2337adfc6d8805fa2704c2",
-    "tests/test_control_row.cjs": "a287fe49f365dfda9ab6000cfcdd9f4f0cf616b1e2fac525a8345774143e4293",
-    "tests/browser_gps_message_layout.py": "0f2249e3caecb9c025563731bb2bdc759e2f6cb6f11a00bda5d1b3ee0ea676c0",
-    "README.md": "9b920274ea7da50e912e11ebba2d13461e30571f0a2fe89d61814619e352f4e1",
-    "HANDOFF_CURRENT.md": "af3687a5f68f6774cb63db6036a78abd5a07bca274e450ff362e0c2777c4c397",
-    "NEXT_STEPS.md": "a2b6deb16ebf23d42d83adf1ef57495ee18273dd09623d31487bdec1bf0ea14f",
-    "CHANGELOG_B_Navi.md": "9e202e044ad3f2132a7ac190fbffa4fbcd3e31ef8341f5c821cbdf05c26c0e69",
-    "RELEASE_VERIFICATION.txt": "d5bd16e3d83e538bee241dc4800c99bb7b589092191d47ce79d4254b36de4b00"
+    "app.js": "1a2f365afd6d070a86439c2b0dca0429ddfc5198c39bb8897f02da65a2f13ec7",
+    "ride-radar.js": "e1b9b5a1e9b48c02f0fb2977d92e1b04536171649211f0c0bd252985bfd5d279",
+    "sw.js": "cf6cca7dc2170f6c798c43fabf587c564ec95ac7d7933c0840be452bbeec3888",
+    "tests/test_control_row.cjs": "f161ebb5a999044ed0611a92e2cd1b91923b80f3bb3b698d91be74624a083a64",
+    "tests/test_radar_voice_mute.cjs": "b1e8055fd63d14f9ca418f9826c6041aab46c10f203ea250296f5c2114daea8e",
+    "tests/browser_radar_voice_mute.py": "8e7e555d497f42019f3faacf00399026a284e62f1fecb55e5eab055750722667",
+    "README.md": "2447d5043f28f456c6dcbc19fcfd966a081064663d00a1d2fb09c5fdff5fad30",
+    "HANDOFF_CURRENT.md": "f753f45d80cedc7cb560f237287ab66862706c1110eb6b5c853a0cac50224d23",
+    "NEXT_STEPS.md": "a305fe9e31d755578c536191404939e0e6d7eb25657a75a8fb11316a4bce99f5",
+    "CHANGELOG_B_Navi.md": "6081bd0401a4adbf0eef522df1429350c527ab369eb3e767d84ea333144e80b8",
+    "RELEASE_VERIFICATION.txt": "270396da1d680c0668635d331e6b1830d82e254d341d39d8c486250e8a97a66f",
+    "TEST_RESULTS_RADAR_VOICE_MUTE.txt": "c7c8ddf13b8f61a7f9dc3617e8c15eb56d97c0d46b8cefb4ecc064b33132e8b7"
   }
 }

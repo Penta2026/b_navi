@@ -1,0 +1,5 @@
+Node: 55/55 PASS
+Browser mock radar speech: PASS
+Other browser mocks: 10 PASS
+Shimanami offline restore browser script: BLOCKED by local HTTP restriction; NOT RUN TO COMPLETION
+Real devices: NOT VERIFIED

@@ -17,7 +17,7 @@
  function start(which){if(mode===which){stop();return}if(which==='radar'&&!goal()){status('先に目的地を設定してね');panel.hidden=false;return}if(!window.isSecureContext){status('スマホGPSにはHTTPS接続が必要です（PC localhost は例外）');panel.hidden=false;return}if(!navigator.geolocation){status('このブラウザではGPSを使えません');return}
   stop(true);if(typeof stopGps==='function'&&state.watchId!=null)stopGps();if(which==='radar')window.BNaviInitRadarTargets?.();if(which==='free'){state.heading={heading:null,at:-Infinity};map.setGpsHeading(null);setOrientationMode('head');}if(which==='radar'){try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{});}catch(e){console.warn(e)}}mode=which;heading=NaN;scale=-1;lastChange=0;fix=null;
   document.body.classList.toggle('free-ride-active',which==='free');
-  if(which==='radar'){screen.hidden=false;$('ride-radar').textContent='📡 レーダー終了';$('ride-radar').classList.add('active');draw();}
+  if(which==='radar'){window.speechSynthesis?.cancel?.();screen.hidden=false;$('ride-radar').textContent='📡 レーダー終了';$('ride-radar').classList.add('active');draw();}
   else{$('ride-free').textContent='■ フリー走行終了';$('ride-free').classList.add('active');$('ride-pill').hidden=false;panel.hidden=true;}
   status('GPSを取得中…');
   // Intentionally independent from route guidance; no BRouter route is needed.
@@ -58,6 +58,8 @@
   if(!state.navActive)return;
   if(mode==='radar'||mode==='free')stop(true);
   mode='nav-radar';fix=state.location;heading=Number.isFinite(state.heading?.heading)?state.heading.heading:NaN;scale=-1;
+  // Immediately silence a turn announcement already in progress. No GPS reset.
+  window.speechSynthesis?.cancel?.();
   screen.hidden=false;panel.hidden=true;refreshTarget();
  }
  function closeNavRadar(){if(mode!=='nav-radar')return;mode='off';screen.hidden=true;}
@@ -69,7 +71,7 @@
   if(scale<0)scale=n;else if(n<scale){scale=n;chime();}else if(n>scale)scale=n;
   status(targetLabel()+'まで直線 '+fmt(d));draw(d,b);
  }
- window.BNaviRideMode={stop,openNavRadar,closeNavRadar,updateNavigationRadar,refreshTarget,getMode:()=>mode};
+ window.BNaviRideMode={stop,openNavRadar,closeNavRadar,updateNavigationRadar,refreshTarget,getMode:()=>mode,isRadarVisible:()=>mode==='nav-radar'||mode==='radar'};
  $('mobile-ride').onclick=()=>{panel.hidden=!panel.hidden};$('ride-close').onclick=()=>panel.hidden=true;
  $('ride-free').onclick=()=>start('free');$('ride-radar').onclick=()=>start('radar');$('radar-exit').onclick=()=>{if(mode==='nav-radar')closeNavRadar();else stop()};$('ride-stop').onclick=()=>stop();
  document.addEventListener('visibilitychange',()=>{visible=!document.hidden;if(!visible&&mode!=='off'){stop(true);status('画面が非表示になったため走行モードを終了しました')}});
