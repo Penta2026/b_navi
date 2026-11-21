@@ -8,6 +8,7 @@
 'use strict';
 const SERVER='https://brouter.de/brouter';
 const IDS=new Map();
+const PENDING_UPLOADS=new Map();
 const profileNames=[['bn_50_beginner','bn_50_general','bn_50_explore'],['bn_125_beginner','bn_125_general','bn_125_explore'],['bn_big_beginner','bn_big_general','bn_big_explore','bn_big_fasttravel_priority']];
 const commands={1:'straight',2:'left',3:'slight left',4:'sharp left',5:'right',6:'slight right',7:'sharp right',8:'keep left',9:'keep right',10:'u-turn',11:'u-turn',13:'roundabout',14:'roundabout',17:'exit left',18:'exit right',100:'destination'};
 function xml(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;')}
@@ -41,16 +42,24 @@ async function upload(name,netFetch=fetch){
  const id=options.find(v=>typeof v==='string'&&/^(custom_|shared_)[A-Za-z0-9_-]+$/.test(v))||body.match(/(?:custom_|shared_)[A-Za-z0-9_-]+/)?.[0];
  if(!id)throw Error('BRouterのカスタムプロファイルIDを取得できません');IDS.set(name,id);return id;
 }
+async function ensureProfile(name,netFetch){
+ if(IDS.has(name))return IDS.get(name);
+ if(!PENDING_UPLOADS.has(name)){
+  const task=upload(name,netFetch).finally(()=>PENDING_UPLOADS.delete(name));
+  PENDING_UPLOADS.set(name,task);
+ }
+ return PENDING_UPLOADS.get(name);
+}
 async function query(points,vehicle,mode,netFetch=fetch,onProgress=null){
  const started=Date.now();const progress=(phase,message)=>{if(typeof onProgress==='function')onProgress({phase,message,elapsedMs:Date.now()-started})};
  if(!Array.isArray(points)||points.length<2||points.length>52||points.some(p=>!validPoint(p)))throw Error('経路地点が不正です');
  const profile=profileName(vehicle,mode);
  progress('profile',IDS.has(profile)?'公開BRouter：前回の走行プロファイルを使用中…':'公開BRouter：走行プロファイルを送信中…');
- let id=IDS.get(profile)||await upload(profile,netFetch);
+ let id=await ensureProfile(profile,netFetch);
  const calc=async()=>{const url=new URL(SERVER);url.searchParams.set('lonlats',points.map(p=>p[1]+','+p[0]).join('|'));url.searchParams.set('profile',id);url.searchParams.set('alternativeidx','0');url.searchParams.set('format','geojson');url.searchParams.set('timode','3');
  return netFetch(url,{signal:AbortSignal.timeout(90000),cache:'no-store',credentials:'omit'});};
  progress('route','公開BRouter：道路ルートを計算中…');
- let r=await calc();if(!r.ok&&[400,404,500].includes(r.status)){IDS.delete(profile);progress('retry','公開BRouter：プロファイル期限切れを確認・再送信中…');id=await upload(profile,netFetch);progress('route','公開BRouter：経路を再計算中…');r=await calc()}
+ let r=await calc();if(!r.ok&&[400,404,500].includes(r.status)){IDS.delete(profile);progress('retry','公開BRouter：プロファイル期限切れを確認・再送信中…');id=await ensureProfile(profile,netFetch);progress('route','公開BRouter：経路を再計算中…');r=await calc()}
  if(!r.ok)throw Error('公開BRouterの計算エラー HTTP '+r.status+' '+(await r.text()).slice(0,150));
  const track=trackFromGeoJSON(await r.json());
  const farMeters=(p,q)=>{const rad=Math.PI/180,dlat=(p[0]-q[0])*rad,dlon=(p[1]-q[1])*rad,a=Math.sin(dlat/2)**2+Math.cos(p[0]*rad)*Math.cos(q[0]*rad)*Math.sin(dlon/2)**2;return 12742000*Math.asin(Math.sqrt(Math.min(1,a)))};

@@ -1,3 +1,40 @@
+# CURRENT — 2026-11-21 しまなみWeb経路組立版 / 引継ぎ正本
+
+> **この節が最新。履歴の古い「しまなみは専用Java APIのみ」という記述より優先。** ベースGitHub `Penta2026/b_navi` commit `d98edad61137fd5e907c28ee71762ad5f025dea6`。原本は `B_Navi_Android vf1.zip` の `ShimanamiReferencePlan.java`・`ShimanamiJourneyPlan.java`・`ShimanamiIslandHandoff` と、保存済み橋参考GPX。今版はフロントだけを変更。
+
+## 正本・運用構成
+- GitHub Pages：静的PWA（`index.html`、`app.js`など）
+- 通常オンラインルート：公開 `https://brouter.de/brouter` にBRFを送信しGPX+voicehintsを取得
+- しまなみ50cc／125cc以下：`shimanami-web-router.js` がユーザー地点を7エリアで分類し、橋番号と進行方向を明示して島内道路を分割計算。橋形状は `shimanami-geometry.js`（無変更）+ `shimanami-bridge-references.js`（過去の実GPXから数値を再構成）で表示。現地の通行可否は保証しない。
+- 島内GPS: `app.js` 内 `loadIslandGuidance`、`updateShimanamiGuidance`。橋入口65m以内かつ残距離160m以内に一時停止。次の島の開始点90m以内で再開。GPS精度35m以内で切替。既存約20mの直前案内を維持。
+- 島内再探索: `rerouteShimanamiFromGps()` は `OffRoutePolicy` に基づき、**今いる島内道路の現在地→元の終点**だけを計算し直す。橋の走行GPXは作らない。
+- 保存: `offlinePayload()` に `shimanamiPlanPoints`、`shimanamiWebBuilt`、各 `sectionIndex`・`checkpointAfter`・`bridgeAfter`・`turnCues`・参考線区別を格納し、旧データの読み込みにも対応。DB名・お気に入りキーは変更なし。
+
+## 変更ファイル
+- `app.js`: 公開BRouter上のしまなみ分割計算、机上検証ボタン、島内自動リルート、経由地確認、オフラインメタデータ
+- `shimanami-web-router.js`: 7エリア順序／往復橋計画／道路・橋の接続監査／自動合成・机上検証
+- `shimanami-bridge-references.js`: 過去の6個の参考GPXの座標と元ファイルハッシュ（**走行用ではない**）
+- `public-brouter-client.js`: 同一BRFの同時アップロードを防ぐ通信中Promise共有
+- `index.html`: 新JS読込と詳細内の「しまなみ机上検証」
+- `sw.js`: 新JSのキャッシュとバージョン更新
+- `tests/test_shimanami_web_router.cjs`、`tests/browser_shimanami_web_flow.py`、`tests/browser_shimanami_via_reroute.py`、`tests/browser_shimanami_payload.py`、`tests/browser_shimanami_offline_restore.py`
+- `README.md`、`HANDOFF_CURRENT.md`、`CHANGELOG_B_Navi.md`、`NEXT_STEPS.md`、`RELEASE_INFO.json`、`RELEASE_VERIFICATION.txt`
+
+## 検証結果と区別
+- Node: 45/45 PASS。模擬スマホテスト: 8/8 PASS。新しい橋参考線の本数6・進行12方向、7島内道路と6橋の接続、経由地/島間/島内再探索を検証。
+- **未確認**: 公開BRouterへの本番リクエストで7道路が全て解決するか（CORS/レート制限/ノードスナップ）、対象端末実機、GPSの橋出口捕捉、IndexedDB実保存再読込、法規適合性。
+- ローカルHTTPは試験実行環境の `ERR_BLOCKED_BY_ADMINISTRATOR` により不可。IndexedDB APIを成功と偽らない。JSONの保存モデル往復は確認済み。
+
+## 禁止事項
+- 既存の `profiles/*.brf`、`shimanami-geometry.js` とAndroid原本・橋参考GPXは、根拠なく書き換えない。
+- 参考線を走行ルートへ無断で混ぜない。原付の合法通行、公開BRouterの可用性、スマホでの画面OFF案内を保証しない。
+- ルート連結を簡便な直線で偽装しない。25mシームNGなら計算失敗として明示。
+- 公開済みGitHubへpushするときは `main` 取得→差分コミット→ `expected_sha` 付きref更新。失敗なら勝手に強制pushせず再確認。
+- 毎回ソースとHANDOFF / NEXT_STEPS / CHANGELOG / 検証結果を含むZIPを作る。
+
+---
+## 旧引継ぎ履歴（最新版の根拠にはしない）
+
 # 2026-11-21 実走フィードバック反映：走行ナビ・レーダー v1
 
 > **この節が最新。** Android `B_Navi_Android vf1.zip` の `OffRoutePolicy.java`・`RouteGuidance.java` を確認し、現行GitHub `Penta2026/b_navi` (`d3028abd9...`) をベースに改修。旧内容に『未実装』の表現がある場合はこの節と実コードを優先。
