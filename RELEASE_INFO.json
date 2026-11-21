@@ -1,45 +1,32 @@
 {
-  "release": "2026-11-21-shimanami-web-router-v1",
+  "release": "2026-11-21-control-row-v2",
   "repository": "Penta2026/b_navi",
-  "base_commit": "d98edad61137fd5e907c28ee71762ad5f025dea6",
-  "features": [
-    "public BRouter isolated island road planning",
-    "6 Android bridge references both directions",
-    "waypoints and reverse trip",
-    "GPS bridge pause and resume",
-    "island-only online reroute",
-    "desk-check UI",
-    "offline guidance payload metadata",
-    "shared BRF upload promise"
+  "base_commit": "79fe5ab174f4271e673069c806ebf433bcd509af",
+  "changes": [
+    "top row + - GPS center radar; second row right heading",
+    "radar icon only",
+    "fixed legacy CSS hiding zoom buttons during navigation",
+    "service worker cache name bumped"
   ],
   "verified": [
-    "45 Node tests",
-    "8 browser mocked tests",
-    "6/6 bridge both directions",
-    "mock GPS 6 handoffs and waypoint arrival",
-    "offline payload JSON roundtrip",
-    "all changed JavaScript syntax"
+    "48 Node tests pass",
+    "browser simulated GPS/nav/radar integration passes",
+    "Chromium geometry pass at 360 390 430 px"
   ],
   "not_verified": [
-    "real public BRouter API response",
-    "actual route legal moped access",
-    "phone GPS and voice",
-    "IndexedDB actual store/reload",
-    "area-external trip",
-    "Kanmon specialized API"
+    "real phone screenshot with updated GitHub deployment",
+    "field GPS/speech/rerouting",
+    "actual public BRouter API end-to-end"
   ],
   "changed": [
-    "app.js",
-    "shimanami-web-router.js",
-    "shimanami-bridge-references.js",
-    "public-brouter-client.js",
     "index.html",
+    "style.css",
     "sw.js",
-    "tests/test_shimanami_web_router.cjs",
-    "tests/browser_shimanami_web_flow.py",
-    "tests/browser_shimanami_via_reroute.py",
-    "tests/browser_shimanami_payload.py",
-    "tests/browser_shimanami_offline_restore.py",
+    "tests/test_control_row.cjs",
+    "tests/test_navigation_focus.cjs",
+    "tests/test_ride_logic.cjs",
+    "tests/browser_control_row.py",
+    "tests/browser_ride_integration.py",
     "README.md",
     "HANDOFF_CURRENT.md",
     "NEXT_STEPS.md",
@@ -48,21 +35,18 @@
     "RELEASE_INFO.json"
   ],
   "sha256": {
-    "app.js": "197dca1e164fddb7c33edf19ebd50f91c17f2ae970287d058ab3eaef89dfdf04",
-    "shimanami-web-router.js": "51aebea1e67ff8cc69dbeb724b1772c1ff29cf9726a8f4eef34192adc81bd015",
-    "shimanami-bridge-references.js": "a8544dd3c09f6d9bd58bf5f056997feeb14b90a351332f21efd7e75ef83f7fb3",
-    "public-brouter-client.js": "2ccb15e2b4fe2fffb82f994e9102d0eddd83b16f57012643de63375d37ae27cf",
-    "index.html": "a82d52f6026f9f25b42ba5502447b093c1af4670faa44462142b5c660a6aa5f0",
-    "sw.js": "32fcc9cb9ab3306ef8546c4bbe7da6685011f23fa2c68fd6ab64332dc2047109",
-    "tests/test_shimanami_web_router.cjs": "be1db43d77c49b3ebf6a39db01edee9c7c1af168af0f61a9fb6ccebf9e6b2979",
-    "tests/browser_shimanami_web_flow.py": "e6ead0969a21e178e2eb6bd037561cb5f8c9a988729335ce9c3672f490f8607e",
-    "tests/browser_shimanami_via_reroute.py": "112efde7e420e0a399c426e9d1fa080860ad4305688fd60a893d152aa6294359",
-    "tests/browser_shimanami_payload.py": "52e38440f06604eaa421f8d9b99d363abde53a451cf2896d334da217975901e7",
-    "tests/browser_shimanami_offline_restore.py": "7336427a6bd45cb0e2414bd5a154f947d783324a69571dbc0a79e01725ee7f68",
-    "README.md": "c7dbaaba018ffea3c93b616b24e289f74bd127f2da76bb1ed60d37597077e3e8",
-    "HANDOFF_CURRENT.md": "2703d12d1731e3b2dc9cbcfac599ebc903de05a387b2fe8a73f8e12b5d90538a",
-    "NEXT_STEPS.md": "c91ccd5573f59dbd762736f6d0f1b39090f580eb3a8047696218413b92e69eab",
-    "CHANGELOG_B_Navi.md": "a4d6693f726d974d6e0d4843ca48ea1ab3042acc019a934f35696e8a11c695bf",
-    "RELEASE_VERIFICATION.txt": "c0a36fb82f69b0a9055b4874eb882abecd066c5ee788a47f29ab694095837f16"
+    "index.html": "1e989af7b739f497df1a21e0f7bdd0ddae3d3cb4f6f4c051912179b64d75cb00",
+    "style.css": "70717cf643820b20132612f34b0bd1325d5349c747ac6cde16ddf66a7de5e206",
+    "sw.js": "a769ce7faf754c3d1dac131e2c428ffc4e6357b7237da494c8f05d0459e9d86f",
+    "tests/test_control_row.cjs": "9b6d3fbc1386c7d483b16a4fdd3281b99484ad8d51f9266260e788a00daad936",
+    "tests/test_navigation_focus.cjs": "b8c7b0f40b71b82e999986f253ff00d9d619b5e1a6e8592f56215e43fd7a7803",
+    "tests/test_ride_logic.cjs": "eef86515153f44c4400af590e1aca6f202b0a2bc514e0867c5a5742a2728c88b",
+    "tests/browser_control_row.py": "39e7f5f9e7024cf82c07f23909febc51a748110401c40a1f31f97f8189d3cdf9",
+    "tests/browser_ride_integration.py": "1f885366c4e88f2bdf013b1d3607b6c4af72392b1dd759cf86cb1459a328e207",
+    "README.md": "883d842f38c0d99d21185171f4b13a1bb97ad2b13ad8e356ccd788ff2be0855e",
+    "HANDOFF_CURRENT.md": "32fbfc544106ecf973bdf2196aa6f080aadb1f7b295496e61a63c356c9b08cfa",
+    "NEXT_STEPS.md": "71e4a9dc1dee346144d1ce7aae24a71f83750c6576b70e2a85df9f44708d3dcf",
+    "CHANGELOG_B_Navi.md": "f370f61498b8a0e7e348fa5640695b014916c3823ceddfbe22ac9f57d81b2ffd",
+    "RELEASE_VERIFICATION.txt": "6b098bcee3c75bc37326339f8f759e44503dd7afa20dccfb59a8b7aa6b1ccc17"
   }
 }

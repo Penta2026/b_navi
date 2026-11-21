@@ -41,7 +41,7 @@ with sync_playwright() as playwright:
  assert page.evaluate('state.navActive'), 'nav not started'
  assert page.evaluate('document.body.classList.contains("navigation-active")')
  assert page.locator('.topbar').evaluate('(e)=>getComputedStyle(e).display')=='none'
- assert page.locator('#map-zoom-controls').is_visible()
+ assert page.locator('#map-controls #zoom-in').is_visible() and page.locator('#map-controls #zoom-out').is_visible()
  assert page.locator('#nav-radar-toggle').is_visible()
  # First accurate fix near via and 2nd fix to confirm arrival
  page.evaluate('window.__gps(34.40082,132.45,5)')
@@ -95,7 +95,7 @@ with sync_playwright() as playwright:
  page.locator('#ride-free').click()
  assert page.evaluate('document.body.classList.contains("free-ride-active")')
  assert page.locator('.topbar').evaluate('(e)=>getComputedStyle(e).display')=='none'
- assert page.locator('#map-zoom-controls').is_visible()
+ assert page.locator('#map-controls #zoom-in').is_visible() and page.locator('#map-controls #zoom-out').is_visible()
  page.locator('#ride-stop').click()
  assert not page.evaluate('document.body.classList.contains("free-ride-active")')
  # Stand-alone radar also progresses through via -> destination.

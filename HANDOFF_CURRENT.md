@@ -1,3 +1,11 @@
+## 2026-11-21 公開反映：地図コントロールの横並び
+- 今回対象は `index.html`, `style.css`, `sw.js`, テスト、リリース文書。
+- 前版はZIP作成のみでGitHubに反映できていなかった。今回はGitHubコミットとPages公開成功をそれぞれ確認する。
+- 検証: 上段 `＋ / － / ◎ / ⌖ / 📡`、2段目右端 `進行方向 ⇔ 北を上`。旧CSSのズーム隠しルールを解消。
+- レーダーは案内中のみ表示する既存動作を保持。GPS／検索／橋関連の処理は変更しない。
+- 実機スクリーンショットの最終確認は必要。
+
+- UI微調整: 地図上の操作ボタンを、上段「＋ / － / ◎ / ⌖ / 📡」、下段右端「進行方向」に変更。
 # CURRENT — 2026-11-21 しまなみWeb経路組立版 / 引継ぎ正本
 
 > **この節が最新。履歴の古い「しまなみは専用Java APIのみ」という記述より優先。** ベースGitHub `Penta2026/b_navi` commit `d98edad61137fd5e907c28ee71762ad5f025dea6`。原本は `B_Navi_Android vf1.zip` の `ShimanamiReferencePlan.java`・`ShimanamiJourneyPlan.java`・`ShimanamiIslandHandoff` と、保存済み橋参考GPX。今版はフロントだけを変更。

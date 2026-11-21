@@ -1,3 +1,9 @@
+2026-11-21 Control-row layout release
+Scope: index.html, style.css, sw.js, regression test and handoff docs.
+Known baseline: 79fe5ab174f4271e673069c806ebf433bcd509af.
+Verified: 48 Node tests PASS; mocked smartphone GPS/radar voice UI browser integration PASS; 360/390/430 CSS layout checks PASS.
+Not verified: field GPS/speech behavior.
+
 # B_Navi Shimanami 2026-11-21 verification
 Status: SOURCE/TEST RELEASE; external routing and real GPS NOT VERIFIED.
 Node tests: 45 PASS / 0 FAIL (`node --test tests/*.cjs`).

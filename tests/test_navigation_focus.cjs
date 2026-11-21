@@ -14,7 +14,8 @@ test('live guidance hides editor but keeps GPS, target, heading toggle and stop 
  assert.match(app,/document\.body\.classList\.toggle\('navigation-active',state\.navActive\)/);
  assert.match(css,/body\.navigation-active \.mobile-toolbar/);
  assert.match(css,/body\.navigation-active #sidebar/);
- assert.match(css,/button:not\(#map-location\):not\(#center-hiroshima\):not\(#orientation-toggle\)/);
+ assert.match(css,/#map-controls \.map-control-row-top\{justify-content:flex-start/);
+ assert.match(css,/#map-controls \.map-control-row-bottom\{justify-content:flex-end/);
  assert.match(css,/body\.navigation-active #voice-test-quick\{display:none!important\}/);
  assert.match(app,/window\.BNaviCloseRouteSheet\?\.\(\)/);
 });
