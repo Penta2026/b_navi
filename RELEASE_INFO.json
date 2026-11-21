@@ -1,57 +1,41 @@
 {
-  "release": "2026-11-21-one-row-motion-v3",
+  "release": "2026-11-21-gps-notice-v4",
   "repository": "Penta2026/b_navi",
-  "base_commit": "093a816f689fe68243d6f5b46864d04354eef54b",
+  "base_commit": "6dd8b64e306e29357ce9fe71a3e44a3b36965648",
   "changes": [
-    "single-row six map controls; heading is rightmost and radar is icon-only",
-    "stationary GPS noise cannot request reroute until movement confirmed",
-    "new MotionGate with speed or coherent coordinate movement; no changes to BRFs/bridge references",
-    "service worker cache bumped"
+    "move transient GPS messages below six map control buttons",
+    "keep navigation/free ride/normal modes aligned",
+    "bump PWA service-worker cache name"
   ],
   "verified": [
-    "50 node tests",
-    "9 browser mock suites",
-    "screen widths 320/360/390/430",
-    "stationary and motion reroute simulation"
+    "51 Node tests",
+    "12 mock browser geometry checks at 320/360/390/430px in 3 modes"
   ],
   "not_verified": [
-    "physical device/ride GPS",
-    "public BRouter real API",
-    "background navigation"
+    "real device screenshot after release",
+    "real GPS and routing"
   ],
   "changed": [
-    "CHANGELOG_B_Navi.md",
-    "HANDOFF_CURRENT.md",
-    "NEXT_STEPS.md",
-    "README.md",
-    "RELEASE_VERIFICATION.txt",
-    "TEST_RESULTS_ONE_ROW.txt",
-    "app.js",
-    "index.html",
-    "ride-logic.js",
     "style.css",
     "sw.js",
-    "tests/browser_control_row.py",
-    "tests/browser_ride_integration.py",
     "tests/test_control_row.cjs",
-    "tests/test_ride_logic.cjs",
+    "tests/browser_gps_message_layout.py",
+    "README.md",
+    "HANDOFF_CURRENT.md",
+    "NEXT_STEPS.md",
+    "CHANGELOG_B_Navi.md",
+    "RELEASE_VERIFICATION.txt",
     "RELEASE_INFO.json"
   ],
   "sha256": {
-    "CHANGELOG_B_Navi.md": "4a8c78acef86b59b7377c0e3afb42d88ad3f762838a9a8ef94ae8ffa07475cf6",
-    "HANDOFF_CURRENT.md": "238298e554a25e6c62c8aa3f1fd026831a6afab11084abcce44c555d765c8d4a",
-    "NEXT_STEPS.md": "8bdbd416723d601f190a2df3e309fd10b7e146b349988b97271c40ffdaad16dd",
-    "README.md": "2aa3814ad8a2f1d0c79a1512f0c0ccc64aca521a22c4d2793dce820fa9d2152d",
-    "RELEASE_VERIFICATION.txt": "cc6fdcb00737db9609fe8c462c6038264422b7f253f9b6a325a974494b0704ed",
-    "TEST_RESULTS_ONE_ROW.txt": "3b933d010a54ff6cdd880b37428579912f71c4632d60d357f2d3c7a8a0c272a4",
-    "app.js": "428d42e623b4d02e6fe7dc4a6f823d49ba4edd2c955907c4c683edfa2b3075ac",
-    "index.html": "a85750fa11f438c2f915a7a9bf9f256ffc4e2d0cbdb0bb7d1cdf9e926587b1d9",
-    "ride-logic.js": "a38b2dbe9aacec846b7c0b74a00a9b9926245043b2b76709cd6dfb4b6c107899",
-    "style.css": "f309f7350dbf51bda87d681bd0f80245848c59061008229fe984158d6984cbef",
-    "sw.js": "d0c69fbe9e4faace4417ace35d3821b7035edc0a8cd02216c4729e31b8957efc",
-    "tests/browser_control_row.py": "14f62d4d4fcc71b122b69f2e507887627ba4b2604caeb6c40f9522eec74641e7",
-    "tests/browser_ride_integration.py": "48d4f4e94ecaa842c630dd49bb605fb824f4450642c617930a182a6afd139c88",
-    "tests/test_control_row.cjs": "8ecb61622e80980343e3a56614e4005aae484888fac8b81cf59970969f17a550",
-    "tests/test_ride_logic.cjs": "11c0d6d5e4bb482eede8ba53586ac553ab750d5eec9df418df9cf4abeb676f4a"
+    "style.css": "0d582ec038e16277cbfdd180ce27a667aef12b57ed76ccec8970a9b538418081",
+    "sw.js": "9182a24b7da41aa250ae6bf4e8e7a20be2e0986e1c2337adfc6d8805fa2704c2",
+    "tests/test_control_row.cjs": "a287fe49f365dfda9ab6000cfcdd9f4f0cf616b1e2fac525a8345774143e4293",
+    "tests/browser_gps_message_layout.py": "0f2249e3caecb9c025563731bb2bdc759e2f6cb6f11a00bda5d1b3ee0ea676c0",
+    "README.md": "9b920274ea7da50e912e11ebba2d13461e30571f0a2fe89d61814619e352f4e1",
+    "HANDOFF_CURRENT.md": "af3687a5f68f6774cb63db6036a78abd5a07bca274e450ff362e0c2777c4c397",
+    "NEXT_STEPS.md": "a2b6deb16ebf23d42d83adf1ef57495ee18273dd09623d31487bdec1bf0ea14f",
+    "CHANGELOG_B_Navi.md": "9e202e044ad3f2132a7ac190fbffa4fbcd3e31ef8341f5c821cbdf05c26c0e69",
+    "RELEASE_VERIFICATION.txt": "d5bd16e3d83e538bee241dc4800c99bb7b589092191d47ce79d4254b36de4b00"
   }
 }

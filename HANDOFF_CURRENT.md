@@ -1,3 +1,8 @@
+## 2026-11-21 通知位置の追補（最新）
+- `style.css` 末尾で `#map-gps-message` のtopを `calc(max(12px, safe-area-inset-top) + 62px)` に統一。これまでの案内時 `top:14px` とボタンの重なりを解消。
+- 6ボタンUI、リルート判定、BRF、しまなみ6橋、長押し、保存/音声処理は変更なし。
+- Nodeテストと、320〜430px × 3モードでのブラウザ幾何テストを行う。実機は未確認。
+
 ## 最新: 2026-11-21 一列操作＆移動判定
 - `index.html`,`style.css`: 地図操作6ボタンを一列に配置。右端に進行方向切替。
 - `ride-logic.js`: MotionGate追加。停止時はリルートしない。`app.js`でwatchPositionの位置と速度から判定。

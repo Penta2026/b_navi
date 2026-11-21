@@ -21,7 +21,14 @@ test('CSS keeps zoom buttons visible in active guidance and free ride', () => {
 });
 test('new service worker cache name activates the new markup and CSS', () => {
  const sw=read('sw.js');
- assert.match(sw,/bnavi-pc-pwa-20261121-control-row-v3/);
+ assert.match(sw,/bnavi-pc-pwa-20261121-gps-notice-v4/);
  assert.match(sw,/'.\/index.html'/);
  assert.match(sw,/'.\/style.css'/);
+});
+
+test('GPS notification below all six map buttons',()=>{
+ const css=read('style.css');
+ assert.match(css,/body\.navigation-active #map-gps-message,\s*body\.free-ride-active #map-gps-message\{/);
+ assert.match(css,/top:calc\(max\(12px, env\(safe-area-inset-top, 0px\)\) \+ 62px\)/);
+ assert.match(css,/pointer-events:none/);
 });

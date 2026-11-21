@@ -202,3 +202,16 @@ body.navigation-active #navigation-hud strong{font-size:clamp(24px,6vw,31px)}
 body.navigation-active #map-controls .map-control-row-top > button,
 body.free-ride-active #map-controls .map-control-row-top > button{height:44px!important}
 @media(max-width:350px){#map-controls{left:9px!important;right:9px!important}#map-controls .map-control-row-top{gap:4px}#map-controls .map-control-row-top > #orientation-toggle{flex-basis:75px;width:75px;min-width:75px!important;max-width:75px;font-size:11px!important}}
+
+/* 2026-11-21: transient GPS notices sit BELOW the one-row map controls.
+   Keep timeout behavior, and leave the large turn-instruction card in place. */
+#map-gps-message,
+body.navigation-active #map-gps-message,
+body.free-ride-active #map-gps-message{
+  top:calc(max(12px, env(safe-area-inset-top, 0px)) + 62px);
+  left:12px;
+  right:auto;
+  width:max-content;
+  max-width:min(340px,calc(100% - 24px));
+  z-index:8;
+}
