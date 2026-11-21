@@ -1,0 +1,6 @@
+Date: 2026-11-21
+Node: node --test tests/*.cjs => PASS 74/74
+Browser simulated UI: tests/browser_my_route_library.py => PASS (IndexedDB-compatible mock; native IDB NOT verified)
+Browser regressions PASS: browser_route_presets.py, browser_route_tuning.py, browser_smoke.py, browser_gpx_itinerary.py, browser_ride_integration.py, browser_radar_voice_mute.py, browser_control_row.py, browser_gps_message_layout.py, browser_voice_settings.py, browser_long_press.py
+Browser native IDB: NOT TESTED (local HTTP blocked by execution environment)
+Live public BRouter / Android / iPhone / GitHub Pages deployment: NOT TESTED

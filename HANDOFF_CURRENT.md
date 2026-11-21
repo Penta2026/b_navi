@@ -1,3 +1,47 @@
+# 2026-11-21 — マイルート集（計算済み経路＋パラメータ）PWA統合版
+
+この版は `B_Navi_PWA_Named_Route_Presets_2026-11-21.zip` を土台にした追加開発。**PWA実ソースへの実装とZIP化まで完了。GitHub Pages本番リポジトリへは未反映。**
+
+- ルート検索またはGPX読み込みで表示した経路を、**名前・排気量・3軸パラメータ・高速/有料オプション・S/経由地/G・道路形状とGPX音声案内ヒント**をまとめた「マイルート」として端末内に保存できる。
+- 「経路の結果」→「🗺 マイルート集」を開いて、名前入力→「☆ 今表示中の経路を保存」。一覧から「地図に読み込む」／「削除」。同車種・同名の保存は確認してから上書き。最大30件。
+- 保存場所は `bnavi-my-route-library-v1` IndexedDB。名前付き**パラメータだけ**の保存は既存 `bnavi.routePresetLibrary.v1` localStorage（50件）として別に維持。実走GPX記録も別に維持。
+- マイルートを読み込んでもBRouterへ自動再通信しない。保存した線・計算時の設定・経由地を復元。案内中は読み込みを拒否し、表示中の経路との入替は確認する。
+- しまなみ橋参考線と関門押し歩きは元の区間種別を保ち、走行可能な道路GPXへ変換しない。
+- Service Worker のキャッシュ名更新。Webサイト公開にはこのZIPを**解凍し、GitHub Pagesリポジトリのルートへ内容を配置**する必要がある（ZIPそのもののアップロードではない）。
+- テスト：Node **74/74 PASS**。Chromium模擬で「マイルート集」保存→呼出→削除、旧プリセット・3軸・GPS/音声/レーダー・GPX地点順・320〜430px UI 等を確認。
+- **未確認**：ブラウザの実IndexedDB（検証環境のローカルHTTPがブロックされるため保存機能はIndexedDB互換モックによる動作検証）、Android/iPhone実機、公開BRouter実通信、本番GitHub Pages配備、現地合法性。
+
+---
+
+# 現行正本：B_Navi PWA 名前付きカスタム調整プリセット（2026-11-21）
+
+**最優先：このZIPの実コードを正とする。** 引継ぎ元 `B_Navi_PWA_Custom_Route_Tuning_2026-11-21.zip`。GitHubへのpushなし。
+
+- `route-presets.js`: 名前付き調整プロファイル管理の純粋ロジック。キー `bnavi.routePresetLibrary.v1`、形式 `{version:1,items:[{id,name,vehicle,tuning,createdAt,updatedAt}]}`。総数50、名前40文字、車種ごとに同名判定、上書き明示、50/125ccの高速・有料ONを正規化で拒否。
+- `app.js`: `bindPresetUI()` で保存/呼び出し/削除、JSONバックアップ出力・読み込み。保存確認前に `localStorage` へ書かない。読み込みは `tuningByVehicle` に反映し、ルート計算は既存のボタンから手動実施。アクティブなナビ/ルート線やGPXは書き換えない。既存のリルート時固定 `state.activeRouteTuning` を保持。
+- `index.html`: スライダー詳細内にさらに折り畳めるプリセットパネル、別折り畳みバックアップ操作。`style.css`: 既存の固定「実走GPX保存」操作が設定を塞ぐ競合を回避。`sw.js`: 新スクリプトを事前キャッシュしバージョン更新。
+- **プリセット保存≠計算済み経路の保存≠実走GPX**。ルート線の保存は従来の「GPX保存」「この経路を端末に保存」から。JSONバックアップには位置情報を入れない。
+- 検証: `node --test tests/*.cjs` **70/70 PASS**。`tests/browser_route_presets.py` と既存 `browser_route_tuning.py`, `browser_smoke.py`, `browser_gpx_itinerary.py`, `browser_ride_integration.py`, `browser_radar_voice_mute.py`, `browser_control_row.py`, `browser_gps_message_layout.py`, `browser_voice_settings.py`, `browser_long_press.py`, `browser_shimanami_payload.py`, `browser_shimanami_via_reroute.py` は成功（模擬）。既存の手動スクリプト読込を `index.html` の実リストへ追従するよう改善。
+- 未検証: 実機localStorage耐久性/バックアップの別端末読み込み、実BRouterネットワーク、実走およびLINE共有、しまなみフルWeb走行。GitHub Pagesへの公開は行っていない。
+
+---
+
+# 現行正本: B_Navi PWA 3軸カスタムルート調整 v1（2026-11-21）
+
+**このZIPのソースとこの節を最優先**。ベースはユーザー提供 `B_Navi_PWA_Actual_Track_GPX_SHARE_2026-11-21.zip`。GitHub `Penta2026/b_navi` へのpushは行っていない。
+
+- UIは「車種」+3本スライダー：距離/探索、道狭/道広、直線/景観。各車種の旧「一般」BRFが中央の完全一致基準。内部 `mode=1`。以前の10 BRFは上書きしない。
+- `route-tuning.js` が中央以外の設定からBRF文字列を生成。`public-brouter-client.js` が設定別カスタムBRFを `/profile` にPOSTし、各設定固有のIDをBRouterで再利用する。法的通行制限のゲートは残す。別の設定のIDを誤再利用しない。
+- `app.js` が車種別設定をローカルに保存し、検索時に `state.activeRouteTuning` / `state.activeRoutingVehicle` を固定。通常リルート・しまなみ分割道路計算/再探索へもその設定を渡す。保存済みルートメタデータに追加するが、既存形式も読み込める。
+- 126cc以上の高速・有料は独立チェックで初期OFF。`motorroad=yes` / `motorway` の解禁は高速オプション時のみ、`toll=yes` の解禁は有料オプション時のみ。`motorcycle=no` 等を解除してはならない。
+- 元の景観判定はない。新規に `estimated_forest_class` / `estimated_river_class` を利用。リアルな車の流れや車線幅は検知できず、道路属性からの推定に留まる。
+- Java専用APIが設定されると動的BRF調整を受け付けないため、変更時は計算失敗として明示。公開BRouterのCORSとサーバ負荷・制限は実通信未確認。
+- 実走GPX記録・共有は維持。`style.css`でナビ/フリー走行中の `#track-panel` を非表示にして操作競合を解消、終了後は復帰。
+- テスト: Node 64/64 PASS。新規 `tests/test_route_tuning.cjs` (6件) と `tests/browser_route_tuning.py`、既存browser smoke/GPX/ride/radar/control/GPSを実行し成功。しまなみフルブラウザ試験は終了せず未検証。**実端末・公開BRouter本番通信は未確認**。
+- 変更: `route-tuning.js`, `public-brouter-client.js`, `app.js`, `index.html`, `style.css`, `sw.js`, tests, 引継ぎドキュメント。`profiles/*.brf`, `shimanami-geometry.js`, `track-recorder.js` は未改変。
+
+---
+
 ## 最新 2026-11-21: GPX中継地点の取り込み修正（道の途中形式を含む）
 - 現行正本: `Penta2026/b_navi`。基準コミット: `49e112ee...`（レーダー音声ミュート）。
 - 原因: `gpx-transfer.js` が道路軌跡のない `<rte><rtept>` を走行線として扱い、`state.via=[]` にしていた。そのためS→中継→Gが保存されなかった。

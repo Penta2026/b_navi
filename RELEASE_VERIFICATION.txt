@@ -1,21 +1,8 @@
-B_Navi PWA GPX waypoint itinerary importer — 2026-11-21
-Base repository: Penta2026/b_navi at 49e112eea7d180504fc1dfbb06ee0f562e3cfc15
-
-CONFIRMED IN LOCAL TESTS:
-- Node.js: 58 tests passed, 0 failed (node --test tests/test_*.cjs).
-- Chromium headless, DOM+app integration (simulated BRouter): a synthetic 4-point GPX auto-imports start, 2 vias and goal, preserves order/names, passes 4 points to route calculation, and permits retry.
-- A normal GPX <trkseg>/<trkpt> still uses the existing track importer without route recalculation.
-- A simulated BRouter result bypassing an intermediate stop is rejected; imported points remain.
-- The user's attached GPX was inspected and tested LOCALLY using a separate private script: it has one start, two intermediate stops, one end, and no drivable geometry. The private GPX itself and coordinates are NOT included in this public distribution.
-- JS syntax checked: app.js, gpx-transfer.js, gpx-itinerary-core.js.
-
-NOT VERIFIED:
-- Real brouter.de response for the supplied 4-point route: network not available from this test environment.
-- Real mobile device GPX Share Target, GPS arrivals, Japanese TTS, and offline restore (existing scope).
-- GitHub commit / Pages deployment: check only after publishing.
-
-SAFETY:
-- No invented road track is generated from itinerary points.
-- No route is claimed successful if BRouter fails or goes more than 300 m from a waypoint.
-- No private uploaded route in repo/ZIP; mock tests use synthetic coordinates.
-- Existing Shimanami/Kanmon special references, vehicle BRFs, and radar voice remain unchanged.
+B_Navi PWA 名前付きルート調整プリセット 2026-11-21
+正本: この統合ZIPの実コード
+土台: B_Navi_PWA_Custom_Route_Tuning_2026-11-21.zip
+変更: route-presets.js, app.js, index.html, style.css, sw.js, tests, 引継ぎ資料
+Node 70/70 PASS
+Chromium模擬ブラウザ12種類 PASS（プリセット保存・GPX・ナビ・レーダー・音声等）
+GitHub Pagesには未公開。公開BRouter実通信・Android/iPhone実機は未検証。
+保存は計算パラメータのみ。走行線GPX保存とは別。

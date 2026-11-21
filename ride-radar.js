@@ -13,9 +13,9 @@
  function targetLabel(){return window.BNaviActiveTargetLabel?.()||'目的地';}
  function tone(ctx,freq,when,duration){const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(0.0001,when);g.gain.linearRampToValueAtTime(.17,when+.012);g.gain.exponentialRampToValueAtTime(.0001,when+duration);o.connect(g).connect(ctx.destination);o.start(when);o.stop(when+duration+.012)}
  function chime(){try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const t=audio.currentTime+.015;for(const shift of [0,.46]){tone(audio,740,t+shift,.095);tone(audio,990,t+shift+.115,.155);}}catch(e){console.warn('Radar audio unavailable',e)}}
- function stop(silent=false){if(watch!==null){navigator.geolocation.clearWatch(watch);watch=null}if(mode==='free'){state.location=null;map.setGpsHeading(null);refreshMap();}document.body.classList.remove('free-ride-active');mode='off';screen.hidden=true;$('ride-pill').hidden=true;$('ride-free').textContent='🏍 フリー走行開始';$('ride-radar').textContent='📡 レーダー開始';$('ride-free').classList.remove('active');$('ride-radar').classList.remove('active');if(!silent)status('停止中');}
+ function stop(silent=false){if(mode==='free'||mode==='radar')window.BNaviTrack?.stop();if(watch!==null){navigator.geolocation.clearWatch(watch);watch=null}if(mode==='free'){state.location=null;map.setGpsHeading(null);refreshMap();}document.body.classList.remove('free-ride-active');mode='off';screen.hidden=true;$('ride-pill').hidden=true;$('ride-free').textContent='🏍 フリー走行開始';$('ride-radar').textContent='📡 レーダー開始';$('ride-free').classList.remove('active');$('ride-radar').classList.remove('active');if(!silent)status('停止中');}
  function start(which){if(mode===which){stop();return}if(which==='radar'&&!goal()){status('先に目的地を設定してね');panel.hidden=false;return}if(!window.isSecureContext){status('スマホGPSにはHTTPS接続が必要です（PC localhost は例外）');panel.hidden=false;return}if(!navigator.geolocation){status('このブラウザではGPSを使えません');return}
-  stop(true);if(typeof stopGps==='function'&&state.watchId!=null)stopGps();if(which==='radar')window.BNaviInitRadarTargets?.();if(which==='free'){state.heading={heading:null,at:-Infinity};map.setGpsHeading(null);setOrientationMode('head');}if(which==='radar'){try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{});}catch(e){console.warn(e)}}mode=which;heading=NaN;scale=-1;lastChange=0;fix=null;
+  stop(true);if(typeof stopGps==='function'&&state.watchId!=null)stopGps();if(which==='radar')window.BNaviInitRadarTargets?.();if(which==='free'){state.heading={heading:null,at:-Infinity};map.setGpsHeading(null);setOrientationMode('head');}if(which==='radar'){try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{});}catch(e){console.warn(e)}}mode=which;window.BNaviTrack?.start(which);heading=NaN;scale=-1;lastChange=0;fix=null;
   document.body.classList.toggle('free-ride-active',which==='free');
   if(which==='radar'){window.speechSynthesis?.cancel?.();screen.hidden=false;$('ride-radar').textContent='📡 レーダー終了';$('ride-radar').classList.add('active');draw();}
   else{$('ride-free').textContent='■ フリー走行終了';$('ride-free').classList.add('active');$('ride-pill').hidden=false;panel.hidden=true;}
@@ -23,7 +23,7 @@
   // Intentionally independent from route guidance; no BRouter route is needed.
   watch=navigator.geolocation.watchPosition(onFix,e=>{status('GPSエラー：'+e.message);if(e.code===1)stop(true);},{enableHighAccuracy:true,maximumAge:2000,timeout:15000});
  }
- function onFix(pos){if(mode==='off'||!visible)return;const c=pos.coords;if(!Number.isFinite(c.latitude)||!Number.isFinite(c.longitude))return;
+ function onFix(pos){if(mode==='off'||!visible)return;window.BNaviTrack?.add(pos);const c=pos.coords;if(!Number.isFinite(c.latitude)||!Number.isFinite(c.longitude))return;
   if(c.accuracy>(mode==='radar'?65:45)){status('GPS精度が不足しています ±'+Math.round(c.accuracy)+'m');return}
   const at=[c.latitude,c.longitude];fix=at;
   if(Number.isFinite(c.heading)&&c.speed>=2)heading=c.heading;

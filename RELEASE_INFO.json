@@ -1,57 +1,66 @@
 {
-  "release": "2026-11-21-ordered-gpx-itinerary-v6",
-  "repository": "Penta2026/b_navi",
-  "base_commit": "49e112eea7d180504fc1dfbb06ee0f562e3cfc15",
-  "changes": [
-    "recognize waypoint-only routepoint GPX and preserve ordered stop labels",
-    "auto-calculate online route across all stops with retry",
-    "reject public BRouter tracks that bypass intermediate stops",
-    "retain existing true GPX track import and all other navigation features",
-    "refresh PWA shell cache"
+  "release": "2026-11-21-my-route-library-v1",
+  "basis_archive": "B_Navi_PWA_Named_Route_Presets_2026-11-21.zip",
+  "deployment": "not deployed; deploy-ready root-level static PWA ZIP only",
+  "features": [
+    "named calculated routes with coordinates, waypoints, original active routing parameters and GPX hints in IndexedDB",
+    "save/open/delete 30 routes",
+    "preserves named tuning presets and recorded GPX save/share"
   ],
-  "verified": [
-    "58 Node tests passed",
-    "browser mock tests: ordered GPX imports 4 points, retry, targets, normal track unaffected, skipped waypoint rejected",
-    "user-provided itinerary inspected and tested locally; not included in public release"
+  "tested_node": "74/74 PASS",
+  "tested_browser_simulation": [
+    "browser_my_route_library.py (mock IndexedDB)",
+    "browser_route_presets.py",
+    "browser_route_tuning.py",
+    "browser_smoke.py",
+    "browser_gpx_itinerary.py",
+    "browser_ride_integration.py",
+    "browser_radar_voice_mute.py",
+    "browser_control_row.py",
+    "browser_gps_message_layout.py",
+    "browser_voice_settings.py",
+    "browser_long_press.py"
   ],
   "not_verified": [
-    "live public BRouter response for the route",
-    "real mobile share/import, GPS arrivals and speech",
-    "GitHub Pages deployment until independently confirmed"
+    "Actual native IndexedDB persistence (local HTTP blocked)",
+    "Physical Android/iPhone devices and LINE",
+    "Real BRouter service",
+    "GitHub Pages deployment",
+    "Full Shimanami live route calculation"
   ],
   "changed": [
-    "gpx-itinerary-core.js",
-    "gpx-transfer.js",
+    "my-route-library.js",
     "app.js",
     "index.html",
     "style.css",
     "sw.js",
-    "tests/test_gpx_itinerary.cjs",
-    "tests/browser_gpx_itinerary.py",
+    "tests/test_my_route_library.cjs",
+    "tests/browser_my_route_library.py",
     "tests/test_control_row.cjs",
     "tests/test_radar_voice_mute.cjs",
     "README.md",
     "HANDOFF_CURRENT.md",
-    "NEXT_STEPS.md",
     "CHANGELOG_B_Navi.md",
-    "RELEASE_VERIFICATION.txt",
+    "NEXT_STEPS.md",
+    "DEPLOY_GITHUB_PAGES.md",
+    "TEST_RESULTS_MY_ROUTES.txt",
     "RELEASE_INFO.json"
   ],
   "sha256": {
-    "gpx-itinerary-core.js": "271c115d7fc7455a2a00d4f8f558b985640c52907660291f02c6469d2e78505a",
-    "gpx-transfer.js": "ee27af2e434a9f292d6ababfaeff2380046e99cd7d6fc7dfba5956be04d25eea",
-    "app.js": "4be21735ea1ca59bdc4b9c102d04bb22cbc65bba86240081de56a6f9e1df005f",
-    "index.html": "2cb45d82ce919c5b025ed3982bd4d9c6c45d4caaef54e889c6ed01b9adaa582d",
-    "style.css": "7547cbc833521bee64b025786498ac3c3a60da3572418c43d9a1bca131ab761d",
-    "sw.js": "10a76e7e8f827f28dda5ec667faf2846f4625306091d1a79b13e095a4c3c4501",
-    "tests/test_gpx_itinerary.cjs": "6fbd7dffbb9ac375d996b8baf7a367718d152300a0e189d4e01fcc44460880c0",
-    "tests/browser_gpx_itinerary.py": "fe39a06be85f0e60e2762e971ac3887e9f9802990787f56741949c286771b40b",
-    "tests/test_control_row.cjs": "884bf3df2fb1e7bf22f2fba491391b0955844d9a09f224f34091a2ed5f56b1ff",
-    "tests/test_radar_voice_mute.cjs": "524c227a3090616426a1bd0db53fd89fbad5c86fd4fff4b2766aa9d594dfde11",
-    "README.md": "be9dff7e2c93d7d70f382be4d52727935f2d3c0e8cd17fed1441fb9b0df520aa",
-    "HANDOFF_CURRENT.md": "911f2a38a0378e793a560fbcbaba95b9224c39f36722272018628aeb683db636",
-    "NEXT_STEPS.md": "ad591a76a0cb0c62b2fea7ed6837f1946e531232c4efb571639568de583756cd",
-    "CHANGELOG_B_Navi.md": "a77eac477fbf27cd0d597b66fe8acd2312dff458554f5b5a7a4f2abef653805f",
-    "RELEASE_VERIFICATION.txt": "f1a5d9730b466ecbbc46ae9b5bc0987fea00dfb0437109a97be74ae474ed2706"
+    "my-route-library.js": "c185a8b0bebcbf979c9482833f325980d9b2945212975cbf000f3049f57ac879",
+    "app.js": "9b9e7f5c10ae91f733a49b1888715a1ec924a798e0ca79fe2acd1a8f58b4e543",
+    "index.html": "012ce11bbd35f8c1da32723bfaa0e07690fb49f9e38cb2d0030c109289e31f40",
+    "style.css": "cfdbfdc0bf2efdadd38efd901e890d9bbbc0c195767014530ba75673919e882e",
+    "sw.js": "715e9024e0eff530ca132a2599de5c5d8312d5a803b792ef4843b9ddd5556b49",
+    "tests/test_my_route_library.cjs": "2c87406d34e18a0fc56e894370558e91524eae56e26161eb06152e424aaf2937",
+    "tests/browser_my_route_library.py": "c9d70a8f784236455ec17f518df45d4b9efac0baeddb36aace84795451d88a92",
+    "tests/test_control_row.cjs": "437e90ee957c89877ddcc9524ddc21b0cb971e7ab8a72be3aa7dc8e7cd57aa40",
+    "tests/test_radar_voice_mute.cjs": "fa49aa0ddf7be5f678f4daa19076c92ed9f0496355216e012a43911d8ee3a119",
+    "README.md": "88082963a9ae261f01d92eee464221aadbe97944280a1b430f99a00eb44e0332",
+    "HANDOFF_CURRENT.md": "09b15e6e210481013f94477419bc11c20e6952964895e4d10330ccda0fcec67d",
+    "CHANGELOG_B_Navi.md": "5f9d34fcd0f3dd108636a34a9b8e82142f669bc997e26ff365d76623996f8e1c",
+    "NEXT_STEPS.md": "aa085174bd9325e046f7efd581e973f353bc180a8614cdee3f18821d84143f48",
+    "DEPLOY_GITHUB_PAGES.md": "43f9306be28e6d49c7363eb44de477b71f3b26c5075a491d80a1acddf4ce930d",
+    "TEST_RESULTS_MY_ROUTES.txt": "5586b58f26e523d2c9bc5da145a6bcf462834009d4f0b81944db91780631e0ee"
   }
 }

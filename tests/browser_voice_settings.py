@@ -3,6 +3,7 @@ import re
 from playwright.sync_api import sync_playwright
 base=Path(__file__).resolve().parents[1]
 html=(base/'index.html').read_text()
+names=re.findall(r'<script src="\./([^"]+)" defer></script>',html)
 html=re.sub(r'<script\s+src="[^"]+"\s+defer></script>','',html)
 html=re.sub(r'<link rel="stylesheet" href="./style.css">', '<style>'+ (base/'style.css').read_text() +'</style>',html)
 with sync_playwright() as p:
@@ -17,7 +18,7 @@ with sync_playwright() as p:
    window.SpeechSynthesisUtterance=class {constructor(text){this.text=text;}};
    Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{cancel(){},speak(u){window.__spoken.push({text:u.text,rate:u.rate,volume:u.volume,pitch:u.pitch,voiceURI:u.voice?.voiceURI})},getVoices(){return [{lang:'ja-JP',name:'Japanese A',voiceURI:'voice1'},{lang:'ja-JP',name:'Japanese B',voiceURI:'voice2'}]}}});
  }''')
- for name in ['ride-logic.js','navigation-heading.js','map-core.js','android-approaches.js','shimanami-geometry.js','offline-route-store.js','public-brouter-client.js','voice-settings.js','app.js','place-search-core.js','mobile-ui.js','ride-radar.js','gpx-transfer.js']:
+ for name in names:
   page.add_script_tag(content=(base/name).read_text())
  page.wait_for_timeout(180)
  assert page.locator('#settings-btn').is_visible()

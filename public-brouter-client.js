@@ -31,41 +31,46 @@ function gpxFromTrack(track,profile){
  const cues=track.cues.map(c=>`<rtept lat="${c.point[0]}" lon="${c.point[1]}"><desc>${xml(c.desc)}</desc><extensions><offset>${c.offset}</offset>${c.roundaboutExit?`<roundaboutExit>${c.roundaboutExit}</roundaboutExit>`:''}</extensions></rtept>`).join('');
  return `<?xml version="1.0" encoding="utf-8"?><gpx version="1.1" creator="B_Navi public BRouter trial" xmlns="http://www.topografix.com/GPX/1/1"><metadata><desc>${xml('Published BRouter trial: '+profile)}</desc></metadata><trk><name>B_Navi route</name><trkseg>${points}</trkseg></trk><rte>${cues}</rte></gpx>`;
 }
-async function upload(name,netFetch=fetch){
+const tuner=root.BNaviRouteTuning||(typeof require!=='undefined'?require('./route-tuning.js'):null);
+async function upload(name,cacheKey,netFetch=fetch,custom=null,vehicle=1){
  const url=new URL('./profiles/'+name+'.brf',location.href);
  const p=await netFetch(url,{cache:'no-store'});if(!p.ok)throw Error('走行プロファイルを取得できません HTTP '+p.status);
- const brf=await p.text();if(!brf.includes('---context:way')||!brf.includes('---context:node'))throw Error('プロファイルが不正です');
+ const baseline=await p.text();if(!baseline.includes('---context:way')||!baseline.includes('---context:node'))throw Error('プロファイルが不正です');
+ const brf=custom&&tuner?!tuner.isDefault(custom,vehicle)?tuner.tuneProfile(baseline,custom,vehicle):baseline:baseline;
  const resp=await netFetch(SERVER+'/profile',{method:'POST',headers:{'Content-Type':'text/plain'},body:brf,signal:AbortSignal.timeout(30000),credentials:'omit'});
  const body=await resp.text();if(!resp.ok)throw Error('公開BRouterのプロファイル登録に失敗 HTTP '+resp.status+' '+body.slice(0,120));
  let obj;try{obj=JSON.parse(body)}catch{obj=body}
  const options=[obj?.profileId,obj?.id,obj?.profile,obj?.name,obj?.profileName,typeof obj==='string'?obj:null];
  const id=options.find(v=>typeof v==='string'&&/^(custom_|shared_)[A-Za-z0-9_-]+$/.test(v))||body.match(/(?:custom_|shared_)[A-Za-z0-9_-]+/)?.[0];
- if(!id)throw Error('BRouterのカスタムプロファイルIDを取得できません');IDS.set(name,id);return id;
+ if(!id)throw Error('BRouterのカスタムプロファイルIDを取得できません');IDS.set(cacheKey,id);return id;
 }
-async function ensureProfile(name,netFetch){
- if(IDS.has(name))return IDS.get(name);
- if(!PENDING_UPLOADS.has(name)){
-  const task=upload(name,netFetch).finally(()=>PENDING_UPLOADS.delete(name));
-  PENDING_UPLOADS.set(name,task);
+async function ensureProfile(name,cacheKey,netFetch,custom,vehicle){
+ if(IDS.has(cacheKey))return IDS.get(cacheKey);
+ if(!PENDING_UPLOADS.has(cacheKey)){
+  const task=upload(name,cacheKey,netFetch,custom,vehicle).finally(()=>PENDING_UPLOADS.delete(cacheKey));
+  PENDING_UPLOADS.set(cacheKey,task);
  }
- return PENDING_UPLOADS.get(name);
+ return PENDING_UPLOADS.get(cacheKey);
 }
-async function query(points,vehicle,mode,netFetch=fetch,onProgress=null){
+async function query(points,vehicle,mode,netFetch=fetch,onProgress=null,custom=null){
  const started=Date.now();const progress=(phase,message)=>{if(typeof onProgress==='function')onProgress({phase,message,elapsedMs:Date.now()-started})};
  if(!Array.isArray(points)||points.length<2||points.length>52||points.some(p=>!validPoint(p)))throw Error('経路地点が不正です');
  const profile=profileName(vehicle,mode);
- progress('profile',IDS.has(profile)?'公開BRouter：前回の走行プロファイルを使用中…':'公開BRouter：走行プロファイルを送信中…');
- let id=await ensureProfile(profile,netFetch);
+ const isCustomized=custom&&tuner&&!tuner.isDefault(custom,vehicle);
+ if(custom&&!tuner)throw Error('ルート微調整モジュールがありません');
+ const cacheKey=isCustomized?profile+':'+tuner.key(custom,vehicle):profile;
+ progress('profile',IDS.has(cacheKey)?'公開BRouter：前回の走行プロファイルを使用中…':'公開BRouter：走行プロファイルを送信中…');
+ let id=await ensureProfile(profile,cacheKey,netFetch,custom,vehicle);
  const calc=async()=>{const url=new URL(SERVER);url.searchParams.set('lonlats',points.map(p=>p[1]+','+p[0]).join('|'));url.searchParams.set('profile',id);url.searchParams.set('alternativeidx','0');url.searchParams.set('format','geojson');url.searchParams.set('timode','3');
  return netFetch(url,{signal:AbortSignal.timeout(90000),cache:'no-store',credentials:'omit'});};
  progress('route','公開BRouter：道路ルートを計算中…');
- let r=await calc();if(!r.ok&&[400,404,500].includes(r.status)){IDS.delete(profile);progress('retry','公開BRouter：プロファイル期限切れを確認・再送信中…');id=await ensureProfile(profile,netFetch);progress('route','公開BRouter：経路を再計算中…');r=await calc()}
+ let r=await calc();if(!r.ok&&[400,404,500].includes(r.status)){IDS.delete(cacheKey);progress('retry','公開BRouter：プロファイル期限切れを確認・再送信中…');id=await ensureProfile(profile,cacheKey,netFetch,custom,vehicle);progress('route','公開BRouter：経路を再計算中…');r=await calc()}
  if(!r.ok)throw Error('公開BRouterの計算エラー HTTP '+r.status+' '+(await r.text()).slice(0,150));
  const track=trackFromGeoJSON(await r.json());
  const farMeters=(p,q)=>{const rad=Math.PI/180,dlat=(p[0]-q[0])*rad,dlon=(p[1]-q[1])*rad,a=Math.sin(dlat/2)**2+Math.cos(p[0]*rad)*Math.cos(q[0]*rad)*Math.sin(dlon/2)**2;return 12742000*Math.asin(Math.sqrt(Math.min(1,a)))};
  if(farMeters(track.points[0],points[0])>300||farMeters(track.points.at(-1),points.at(-1))>300)throw Error('BRouterの計算起終点が指定位置と一致しません');
  progress('done','公開BRouter：経路を受信しました');
- return {profile,track,gpx:gpxFromTrack(track,profile),elapsedMs:Date.now()-started};
+ return {profile:profile+(isCustomized?'・カスタム '+tuner.key(custom,vehicle):''),track,gpx:gpxFromTrack(track,cacheKey),elapsedMs:Date.now()-started};
 }
 const api={SERVER,profileName,trackFromGeoJSON,gpxFromTrack,query};root.BNaviPublicBrouter=api;
 if(typeof module!=='undefined'&&module.exports)module.exports=api;

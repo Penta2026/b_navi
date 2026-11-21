@@ -5,6 +5,7 @@ from playwright.sync_api import sync_playwright
 
 base = Path(__file__).resolve().parents[1]
 html = (base/'index.html').read_text(encoding='utf-8')
+names = re.findall(r'<script src="\./([^"]+)" defer></script>',html)
 html = re.sub(r'<script\s+src="[^"]+"\s+defer></script>', '', html)
 html = html.replace('<link rel="stylesheet" href="./style.css">', '<style>' + (base/'style.css').read_text(encoding='utf-8') + '</style>')
 
@@ -21,7 +22,7 @@ with sync_playwright() as p:
       Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{cancel(){},speak(){},getVoices(){return []}}});
       window.SpeechSynthesisUtterance=class{constructor(s){this.text=s}};
     }''')
-    for filename in ['ride-logic.js','navigation-heading.js','map-core.js','android-approaches.js','shimanami-geometry.js','offline-route-store.js','public-brouter-client.js','voice-settings.js','app.js','place-search-core.js','mobile-ui.js','ride-radar.js','gpx-transfer.js']:
+    for filename in names:
         page.add_script_tag(content=(base/filename).read_text(encoding='utf-8'))
     page.wait_for_timeout(260)
     # The normal mode route sheet is closed during map interaction.
