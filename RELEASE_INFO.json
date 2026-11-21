@@ -1,52 +1,57 @@
 {
-  "release": "2026-11-21-control-row-v2",
+  "release": "2026-11-21-one-row-motion-v3",
   "repository": "Penta2026/b_navi",
-  "base_commit": "79fe5ab174f4271e673069c806ebf433bcd509af",
+  "base_commit": "093a816f689fe68243d6f5b46864d04354eef54b",
   "changes": [
-    "top row + - GPS center radar; second row right heading",
-    "radar icon only",
-    "fixed legacy CSS hiding zoom buttons during navigation",
-    "service worker cache name bumped"
+    "single-row six map controls; heading is rightmost and radar is icon-only",
+    "stationary GPS noise cannot request reroute until movement confirmed",
+    "new MotionGate with speed or coherent coordinate movement; no changes to BRFs/bridge references",
+    "service worker cache bumped"
   ],
   "verified": [
-    "48 Node tests pass",
-    "browser simulated GPS/nav/radar integration passes",
-    "Chromium geometry pass at 360 390 430 px"
+    "50 node tests",
+    "9 browser mock suites",
+    "screen widths 320/360/390/430",
+    "stationary and motion reroute simulation"
   ],
   "not_verified": [
-    "real phone screenshot with updated GitHub deployment",
-    "field GPS/speech/rerouting",
-    "actual public BRouter API end-to-end"
+    "physical device/ride GPS",
+    "public BRouter real API",
+    "background navigation"
   ],
   "changed": [
-    "index.html",
-    "style.css",
-    "sw.js",
-    "tests/test_control_row.cjs",
-    "tests/test_navigation_focus.cjs",
-    "tests/test_ride_logic.cjs",
-    "tests/browser_control_row.py",
-    "tests/browser_ride_integration.py",
-    "README.md",
+    "CHANGELOG_B_Navi.md",
     "HANDOFF_CURRENT.md",
     "NEXT_STEPS.md",
-    "CHANGELOG_B_Navi.md",
+    "README.md",
     "RELEASE_VERIFICATION.txt",
+    "TEST_RESULTS_ONE_ROW.txt",
+    "app.js",
+    "index.html",
+    "ride-logic.js",
+    "style.css",
+    "sw.js",
+    "tests/browser_control_row.py",
+    "tests/browser_ride_integration.py",
+    "tests/test_control_row.cjs",
+    "tests/test_ride_logic.cjs",
     "RELEASE_INFO.json"
   ],
   "sha256": {
-    "index.html": "1e989af7b739f497df1a21e0f7bdd0ddae3d3cb4f6f4c051912179b64d75cb00",
-    "style.css": "70717cf643820b20132612f34b0bd1325d5349c747ac6cde16ddf66a7de5e206",
-    "sw.js": "a769ce7faf754c3d1dac131e2c428ffc4e6357b7237da494c8f05d0459e9d86f",
-    "tests/test_control_row.cjs": "9b6d3fbc1386c7d483b16a4fdd3281b99484ad8d51f9266260e788a00daad936",
-    "tests/test_navigation_focus.cjs": "b8c7b0f40b71b82e999986f253ff00d9d619b5e1a6e8592f56215e43fd7a7803",
-    "tests/test_ride_logic.cjs": "eef86515153f44c4400af590e1aca6f202b0a2bc514e0867c5a5742a2728c88b",
-    "tests/browser_control_row.py": "39e7f5f9e7024cf82c07f23909febc51a748110401c40a1f31f97f8189d3cdf9",
-    "tests/browser_ride_integration.py": "1f885366c4e88f2bdf013b1d3607b6c4af72392b1dd759cf86cb1459a328e207",
-    "README.md": "883d842f38c0d99d21185171f4b13a1bb97ad2b13ad8e356ccd788ff2be0855e",
-    "HANDOFF_CURRENT.md": "32fbfc544106ecf973bdf2196aa6f080aadb1f7b295496e61a63c356c9b08cfa",
-    "NEXT_STEPS.md": "71e4a9dc1dee346144d1ce7aae24a71f83750c6576b70e2a85df9f44708d3dcf",
-    "CHANGELOG_B_Navi.md": "f370f61498b8a0e7e348fa5640695b014916c3823ceddfbe22ac9f57d81b2ffd",
-    "RELEASE_VERIFICATION.txt": "6b098bcee3c75bc37326339f8f759e44503dd7afa20dccfb59a8b7aa6b1ccc17"
+    "CHANGELOG_B_Navi.md": "4a8c78acef86b59b7377c0e3afb42d88ad3f762838a9a8ef94ae8ffa07475cf6",
+    "HANDOFF_CURRENT.md": "238298e554a25e6c62c8aa3f1fd026831a6afab11084abcce44c555d765c8d4a",
+    "NEXT_STEPS.md": "8bdbd416723d601f190a2df3e309fd10b7e146b349988b97271c40ffdaad16dd",
+    "README.md": "2aa3814ad8a2f1d0c79a1512f0c0ccc64aca521a22c4d2793dce820fa9d2152d",
+    "RELEASE_VERIFICATION.txt": "cc6fdcb00737db9609fe8c462c6038264422b7f253f9b6a325a974494b0704ed",
+    "TEST_RESULTS_ONE_ROW.txt": "3b933d010a54ff6cdd880b37428579912f71c4632d60d357f2d3c7a8a0c272a4",
+    "app.js": "428d42e623b4d02e6fe7dc4a6f823d49ba4edd2c955907c4c683edfa2b3075ac",
+    "index.html": "a85750fa11f438c2f915a7a9bf9f256ffc4e2d0cbdb0bb7d1cdf9e926587b1d9",
+    "ride-logic.js": "a38b2dbe9aacec846b7c0b74a00a9b9926245043b2b76709cd6dfb4b6c107899",
+    "style.css": "f309f7350dbf51bda87d681bd0f80245848c59061008229fe984158d6984cbef",
+    "sw.js": "d0c69fbe9e4faace4417ace35d3821b7035edc0a8cd02216c4729e31b8957efc",
+    "tests/browser_control_row.py": "14f62d4d4fcc71b122b69f2e507887627ba4b2604caeb6c40f9522eec74641e7",
+    "tests/browser_ride_integration.py": "48d4f4e94ecaa842c630dd49bb605fb824f4450642c617930a182a6afd139c88",
+    "tests/test_control_row.cjs": "8ecb61622e80980343e3a56614e4005aae484888fac8b81cf59970969f17a550",
+    "tests/test_ride_logic.cjs": "11c0d6d5e4bb482eede8ba53586ac553ab750d5eec9df418df9cf4abeb676f4a"
   }
 }

@@ -1,18 +1,25 @@
-2026-11-21 Control-row layout release
-Scope: index.html, style.css, sw.js, regression test and handoff docs.
-Known baseline: 79fe5ab174f4271e673069c806ebf433bcd509af.
-Verified: 48 Node tests PASS; mocked smartphone GPS/radar voice UI browser integration PASS; 360/390/430 CSS layout checks PASS.
-Not verified: field GPS/speech behavior.
+B_Navi 2026-11-21 one-row controls and stationary GPS reroute prevention
+Based on GitHub Penta2026/b_navi HEAD: 093a816f689fe68243d6f5b46864d04354eef54b.
 
-# B_Navi Shimanami 2026-11-21 verification
-Status: SOURCE/TEST RELEASE; external routing and real GPS NOT VERIFIED.
-Node tests: 45 PASS / 0 FAIL (`node --test tests/*.cjs`).
-Browser mock tests: 8 PASS (`browser_smoke.py`, `browser_long_press.py`, `browser_voice_settings.py`, `browser_address_search.py`, `browser_ride_integration.py`, `browser_shimanami_web_flow.py`, `browser_shimanami_via_reroute.py`, `browser_shimanami_payload.py`).
-Mock plans: forward 6/6 bridges, reverse 6/6, waypoint within same island, cross-island waypoint order, U-turn itinerary, broken reference/gap/road snap rejection.
-Mock GPS: six bridge pause/resume events; waypoint prompt/continue; same-island reroute preserves bridge; final arrival auto-stop.
-Offline model: JSON serialization roundtrip preserves sectionIndex/checkpointAfter, bridge references, cues; real browser IndexedDB write/reload NOT VERIFIED.
-UNVERIFIED: real brouter.de /profile HTTP POST, six crossing legs on actual OSM/RD5 network, smartphone GPS, GPS voice continuity, iOS background audio, traffic/legal restrictions.
-UNVERIFIED: hosted-route real device UI and route timing.
-Validation blocker: local HTTP server test `tests/browser_shimanami_offline_restore.py` could not launch due `ERR_BLOCKED_BY_ADMINISTRATOR` in test environment. Keep for later run.
-Known limitation: valid Shimanami points must fall within Android reference-plan island area; city-to-island/area-external journey not handled yet.
-No changes to BRF, original Android bridge geometry, saved IndexedDB keys, or local favorites.
+VERIFIED:
+- JavaScript syntax validation: app.js, ride-logic.js.
+- Node: 50 tests PASS, 0 FAIL (node --test tests/*.cjs).
+- Browser mock tests: 9 PASS (browser_smoke.py, browser_long_press.py,
+  browser_voice_settings.py, browser_address_search.py, browser_ride_integration.py,
+  browser_shimanami_web_flow.py, browser_shimanami_via_reroute.py,
+  browser_shimanami_payload.py, browser_control_row.py).
+- Browser screenshot geometry: all six controls in one row at widths 320/360/390/430px,
+  including active navigation. Visible +, -, GPS, crosshair, radar icon, heading.
+- Simulated GPS with speed=0: route request stays at zero during stationary drift.
+- Simulated repeated speed=7 m/s: off-route route request occurs once.
+- Unit tests for GPS speed absent: coherent multi-fix displacement can enable reroute.
+- Existing 6 Shimanami bridge pause/resume, via and arrival voice tests preserved.
+- GitHub Pages deployment state: see actual Actions run status separately.
+
+NOT VERIFIED:
+- Actual mobile GPS speed quality or rerouting while moving on public roads.
+- Live BRouter responses or offline IndexedDB reload on field device.
+- Actual mobile TTS or GPS background operation.
+- Road permissions/signs; observe local restrictions first.
+
+FILES: see RELEASE_INFO.json.

@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),path=require('path');
-const {meters,distanceToPolyline,OffRoutePolicy,ArrivalPolicy}=require('../ride-logic.js');
+const {meters,distanceToPolyline,MotionGate,OffRoutePolicy,ArrivalPolicy}=require('../ride-logic.js');
 const src=n=>fs.readFileSync(path.join(__dirname,'..',n),'utf8');
 test('point-to-polyline distance is based on segments, not distant track vertices',()=>{
  const p=[34.4005,132.4005],segment=[[34.4,132.4],[34.401,132.401]];
@@ -50,4 +50,22 @@ test('radar switching uses navigation GPS without duplicate watcher; free ride h
  assert.match(radar,/window\.BNaviObserveDestination/);
  assert.match(css,/body\.free-ride-active \.topbar/);
  for(const id of ['nav-radar-toggle','map-controls','zoom-in','zoom-out','next-destination-dialog'])assert.ok(html.includes(`id="${id}"`));
+});
+
+test('MotionGate blocks stationary jitter, then permits sustained speed fixes',()=>{
+ const g=new MotionGate();
+ const p=[34.4,132.45];
+ for(let i=0;i<6;i++)assert.equal(g.observe([p[0]+(i%2)*.00005,p[1]+(i%2)*.00006],7,0,i*1000),false);
+ assert.equal(g.observe([34.4,132.45],7,4,6000),false);
+ assert.equal(g.observe([34.4,132.45],7,4,7000),true);
+ assert.equal(g.isMoving(12000),true);
+ assert.equal(g.isMoving(14001),false);
+});
+test('MotionGate permits coherent GPS travel when speed is missing',()=>{
+ const g=new MotionGate();
+ const p=(dy)=>[34.4+dy,132.45];
+ assert.equal(g.observe(p(0),5,null,0),false);
+ assert.equal(g.observe(p(.00025),5,null,1000),false);
+ assert.equal(g.observe(p(.0005),5,null,2000),false);
+ assert.equal(g.observe(p(.00075),5,null,3000),true);
 });

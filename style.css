@@ -189,3 +189,16 @@ body.navigation-active #navigation-hud strong{font-size:clamp(24px,6vw,31px)}
 .next-destination-actions button{min-height:51px;border:1px solid #b7cbd3;border-radius:10px;font-weight:750;background:#eaf1f4;color:#275364;padding:10px}
 .next-destination-actions .primary{background:#08718c;color:white;border-color:#08718c}
 @media(max-width:800px){#map-controls{top:max(12px,env(safe-area-inset-top,0px));left:12px;right:12px}#map-controls .map-control-row-top{gap:6px}#map-controls .map-control-row-bottom{justify-content:flex-end}#map-hint{top:108px;left:12px;max-width:53vw}}
+
+
+/* 2026-11-21: all six map actions fit on one row, including at compact phone widths.
+ * Keep the radar icon-only, and keep heading aligned at the right edge. */
+#map-controls{gap:0}
+#map-controls .map-control-row-top{width:100%;display:flex;gap:clamp(4px,1.25vw,6px);justify-content:flex-start;align-items:center;pointer-events:none}
+#map-controls .map-control-row-top > button{pointer-events:auto;height:44px!important;min-height:44px!important;min-width:0!important;box-sizing:border-box;border-radius:10px}
+#map-controls .map-control-row-top > :is(#zoom-in,#zoom-out,#map-location,#center-hiroshima,#nav-radar-toggle){flex:0 1 44px;width:44px;min-width:0;padding:0}
+#map-controls .map-control-row-top > #orientation-toggle{flex:0 0 80px;width:80px;min-width:80px!important;max-width:80px;margin-left:auto;padding:0 4px;font-size:12px!important;letter-spacing:-.03em;white-space:nowrap}
+#map-controls .map-control-row-bottom{display:none!important}
+body.navigation-active #map-controls .map-control-row-top > button,
+body.free-ride-active #map-controls .map-control-row-top > button{height:44px!important}
+@media(max-width:350px){#map-controls{left:9px!important;right:9px!important}#map-controls .map-control-row-top{gap:4px}#map-controls .map-control-row-top > #orientation-toggle{flex-basis:75px;width:75px;min-width:75px!important;max-width:75px;font-size:11px!important}}

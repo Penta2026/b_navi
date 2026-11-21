@@ -81,12 +81,18 @@ with sync_playwright() as playwright:
    routeView('normal',[{type:'road',points:[[34.4,132.45],[34.4005,132.45],[34.4009,132.45],[34.4013,132.45],[34.4018,132.45]],gpx,label:'old route'}],gpx,'before reroute');
  }''',GPX)
  page.locator('#nav-start-quick').click()
- page.evaluate('window.__gps(34.4003,132.4550,5)')
+ # At home, stationary GPS drift must not trigger rerouting.
+ page.evaluate('window.__gpsOk({coords:{latitude:34.4003,longitude:132.4550,accuracy:5,heading:0,speed:0},timestamp:Date.now()})')
  page.wait_for_timeout(680)
- page.evaluate('window.__gps(34.4003,132.4550,5)')
+ page.evaluate('window.__gpsOk({coords:{latitude:34.4003,longitude:132.4550,accuracy:5,heading:0,speed:0},timestamp:Date.now()})')
  page.wait_for_timeout(680)
- page.evaluate('window.__gps(34.4003,132.4550,5)')
- page.wait_for_timeout(250)
+ page.evaluate('window.__gpsOk({coords:{latitude:34.4003,longitude:132.4550,accuracy:5,heading:0,speed:0},timestamp:Date.now()})')
+ assert page.evaluate('window.__routeCalls')==0,'reroute while stationary'
+ # Sustained GPS speed re-enables rerouting only after several off-route fixes.
+ for i in range(4):
+  page.evaluate('window.__gps(34.4003,132.4550,5)')
+  page.wait_for_timeout(670)
+ page.wait_for_timeout(200)
  assert page.evaluate('window.__routeCalls')==1, f"reroute requests: {page.evaluate('window.__routeCalls')}"
  assert page.evaluate('state.navActive'), 'reroute stopped guidance'
  page.locator('#nav-stop-quick').click()
