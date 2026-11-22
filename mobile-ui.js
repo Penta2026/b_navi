@@ -282,7 +282,7 @@
         suggestions.forEach(x=>showSearchResult(x,el));
       }else{
         const p=document.createElement('p');p.className='search-no-match';
-        p.textContent=providerSuccesses===0?'検索サービスに接続できませんでした。通信状態を確認して再検索してね。':
+        p.textContent=providerSuccesses===0?'施設検索サービスに接続できませんでした。通信状態を確認して再検索してね。':
           '該当する施設を検索データから見つけられませんでした。住所が分かる場合は「住所で探す」も試してね。';
         el.append(p);
       }
