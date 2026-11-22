@@ -103,12 +103,17 @@
    if(!r.ok)throw Error('Nominatim HTTP '+r.status);
    return searchCore.fromNominatim(await r.json());
  }
- async function searchPhoton(q){
-   const url='https://photon.komoot.io/api/?lang=ja&limit=20&q='+encodeURIComponent(q);
+ async function searchPhoton(q,category=null){
+   const url=new URL('https://photon.komoot.io/api/');
+   url.searchParams.set('lang','ja');url.searchParams.set('limit','25');url.searchParams.set('q',q);
+   if(category&&!searchCore.parts(q).region.length&&typeof map!=='undefined'&&Number.isFinite(map.lat)&&Number.isFinite(map.lon)){
+     url.searchParams.set('lat',String(map.lat));url.searchParams.set('lon',String(map.lon));
+   }
    const r=await fetch(url,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(12000)});
    if(!r.ok)throw Error('Photon HTTP '+r.status);
    return searchCore.fromPhoton(await r.json());
  }
+
  function applySelected(kind){
    if(!picked)return;
    if(kind==='via'){if(state.via.length>=50){alert('経由地は50件までだよ');return;}state.via.push(picked.coord);}
@@ -122,7 +127,7 @@
    const button=document.createElement('button');button.type='button';button.className='place-main';
    button.textContent=row.name;
    if(kind!=='station'){
-    const small=document.createElement('small');small.textContent=kind==='address'?'住所の候補・位置は概略（番地までの確定位置ではありません） · '+row.source:(row.address||'所在地の詳細なし')+' · '+row.source;
+    const small=document.createElement('small');small.textContent=kind==='address'?'住所の候補・位置は概略（番地までの確定位置ではありません） · '+row.source:(row.address||'所在地の詳細なし');
     button.append(small);
    }
    button.onclick=()=>selectPlace(row.name,row.lat.toFixed(6)+','+row.lon.toFixed(6));
@@ -181,7 +186,7 @@
    const ext=$('online-map-search');if(ext)ext.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);
    const el=$('place-search-results');
     const localStationQuery=!forcedAddress&&stationCore?.isExplicit(q);
-    if(!localStationQuery&&Date.now()-lastSearch<1600){el.textContent='続けて検索するときは少し間隔をあけてね。';return}
+    if(!localStationQuery&&Date.now()-lastSearch<1600){setMessage('続けて検索するときは少し間隔をあけてね。');return}
    lastSearch=Date.now();searchBusy=true;const addressMode=forcedAddress||addressCore.looksLikeAddress(q);
    el.textContent=addressMode?'住所を検索中…':'施設名と地域を照合して検索中…';
    try{
@@ -192,38 +197,41 @@
         try{const matches=await searchStations(q);if(matches.length){showStationResults(matches,el);return;}}
         catch(err){/* Fall back to online geocoders when local data cannot load. */}
       }
-     const parsed=searchCore.parts(q);let candidates=[];const errors=[];
-     try{candidates=await searchNominatim(q)}catch(err){errors.push(err.message)}
+     const parsed=searchCore.parts(q),cat=searchCore.category(q),candidates=[],errors=[];
+     let photonOk=false,nominatimOk=false;
+     try{candidates.push(...await searchPhoton(q,cat));photonOk=true}
+     catch(err){errors.push('Photon: '+err.message)}
      let results=searchCore.rank(candidates,q);
-     if(!results.length && parsed.region.length && parsed.name.length>=2){
-       // Nominatim free-form parsing of Japanese name + region is inconsistent.
-       // Keep region as a strict result filter even when searching by name alone.
-       await sleep(1100);
-       try{candidates.push(...await searchNominatim(parsed.name));results=searchCore.rank(candidates,q)}
-       catch(err){errors.push(err.message)}
+     if(results.length<8){
+       try{candidates.push(...await searchNominatim(q));nominatimOk=true;results=searchCore.rank(candidates,q)}
+       catch(err){errors.push('Nominatim: '+err.message)}
      }
-     if(!results.length){
-       // Photon also relies on OSM data; it can find differently indexed names,
-       // but cannot create POIs absent from OSM. It is a secondary manual-query fallback.
-       try{candidates.push(...await searchPhoton(parsed.name||q));results=searchCore.rank(candidates,q)}
-       catch(err){errors.push(err.message)}
+     if(!results.length&&parsed.region.length&&parsed.name.length>=2&&parsed.name!==q){
+       await sleep(500);
+       try{candidates.push(...await searchPhoton(parsed.name,cat));photonOk=true;results=searchCore.rank(candidates,q)}
+       catch(err){errors.push('Photon locality fallback: '+err.message)}
      }
-      if(!results.length && !localStationQuery){
-        try{const matches=await searchStations(q);if(matches.length){showStationResults(matches,el);return;}}
-        catch(err){/* Retain the online search failure message if the index is missing. */}
-      }
-      el.replaceChildren();
-      if(results.length){
+     if(!results.length&&!localStationQuery){
+       try{const matches=await searchStations(q);if(matches.length){showStationResults(matches,el);return;}}
+       catch(err){/* Keep actual remote search status if station data is unavailable. */}
+     }
+     const suggestions=results.length?[]:searchCore.related(candidates,q,results);
+     el.replaceChildren();
+     if(results.length){
        const h=document.createElement('p');h.className='search-summary';
-       h.textContent=results.length+'件見つかったよ（施設名と指定地域を照合）';el.append(h);
+       h.textContent='検索結果 '+results.length+'件';el.append(h);
        results.forEach(x=>showSearchResult(x,el));
-       const note=document.createElement('p');note.className='smallprint';
-       note.textContent='OpenStreetMap由来の検索です。表示された施設の場所は地図上でも確認してね。';el.append(note);
+     }else if(suggestions.length){
+       const h=document.createElement('p');h.className='search-summary';
+       h.textContent='関連候補 '+suggestions.length+'件（名称を確認してね）';el.append(h);
+       suggestions.forEach(x=>showSearchResult(x,el));
      }else{
        const p=document.createElement('p');p.className='search-no-match';
-       p.textContent='施設名と地域が一致する候補は見つかりませんでした。無関係な会社は表示しません。';el.append(p);
-       const sub=document.createElement('p');sub.className='smallprint';
-       sub.textContent=errors.length===3?'検索サービスへの接続にも失敗しました。':'地図への施設登録がない場合は、別の施設検索基盤が必要です。';el.append(sub);
+       p.textContent=(!photonOk&&!nominatimOk)?'施設検索サービスに接続できませんでした。通信状態を確認して再検索してね。':'該当する施設が見つからなかったよ。施設名を短くするか、地域名を付けて検索してね。';el.append(p);
+     }
+     if(results.length||suggestions.length){
+       const note=document.createElement('p');note.className='smallprint';
+       note.textContent='検索候補は施設の位置を保証しないため、地図で確認してね。';el.append(note);
      }
      addExternalSearch(el,q);
    }catch(err){

@@ -1,5 +1,5 @@
 /* Cache only local static app-shell files, NEVER .rd5, routes, or map tiles. */
-const CACHE='bnavi-pc-pwa-20261122-station-search-simple-labels-v2';
+const CACHE='bnavi-pc-pwa-20261122-poi-search-expanded-v1';
 const FILES=['./','./index.html','./style.css','./app.js','./ride-logic.js','./navigation-heading.js','./voice-settings.js','./route-tuning.js','./route-presets.js','./my-route-library.js','./public-brouter-client.js','./offline-route-store.js','./place-search-core.js','./station-search.js','./data/jr_stations.json','./address-search.js','./mobile-ui.js','./gpx-itinerary-core.js','./gpx-transfer.js','./ride-radar.js','./track-recorder.js','./android-approaches.js','./shimanami-geometry.js','./shimanami-bridge-references.js','./shimanami-web-router.js','./map-core.js','./icon.svg','./icon-192.png','./icon-512.png','./manifest.webmanifest'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('bnavi-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

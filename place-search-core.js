@@ -53,30 +53,75 @@
    const matched=probes.filter(r=>address.includes(r)).length;
    return matched===probes.length?1:0;
  }
+ const CATEGORY_GROUPS=[
+   {words:['カフェ','喫茶店'],tags:[['amenity','cafe']]},
+   {words:['レストラン','飲食店'],tags:[['amenity','restaurant'],['amenity','fast_food']]},
+   {words:['コンビニ','コンビニエンスストア'],tags:[['shop','convenience']]},
+   {words:['スーパー','スーパーマーケット'],tags:[['shop','supermarket']]},
+   {words:['ガソリンスタンド','給油所'],tags:[['amenity','fuel']]},
+   {words:['駐車場','パーキング'],tags:[['amenity','parking']]},
+   {words:['病院'],tags:[['amenity','hospital'],['healthcare','hospital']]},
+   {words:['薬局','ドラッグストア'],tags:[['amenity','pharmacy'],['shop','chemist']]},
+   {words:['ホームセンター'],tags:[['shop','doityourself']]},
+   {words:['郵便局'],tags:[['amenity','post_office']]},
+   {words:['交番','警察署'],tags:[['amenity','police']]},
+   {words:['トイレ','公衆トイレ'],tags:[['amenity','toilets']]},
+   {words:['ホテル','宿泊施設'],tags:[['tourism','hotel'],['tourism','motel'],['tourism','guest_house']]},
+   {words:['キャンプ場'],tags:[['tourism','camp_site']]},
+ ];
+ function category(query){
+   const wanted=clean(parts(query).name).replace(/^(?:近くの|付近の|周辺の)/,'');
+   return CATEGORY_GROUPS.find(c=>c.words.some(w=>clean(w)===wanted))||null;
+ }
+ function categoryMatches(x,c){
+   return !!c&&c.tags.some(([key,value])=>String(x.osmKey||'').toLowerCase()===key&&String(x.osmValue||'').toLowerCase()===value);
+ }
+ function valid(x){const lat=Number(x.lat),lon=Number(x.lon);return Number.isFinite(lat)&&Number.isFinite(lon)&&lat>=20&&lat<=46&&lon>=122&&lon<=154;}
+ function uniqueKey(x){return Math.round(Number(x.lat)*10000)+','+Math.round(Number(x.lon)*10000);}
  function rank(raw,query){
-   const p=parts(query);
-   const out=[];const seen=new Set();
-   for(const x of raw){
-     const lat=Number(x.lat),lon=Number(x.lon);
-     if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)continue;
-     const score=nameScore(x,p.name);
-     if(score<55||!regionScore(x,p.region))continue;
-     const key=Math.round(lat*10000)+','+Math.round(lon*10000);
-     if(seen.has(key))continue;seen.add(key);
-     out.push({...x,lat,lon,score});
+   const p=parts(query),c=category(query);
+   const out=[],seen=new Set();
+   for(const x of raw||[]){
+     if(!valid(x)||!regionScore(x,p.region))continue;
+     const score=Math.max(nameScore(x,p.name),categoryMatches(x,c)?72:0);
+     if(score<55)continue;
+     const key=uniqueKey(x);if(seen.has(key))continue;seen.add(key);
+     out.push({...x,lat:Number(x.lat),lon:Number(x.lon),score});
    }
-   return out.sort((a,b)=>b.score-a.score).slice(0,12);
+   return out.sort((a,b)=>b.score-a.score).slice(0,16);
+ }
+ // The geocoder has already ranked these candidates. Keep them clearly separate
+ // from name/category matches, and never show a POI from a mismatched city.
+ function related(raw,query,matched=[]){
+   const p=parts(query),seen=new Set(matched.map(uniqueKey)),out=[];
+   const target=clean(p.name);
+   if(target.length<3)return [];
+   const keys=new Set(['amenity','shop','tourism','leisure','office','craft','healthcare','historic']);
+   for(const x of raw||[]){
+     if(!valid(x)||!regionScore(x,p.region)||!String(x.name||'').trim())continue;
+     if(!keys.has(String(x.osmKey||'').toLowerCase()))continue;
+     // A nearby but unrelated shop must not become a fake search match.
+     const name=clean(x.name);let overlap=false;
+     for(let i=0;i+2<=target.length;i++)if(name.includes(target.slice(i,i+2))){overlap=true;break;}
+     if(!overlap)continue;
+     const key=uniqueKey(x);if(seen.has(key))continue;seen.add(key);
+     // Never describe a provider-ranked suggestion as an exact name match.
+     out.push({...x,lat:Number(x.lat),lon:Number(x.lon),score:0,related:true});
+     if(out.length>=8)break;
+   }
+   return out;
  }
  function fromNominatim(a){return (Array.isArray(a)?a:[]).map(x=>({
   name:x.name||x.namedetails?.['name:ja']||x.namedetails?.name||String(x.display_name||'').split(',')[0],
   namedetails:x.namedetails||{},address:String(x.display_name||''),addressParts:x.address||{},
-  lat:Number(x.lat),lon:Number(x.lon),source:'Nominatim'
+  lat:Number(x.lat),lon:Number(x.lon),osmKey:x.category||x.class||'',osmValue:x.type||'',source:'Nominatim'
  }));}
  function fromPhoton(g){return (Array.isArray(g?.features)?g.features:[]).map(x=>{
    const p=x.properties||{},c=x.geometry?.coordinates||[];
    return {name:p.name||p['name:ja']||'',namedetails:{'name:ja':p['name:ja']||''},
      address:[p.street,p.housenumber,p.district,p.city,p.county,p.state,p.country].filter(Boolean).join(', '),
-     addressParts:p,lat:Number(c[1]),lon:Number(c[0]),source:'Photon'};
+     addressParts:p,lat:Number(c[1]),lon:Number(c[0]),osmKey:p.osm_key||'',osmValue:p.osm_value||'',source:'Photon'};
  });}
- return Object.freeze({clean,parts,nameScore,regionScore,rank,fromNominatim,fromPhoton});
+
+ return Object.freeze({clean,parts,nameScore,regionScore,category,categoryMatches,rank,related,fromNominatim,fromPhoton});
 });
