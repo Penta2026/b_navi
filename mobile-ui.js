@@ -79,6 +79,25 @@
  // One deliberate search action; do not show facilities from unrelated cities.
  const addressCore=window.BNaviAddressSearch;
  const searchCore=window.BNaviPlaceSearchCore;
+  const stationCore=window.BNaviStationSearch;
+  let stationIndexPromise=null;
+  async function searchStations(q){
+    if(!stationCore?.parse(q))return [];
+    if(!stationIndexPromise){
+      stationIndexPromise=fetch('./data/jr_stations.json',{cache:'force-cache'})
+        .then(r=>{if(!r.ok)throw Error('駅データ HTTP '+r.status);return r.json()})
+        .catch(err=>{stationIndexPromise=null;throw err});
+    }
+    return stationCore.rank(await stationIndexPromise,q);
+  }
+  function showStationResults(rows,el){
+    el.replaceChildren();
+    const summary=document.createElement('p');summary.className='search-summary';
+    summary.textContent='JR駅の候補 '+rows.length+'件（旧PWAの駅データ）';el.append(summary);
+    rows.forEach(row=>showSearchResult(row,el));
+    const note=document.createElement('p');note.className='smallprint';
+    note.textContent='駅の座標は参考位置です。入口や道路への接続位置は地図上で確認してね。';el.append(note);
+  }
  const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  async function searchNominatim(q){
    const url='https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&namedetails=1&limit=20&countrycodes=jp&accept-language=ja&q='+encodeURIComponent(q);
@@ -161,11 +180,18 @@
    if(searchBusy||!q)return;
    const ext=$('online-map-search');if(ext)ext.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);
    const el=$('place-search-results');
-   if(Date.now()-lastSearch<1600){el.textContent='続けて検索するときは少し間隔をあけてね。';return}
+    const localStationQuery=!forcedAddress&&stationCore?.isExplicit(q);
+    if(!localStationQuery&&Date.now()-lastSearch<1600){el.textContent='続けて検索するときは少し間隔をあけてね。';return}
    lastSearch=Date.now();searchBusy=true;const addressMode=forcedAddress||addressCore.looksLikeAddress(q);
    el.textContent=addressMode?'住所を検索中…':'施設名と地域を照合して検索中…';
    try{
-     if(addressMode){await searchAddress(q);return;}
+      if(addressMode){await searchAddress(q);return;}
+      // Explicit station queries resolve locally first: no geocoder outage or
+      // unrelated nearby railway station can hide an exact JR station match.
+      if(localStationQuery){
+        try{const matches=await searchStations(q);if(matches.length){showStationResults(matches,el);return;}}
+        catch(err){/* Fall back to online geocoders when local data cannot load. */}
+      }
      const parsed=searchCore.parts(q);let candidates=[];const errors=[];
      try{candidates=await searchNominatim(q)}catch(err){errors.push(err.message)}
      let results=searchCore.rank(candidates,q);
@@ -182,8 +208,12 @@
        try{candidates.push(...await searchPhoton(parsed.name||q));results=searchCore.rank(candidates,q)}
        catch(err){errors.push(err.message)}
      }
-     el.replaceChildren();
-     if(results.length){
+      if(!results.length && !localStationQuery){
+        try{const matches=await searchStations(q);if(matches.length){showStationResults(matches,el);return;}}
+        catch(err){/* Retain the online search failure message if the index is missing. */}
+      }
+      el.replaceChildren();
+      if(results.length){
        const h=document.createElement('p');h.className='search-summary';
        h.textContent=results.length+'件見つかったよ（施設名と指定地域を照合）';el.append(h);
        results.forEach(x=>showSearchResult(x,el));

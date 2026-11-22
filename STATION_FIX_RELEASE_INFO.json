@@ -1,0 +1,13 @@
+{
+  "date": "2026-11-22",
+  "description": "JR station name fallback from legacy PWA station index",
+  "stationSource": "https://github.com/Penta2026/michinotochu/blob/main/data/jr_stations.json",
+  "stationBlobSha1": "a22f0d8c1cfe8f40d565371c54a0091bc604e540",
+  "stationCount": 4321,
+  "expectedHead": "0328256434d56531b61136e7f732687d074521ae",
+  "localNodeTests": "94 passed, 1 skipped (local data fixture; full data deployed for GitHub CI)",
+  "browserStation": "PASS",
+  "browserAddress": "PASS",
+  "mobileTabs": "PASS 320/390/800/desktop",
+  "browserSmoke": "PASS"
+}

@@ -19,6 +19,6 @@ test('route and search remain independent from routing/GPS data',()=>{
  const src=read('mobile-ui.js');
  assert.match(src,/window\.BNaviCloseRouteSheet/);
  assert.match(src,/window\.BNaviShowRecordedTrackActions/);
- assert.match(read('sw.js'),/mobile-tab-toggle-v1/);
+ assert.match(read('sw.js'),/const CACHE='bnavi-pc-pwa-[^']+'/);
  assert.doesNotMatch(src,/indexedDB\.deleteDatabase/);
 });
