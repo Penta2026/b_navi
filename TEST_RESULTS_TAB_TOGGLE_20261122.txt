@@ -1,0 +1,12 @@
+B_Navi tab toggle release validation — 2026-11-22
+NODE: 90 passed, 0 failed (node --test tests/test_*.cjs)
+BROWSER NEW: 320/390/800px mobile; 1200px desktop PASSED
+BROWSER REGRESSION PASS: browser_address_search, browser_control_row,
+ browser_free_gpx_nav_radar_flow, browser_gps_message_layout, browser_gpx_itinerary,
+ browser_long_press, browser_mode_custom_under, browser_my_route_library,
+ browser_radar_voice_mute, browser_ride_integration, browser_route_presets,
+ browser_route_tuning, browser_shimanami_payload, browser_shimanami_via_reroute,
+ browser_shimanami_web_flow, browser_smoke, browser_track_panel_bottom,
+ browser_voice_settings.
+Excluded: browser_shimanami_offline_restore (localhost/IndexedDB environment limitation).
+Device road, live network, real OS keyboard and background GPS: NOT tested.

@@ -295,3 +295,18 @@ body.navigation-active #track-panel,body.free-ride-active #track-panel{display:n
 .route-tuning-panel[data-active="true"]{border-color:#4a99b2}
 .route-tuning-panel[data-active="true"] .tuning-tag{color:#fff;background:#08718c}
 @media(max-width:390px){.fieldrow{gap:6px}.fieldrow select{padding:9px 5px;font-size:12px}}
+
+
+/* Mobile place search behaves like a collapsible sheet, not a modal backdrop.
+   Keep bottom tabs reachable for one-tap minimize/restore while searching. */
+@media(max-width:800px){
+  #place-dialog[open]:not(:modal){
+    position:fixed;top:auto;left:8px;right:8px;
+    bottom:calc(65px + env(safe-area-inset-bottom));
+    width:auto;max-width:none;
+    max-height:calc(100dvh - 130px - env(safe-area-inset-bottom));
+    margin:0;padding:15px;box-sizing:border-box;overflow:auto;
+    z-index:35;border-radius:17px 17px 12px 12px;
+    box-shadow:0 -6px 28px #183d4b3b;
+  }
+}

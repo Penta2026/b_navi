@@ -1,32 +1,40 @@
 {
-  "name": "B_Navi PWA free ride hides route geometry while retaining S/G",
+  "name": "B_Navi PWA bottom route/search tab tap-to-minimize",
   "date": "2026-11-22",
   "source": "Penta2026/b_navi",
-  "behavior": "Free ride immediately hides only route drawing; keeps S/G and via pins, planned route/GPX data; line reappears when free ride ends.",
+  "baseCommit": "e5bd19fffaa5dac0d361657206756bf2159dac83",
+  "changes": [
+    "Mobile route tab toggles sidebar panel",
+    "Mobile search uses non-modal bottom sheet so the same tab can hide/reopen it",
+    "Favorites tab also toggles",
+    "Search input and results preserved",
+    "Desktop modal search retained"
+  ],
   "nodeTests": {
-    "pass": 87,
-    "total": 87
+    "passed": 90,
+    "total": 90
   },
-  "browserSimulations": {
-    "pass": 18,
-    "total": 18
+  "browserTests": {
+    "mobileWidths": [
+      320,
+      390,
+      800
+    ],
+    "desktopWidth": 1200,
+    "existingRegressionPassed": 18,
+    "existingRegressionNotRun": [
+      "browser_shimanami_offline_restore.py"
+    ]
   },
   "limitations": [
-    "Android/iOS real riding test not performed",
-    "actual offline cold-start and persistence tests not verified"
+    "Android/iOS real taps unverified",
+    "actual offline cold-start unverified"
   ],
-  "changedFileSha256": {
-    "app.js": "f37df7ad9295237ceb154d78441aa90c0604f0556c133921909374c745a47982",
-    "ride-radar.js": "10455d1eaacd92bd01c21a398c78f2cf2257625f32d06b435a54c9d52b4c5934",
-    "sw.js": "b4bed7f564aaaf6bf9ff45da7f2506416e89b43242a8e85ada50fb48aaa31b76",
-    "tests/test_free_ride_map_visibility.cjs": "a9f12504c7e5933bf31d68778883202559d2a7bd793e7b3c1696695e8b95467e",
-    "tests/browser_free_gpx_nav_radar_flow.py": "1be86237421ae9353af0333b2a1679860237e8ff013e812e0ee523e6f95c1b17",
-    "docs/FREE_RIDE_ROUTE_VISIBILITY_20261122.md": "8ebaf50b1360089108a264ad248050715cbdef7d72f594b67759c8802f4629c8",
-    "TEST_RESULTS_FREE_RIDE_ROUTE_VISIBILITY.txt": "f780db3a3753b4ef90809ccd6e3e0fb18442a3b53bb1335f5ba1a7c670bda886",
-    "BROWSER_RESULTS_FREE_RIDE_ROUTE_VISIBILITY.txt": "b18ecb41bbd9423355dbbe7941fac6055725592e9f3b9a68143b02a3777ad1a8",
-    "README.md": "c4e889725b374bd371e0ead19215d08ad6e5a6340d848b48af9a883cf5d33d4c",
-    "HANDOFF_CURRENT.md": "52ac3208ae3da86addbb5dd69f83a0572231be03a099f18105f7dedc66d24549",
-    "CHANGELOG_B_Navi.md": "56489fd8a33f18c3bea7268f740a933eb90b2bf3e339511eccad37f4f952ff1f",
-    "NEXT_STEPS.md": "b55b5a7473c0b27f546da40f1e5e7c341f878f91bf8c582077b5b0be4205f2b1"
+  "changedFileGitSha1": {
+    "mobile-ui.js": "0c7c7646cefab4544fb980c2d7e741c212a7101a",
+    "style.css": "79bbab980ce7eb34dbb2877f774cdd5d015e0e7f",
+    "sw.js": "de0fe3dc7e0baa6b598bcfc9e77275dc20a514f8",
+    "tests/test_mobile_tab_toggle.cjs": "7165d9cc4fba19e8c00e763318a524a63ffc3097",
+    "tests/browser_mobile_tab_toggle.py": "7162df00a6171c59094a39085f0d777b8d7f337b"
   }
 }

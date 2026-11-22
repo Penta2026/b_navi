@@ -3,7 +3,22 @@
 (()=>{
  const $=id=>document.getElementById(id), isMobile=()=>matchMedia('(max-width:800px)').matches;
  let picked=null, searchBusy=false, lastSearch=0;
- const sheet=$('sidebar');
+ const sheet=$('sidebar'), placeDialog=$('place-dialog');
+ let currentPlaceTab='search';
+ function syncToolbar(){
+   const placesOpen=placeDialog.open, routeOpen=!placesOpen&&sheet.classList.contains('sheet-open');
+   const buttons={
+     'mobile-route':routeOpen,
+     'mobile-search':placesOpen&&currentPlaceTab==='search',
+     'mobile-faves':placesOpen&&currentPlaceTab==='favorites',
+     'mobile-map':!placesOpen&&!routeOpen
+   };
+   for(const [id,active] of Object.entries(buttons)){
+     const button=$(id);button.classList.toggle('tool-active',active);
+     if(id!=='mobile-map')button.setAttribute('aria-expanded',String(active));
+   }
+ }
+ function closePlaces(){if(placeDialog.open)placeDialog.close();syncToolbar();}
  window.BNaviCloseRouteSheet=()=>toggleSheet(false);
  // On free-ride completion, expose the existing GPX save/share actions at the
  // bottom of the sheet. A failed/no-fix ride does not create a fake GPX.
@@ -12,17 +27,42 @@
    toggleSheet(true);
    requestAnimationFrame(()=>{sheet.scrollTop=sheet.scrollHeight;});
  };
- function toggleSheet(open){sheet.classList.toggle('sheet-open',open);$('mobile-route').classList.toggle('tool-active',open);$('mobile-map').classList.toggle('tool-active',!open);setTimeout(()=>{if(typeof map!=='undefined'&&map.resize)map.resize();},230)}
+ function toggleSheet(open){
+   if(open)closePlaces();
+   sheet.classList.toggle('sheet-open',open);
+   syncToolbar();
+   setTimeout(()=>{if(typeof map!=='undefined'&&map.resize)map.resize();},230);
+ }
  document.querySelectorAll('.pick').forEach(btn=>btn.addEventListener('click',()=>{if(isMobile())toggleSheet(false)}));
  $('start-pick').addEventListener('click',()=>{if(isMobile())toggleSheet(false)});$('goal-pick').addEventListener('click',()=>{if(isMobile())toggleSheet(false)});$('add-via').addEventListener('click',()=>{if(isMobile())toggleSheet(false)});
- $('mobile-route').onclick=()=>toggleSheet(true);$('mobile-map').onclick=()=>toggleSheet(false);$('sheet-handle').onclick=()=>toggleSheet(!sheet.classList.contains('sheet-open'));
+ $('mobile-route').onclick=()=>toggleSheet(!sheet.classList.contains('sheet-open')||placeDialog.open);
+ $('mobile-map').onclick=()=>{closePlaces();toggleSheet(false)};
+ $('sheet-handle').onclick=()=>toggleSheet(!sheet.classList.contains('sheet-open'));
  $('mobile-search').onclick=()=>showPlaces('search');$('mobile-faves').onclick=()=>showPlaces('favorites');$('open-search').onclick=()=>showPlaces('search');$('open-favorites').onclick=()=>showPlaces('favorites');
  $('go-location').onclick=()=>{startGps();toggleSheet(false)};
  $('swap-endpoints').onclick=()=>{const a=$('start').value;$('start').value=$('goal').value;$('goal').value=a;state.via.reverse();renderVia();refreshMap();fitMarkers();persist();updatePointSummaries();setMessage('出発地と目的地を交換したよ。経由地も逆順にしたよ。')};
- $('place-dialog-close').onclick=()=>$('place-dialog').close();$('place-action-close').onclick=()=>$('place-action-dialog').close();
+ $('place-dialog-close').onclick=closePlaces;$('place-action-close').onclick=()=>$('place-action-dialog').close();
+ placeDialog.addEventListener('close',syncToolbar);
  function safeShowModal(dialog){if(!dialog)return;try{if(dialog.open)dialog.close();dialog.showModal()}catch{dialog.setAttribute('open','open')}}
- function showPlaces(tab){safeShowModal($('place-dialog'));switchTab(tab);if(tab==='search')setTimeout(()=>$('place-query').focus(),100)}
- function switchTab(tab){const fav=tab==='favorites';$('search-panel').hidden=fav;$('favorites-panel').hidden=!fav;$('tab-search').classList.toggle('selected',!fav);$('tab-favorites').classList.toggle('selected',fav);if(fav)renderFavorites()}
+ function showPlaces(tab){
+   // Mobile search is non-modal so the same bottom tab remains tappable.
+   // Keep the dialog DOM alive while hidden: queries and results are preserved.
+   if(isMobile()&&placeDialog.open&&currentPlaceTab===tab){closePlaces();return;}
+   if(isMobile()){
+     toggleSheet(false);
+     if(!placeDialog.open){try{placeDialog.show()}catch{placeDialog.setAttribute('open','open')}}
+   }else if(!placeDialog.open||!placeDialog.matches(':modal'))safeShowModal(placeDialog);
+   switchTab(tab);
+   if(tab==='search')setTimeout(()=>{if(placeDialog.open&&currentPlaceTab==='search')$('place-query').focus()},100);
+ }
+ function switchTab(tab){
+   currentPlaceTab=tab;
+   const fav=tab==='favorites';$('search-panel').hidden=fav;$('favorites-panel').hidden=!fav;
+   $('tab-search').classList.toggle('selected',!fav);$('tab-favorites').classList.toggle('selected',fav);
+   if(fav)renderFavorites();
+   syncToolbar();
+ }
+ syncToolbar();
  $('tab-search').onclick=()=>switchTab('search');$('tab-favorites').onclick=()=>switchTab('favorites');
  function favorites(){try{const x=JSON.parse(localStorage.getItem('bnavi.favorites.v1')||'[]');return Array.isArray(x)?x.filter(f=>f&&typeof f.name==='string'&&typeof f.coord==='string').slice(0,300):[]}catch{return []}}
  function saveFavorites(data){try{localStorage.setItem('bnavi.favorites.v1',JSON.stringify(data));return true}catch{alert('端末への保存に失敗したよ。空き容量やブラウザの設定を確認してね。');return false}}
