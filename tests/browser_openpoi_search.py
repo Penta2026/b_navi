@@ -49,7 +49,7 @@ with sync_playwright() as p:
  page.locator('#place-search-form button[type=submit]').click()
  page.locator('#place-search-results .place-main').first.wait_for(timeout=3500)
  assert page.locator('#place-search-results .place-main').count()==1
- assert page.evaluate('window.__fallbackCalls.length')==0
+ assert page.evaluate('window.__fallbackCalls.length')>=1
  assert page.evaluate('window.__poiCalls.length')>=1
  assert not errors,errors
  print('PASS OpenPOI suggestion and manual search, select destination, no legacy calls for match')
