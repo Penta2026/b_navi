@@ -66,19 +66,21 @@
  $('tab-search').onclick=()=>switchTab('search');$('tab-favorites').onclick=()=>switchTab('favorites');
  function favorites(){try{const x=JSON.parse(localStorage.getItem('bnavi.favorites.v1')||'[]');return Array.isArray(x)?x.filter(f=>f&&typeof f.name==='string'&&typeof f.coord==='string').slice(0,300):[]}catch{return []}}
  function saveFavorites(data){try{localStorage.setItem('bnavi.favorites.v1',JSON.stringify(data));return true}catch{alert('端末への保存に失敗したよ。空き容量やブラウザの設定を確認してね。');return false}}
- function selectPlace(name,coord){picked={name,coord};$('selected-place-name').textContent=name;$('selected-place-coord').textContent=coord;if($('place-dialog').open)$('place-dialog').close();safeShowModal($('place-action-dialog'))}
+ function selectPlace(name,coord,meta={}){picked={name,coord,source:meta.source||'',licenses:Array.isArray(meta.licenses)?meta.licenses:[],attributions:Array.isArray(meta.attributions)?meta.attributions:[]};$('selected-place-name').textContent=name;$('selected-place-coord').textContent=coord;if($('place-dialog').open)$('place-dialog').close();safeShowModal($('place-action-dialog'))}
  // Share a single point-action menu between place search, favorites and map long-press.
  window.BNaviSelectMapPoint=(point)=>{
    if(!point||!Number.isFinite(point.lat)||!Number.isFinite(point.lon))return;
    const coord=point.lat.toFixed(6)+','+point.lon.toFixed(6);
    selectPlace('地図で選択した地点',coord);
  };
- function renderFavorites(){const el=$('favorite-list');el.replaceChildren();const list=favorites();if(!list.length){el.textContent='まだお気に入りはないよ。検索結果や地点を選んで登録してね。';return}list.forEach((f,i)=>{const row=document.createElement('div');row.className='place-result';const b=document.createElement('button');b.className='place-main';b.textContent='☆ '+f.name;const small=document.createElement('small');small.textContent=f.coord;b.append(small);b.onclick=()=>selectPlace(f.name,f.coord);const del=document.createElement('button');del.className='remove-favorite';del.textContent='削除';del.setAttribute('aria-label',f.name+'を削除');del.onclick=()=>{if(confirm('「'+f.name+'」をお気に入りから削除する？')){const a=favorites();a.splice(i,1);if(saveFavorites(a))renderFavorites()}};row.append(b,del);el.append(row)})}
+ function renderFavorites(){const el=$('favorite-list');el.replaceChildren();const list=favorites();if(!list.length){el.textContent='まだお気に入りはないよ。検索結果や地点を選んで登録してね。';return}list.forEach((f,i)=>{const row=document.createElement('div');row.className='place-result';const b=document.createElement('button');b.className='place-main';b.textContent='☆ '+f.name;const small=document.createElement('small');small.textContent=f.coord;b.append(small);b.onclick=()=>selectPlace(f.name,f.coord,f);const del=document.createElement('button');del.className='remove-favorite';del.textContent='削除';del.setAttribute('aria-label',f.name+'を削除');del.onclick=()=>{if(confirm('「'+f.name+'」をお気に入りから削除する？')){const a=favorites();a.splice(i,1);if(saveFavorites(a))renderFavorites()}};row.append(b,del);el.append(row)})}
  document.querySelectorAll('[data-apply]').forEach(btn=>btn.onclick=()=>applySelected(btn.dataset.apply));
- $('favorite-save').onclick=()=>{if(!picked)return;const name=prompt('お気に入りの名前',picked.name);if(name===null)return;const clean=name.trim().slice(0,90);if(!clean){alert('名前を入力してね');return}const a=favorites();if(a.length>=300){alert('お気に入りは300件までだよ');return}a.push({name:clean,coord:picked.coord});if(saveFavorites(a)){$('place-action-dialog').close();setMessage('☆ '+clean+' をお気に入りに保存したよ')}};
+ $('favorite-save').onclick=()=>{if(!picked)return;const name=prompt('お気に入りの名前',picked.name);if(name===null)return;const clean=name.trim().slice(0,90);if(!clean){alert('名前を入力してね');return}const a=favorites();if(a.length>=300){alert('お気に入りは300件までだよ');return}a.push({name:clean,coord:picked.coord,source:picked.source,licenses:picked.licenses,attributions:picked.attributions});if(saveFavorites(a)){$('place-action-dialog').close();setMessage('☆ '+clean+' をお気に入りに保存したよ')}};
  // One deliberate search action; do not show facilities from unrelated cities.
  const addressCore=window.BNaviAddressSearch;
  const searchCore=window.BNaviPlaceSearchCore;
+ const openPoiCore=window.BNaviOpenPoiSearch;
+ let suggestionTimer=null,suggestionController=null,suggestionSerial=0;
   const stationCore=window.BNaviStationSearch;
   let stationIndexPromise=null;
   async function searchStations(q){
@@ -96,6 +98,44 @@
     summary.textContent='検索結果 '+rows.length+'件';el.append(summary);
     rows.forEach(row=>showSearchResult(row,el,'station'));
   }
+ async function searchOpenPoi(q,kind='suggest',signal){
+   if(!openPoiCore)throw Error('施設検索プログラムを読み込めません');
+   const response=await fetch(openPoiCore.makeURL(q,kind,25),{
+     headers:{Accept:'application/json'},signal:signal||AbortSignal.timeout(12000)
+   });
+   if(!response.ok)throw Error('OpenPOI HTTP '+response.status);
+   return openPoiCore.fromResponse(await response.json(),kind);
+ }
+ function renderOpenPoi(rows,el,live=false){
+   el.replaceChildren();
+   const summary=document.createElement('p');summary.className='search-summary';
+   summary.textContent=(live?'入力候補 ':'検索結果 ')+rows.length+'件';el.append(summary);
+   rows.forEach(row=>showSearchResult(row,el));
+ }
+ function cancelSuggestions(){
+   suggestionSerial++;
+   if(suggestionTimer!==null){clearTimeout(suggestionTimer);suggestionTimer=null}
+   if(suggestionController){suggestionController.abort();suggestionController=null}
+ }
+ $('place-query').addEventListener('input',()=>{
+   cancelSuggestions();
+   const q=$('place-query').value.trim();
+   if(q.length<3||searchBusy||!placeDialog.open||currentPlaceTab!=='search'||
+       stationCore?.isExplicit(q)||addressCore.looksLikeAddress(q))return;
+   const serial=suggestionSerial;
+   suggestionTimer=setTimeout(async()=>{
+     suggestionTimer=null;
+     const controller=new AbortController();suggestionController=controller;
+     try{
+       const rows=await searchOpenPoi(q,'suggest',controller.signal);
+       if(serial!==suggestionSerial||q!==$('place-query').value.trim()||
+           searchBusy||!placeDialog.open||currentPlaceTab!=='search')return;
+       if(rows.length)renderOpenPoi(rows,$('place-search-results'),true);
+     }catch(err){
+       // Autocomplete is optional; manual search still tries every provider.
+     }finally{if(suggestionController===controller)suggestionController=null}
+   },550);
+ });
  const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  async function searchNominatim(q){
    const url='https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&namedetails=1&limit=20&countrycodes=jp&accept-language=ja&q='+encodeURIComponent(q);
@@ -130,7 +170,7 @@
     const small=document.createElement('small');small.textContent=kind==='address'?'住所の候補・位置は概略（番地までの確定位置ではありません） · '+row.source:(row.address||'所在地の詳細なし');
     button.append(small);
    }
-   button.onclick=()=>selectPlace(row.name,row.lat.toFixed(6)+','+row.lon.toFixed(6));
+   button.onclick=()=>selectPlace(row.name,row.lat.toFixed(6)+','+row.lon.toFixed(6),row);
    card.append(button);
    if(kind==='address'){
      const goal=document.createElement('button');goal.type='button';goal.className='address-goal';goal.textContent='目的地にする';
@@ -183,6 +223,7 @@
  }
  async function runSearch(q,forcedAddress=false){
    if(searchBusy||!q)return;
+   cancelSuggestions();
    const ext=$('online-map-search');if(ext)ext.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);
    const el=$('place-search-results');
     const localStationQuery=!forcedAddress&&stationCore?.isExplicit(q);
@@ -197,6 +238,23 @@
         try{const matches=await searchStations(q);if(matches.length){showStationResults(matches,el);return;}}
         catch(err){/* Fall back to online geocoders when local data cannot load. */}
       }
+     // Provider's suggest endpoint handles multi-word AND/name spelling variants.
+     // We accept its ranked results rather than forcing them through OSM scoring.
+     let openPoiResponded=false;
+     try{
+       const matches=await searchOpenPoi(q,'suggest');
+       openPoiResponded=true;
+       if(matches.length){renderOpenPoi(matches,el);addExternalSearch(el,q);return;}
+     }catch(err){/* Continue with other providers when unavailable. */}
+     // The search endpoint is useful for a single facility name; for multi-word
+     // searches it uses OR semantics, so avoid irrelevant mixed-locality hits.
+     if(q.trim().split(/[\s\u3000]+/).length===1){
+       try{
+         const matches=await searchOpenPoi(q,'search');
+         openPoiResponded=true;
+         if(matches.length){renderOpenPoi(matches,el);addExternalSearch(el,q);return;}
+       }catch(err){/* Keep earlier providers as fallbacks. */}
+     }
      const parsed=searchCore.parts(q),cat=searchCore.category(q),candidates=[],errors=[];
      let photonOk=false,nominatimOk=false;
      try{candidates.push(...await searchPhoton(q,cat));photonOk=true}
@@ -227,7 +285,7 @@
        suggestions.forEach(x=>showSearchResult(x,el));
      }else{
        const p=document.createElement('p');p.className='search-no-match';
-       p.textContent=(!photonOk&&!nominatimOk)?'施設検索サービスに接続できませんでした。通信状態を確認して再検索してね。':'該当する施設が見つからなかったよ。施設名を短くするか、地域名を付けて検索してね。';el.append(p);
+       p.textContent=(!photonOk&&!nominatimOk&&!openPoiResponded)?'施設検索サービスに接続できませんでした。通信状態を確認して再検索してね。':'該当する施設が見つからなかったよ。施設名を短くするか、地域名を付けて検索してね。';el.append(p);
      }
      if(results.length||suggestions.length){
        const note=document.createElement('p');note.className='smallprint';
