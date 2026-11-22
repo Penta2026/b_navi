@@ -1,3 +1,9 @@
+## 2026-11-22 最新：不要な側道接続路への出入りを抑制
+- 一般3車種BRFで `trunk_link|primary_link|secondary_link|tertiary_link` を `initialclassifier=2`、それ以外を1とし、接続路進入時だけ `initialcost=180`（距離換算）を追加。必要な接続は通行可のまま。
+- `service`／`tertiary` 等が側道の場合は直接対象ではない。地点・OSMタグが未取得のため、効果は未実走検証。
+- 3軸カスタムは一般BRFから設定を継承。通行規制・車種の制限は維持。ローカルNode77件合格。
+- 詳細 `docs/ROAD_CONTINUITY_20261122.md`。
+
 # 最新の追加仕様：2026-11-22 実走GPX日時ファイル名
 
 - `track-recorder.js` の `filename()` と `formatFilename()` を使用。最初のGPX保存またはWeb Share時に `record.exportedAt` をISO時刻で保存。出力名は端末ローカル時刻から `実走GPX-YYYY-MM-DD-HH-mm.gpx` を生成。再読み込みしても同一走行記録なら同名。

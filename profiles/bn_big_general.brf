@@ -76,7 +76,15 @@ assign costfactor
 
 # Reduce unnecessary turning through local roads to avoid signals.
 assign turncost 90.000
-assign initialcost 0
+# 2026-11-22: prefer staying on the main road over a needless link detour.
+# BRouter equivalent-distance entry cost (180 m), NOT a turn prohibition.
+# Class 1 (normal) -> class 2 (*_link): charge once when entering the link;
+# adjacent link segments stay class 2, so the charge does not repeat.
+# For link roads required for access, routing is still allowed.
+assign initialclassifier
+    switch highway=trunk_link|primary_link|secondary_link|tertiary_link 2 1
+assign initialcost
+    switch highway=trunk_link|primary_link|secondary_link|tertiary_link 180 0
 
 ---context:node
 assign initialcost
