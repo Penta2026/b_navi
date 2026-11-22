@@ -52,18 +52,18 @@ with sync_playwright() as p:
  page.evaluate('state.navActive=false')
  # Custom below the dropdown, active only once selected / slider touched.
  page.locator('#route-tuning-panel').evaluate('(e)=>e.open=true')
- page.locator('#tune-explore').evaluate('(e)=>{e.value="55";e.dispatchEvent(new Event("input",{bubbles:true}))}')
+ page.locator('#tune-explore').evaluate('(e)=>{e.value="60";e.dispatchEvent(new Event("input",{bubbles:true}))}')
  assert page.locator('#mode').input_value()=='1'
  assert page.locator('#tuning-enabled').is_checked()
  assert page.locator('#tuning-tag').inner_text().startswith('ON')
  page.locator('#calculate').evaluate('(e)=>e.click()')
  page.wait_for_function('window.__calls.length===5')
  call=page.evaluate('__calls.at(-1)')
- assert call['mode']==1 and call['custom']['explore']==55,call
+ assert call['mode']==1 and call['custom']['explore']==60,call
  # Switching back to beginner leaves 55 in editing memory but calculates original beginner.
  page.locator('#mode').select_option('0')
  assert not page.locator('#tuning-enabled').is_checked()
- assert page.locator('#tune-explore').input_value()=='55'
+ assert page.locator('#tune-explore').input_value()=='60'
  page.locator('#calculate').evaluate('(e)=>e.click()')
  page.wait_for_function('window.__calls.length===6')
  assert page.evaluate('__calls.at(-1)')=={'vehicle':'1','mode':0,'custom':None}

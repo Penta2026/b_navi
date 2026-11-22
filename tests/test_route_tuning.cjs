@@ -9,7 +9,7 @@ test('centre preserves all three real original general BRFs EXACTLY',()=>{
  for(const v of [0,1,2]){assert.equal(tune.tuneProfile(base(v),tune.DEFAULT,v),base(v));assert.equal(tune.isDefault({},v),true)}
 });
 test('settings clamp and disallow 50/125 motorway and toll even when requested',()=>{
- for(const v of [0,1]){const n=tune.normalize({explore:999,width:-999,scenic:12,allowMotorway:true,allowToll:true},v);assert.equal(n.explore,100);assert.equal(n.width,-100);assert.equal(n.scenic,10);assert.equal(n.allowMotorway,false);assert.equal(n.allowToll,false);
+ for(const v of [0,1]){const n=tune.normalize({explore:999,width:-999,scenic:12,allowMotorway:true,allowToll:true},v);assert.equal(n.explore,150);assert.equal(n.width,-150);assert.equal(n.scenic,10);assert.equal(n.allowMotorway,false);assert.equal(n.allowToll,false);
   const output=tune.tuneProfile(base(v),n,v);assert.match(output,/switch toll=yes 10000/);assert.match(output,/switch motorroad=yes 10000/);assert.match(output,/switch highway=motorway 10000/);
  }
 });
@@ -65,7 +65,7 @@ test('different custom settings create isolated BRouter uploaded profiles; repea
   if(u.includes('/brouter?'))return {ok:true,json:async()=>({type:'FeatureCollection',features:[{type:'Feature',geometry:{type:'LineString',coordinates:[[132.45,34.4],[132.46,34.41]]},properties:{voicehints:[]}}]})};
   throw Error('Unknown mock URL: '+u);
  };
- const x={explore:20,width:-30,scenic:65},y={explore:25,width:-30,scenic:65};
+ const x={explore:20,width:-30,scenic:70},y={explore:30,width:-30,scenic:70};
  const result=await client.query(coords,1,1,network,null,x);
  assert.match(result.profile,/カスタム/);
  await client.query(coords,1,1,network,null,x);

@@ -48,7 +48,7 @@ with sync_playwright() as p:
   route_id=page.locator('#my-route-select').input_value();assert route_id
   stored=page.evaluate('''async id=>await BNaviMyRouteLibrary.get(id)''',route_id)
   assert stored['route']['sections'][0]['points'][2]==[34.41,132.46]
-  assert stored['tuning']['explore']==65 and stored['tuning']['scenic']==80
+  assert stored['tuning']['explore']==70 and stored['tuning']['scenic']==80
   assert stored['via']==['34.405000,132.455000']
   # Emulate reopening a saved route after the working map and parameters change.
   page.evaluate("()=>{state.routes=[];state.routeType=null;state.activeRouteTuning=null;tuningByVehicle[1].scenic=0;document.getElementById('tune-scenic').value='0'}")
@@ -56,7 +56,7 @@ with sync_playwright() as p:
   page.locator('#my-route-select').select_option(route_id)
   page.locator('#my-route-load').evaluate('(e)=>e.click()')
   page.wait_for_function("document.getElementById('my-route-status').textContent.includes('復元しました')")
-  assert page.evaluate('state.activeRouteTuning.explore')==65
+  assert page.evaluate('state.activeRouteTuning.explore')==70
   assert page.evaluate('state.routes[0].points.length')==3
   assert page.evaluate('state.via.length')==1
   assert page.locator('#tune-scenic').input_value()=='80'

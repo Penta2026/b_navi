@@ -10,7 +10,7 @@ test('named presets: save multiple per displacement and preserve named values',(
  items=presets.upsert(items,'海沿いツーリング',2,{explore:20,allowMotorway:true,allowToll:true},{makeId:()=> 'three'}).items;
  assert.equal(items.length,3);
  assert.deepEqual(presets.forVehicle(items,1).map(x=>x.name).sort(),['海沿いツーリング','街なか']);
- assert.equal(items[0].tuning.explore,55);
+ assert.equal(items[0].tuning.explore,60);
  assert.equal(items[2].tuning.allowMotorway,true);
  assert.deepEqual(presets.read(presets.pack(items)),items);
 });

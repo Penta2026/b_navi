@@ -86,7 +86,7 @@ function bindTuning(){
  loadTuning();updateTuningUI();
  $('tuning-enabled').addEventListener('change',()=>chooseCustom($('tuning-enabled').checked));
  for(const [key,id] of [['explore','tune-explore'],['width','tune-width'],['scenic','tune-scenic']]){
-   $(id).addEventListener('input',()=>{const vehicle=Number($('vehicle').value);tuningByVehicle[vehicle][key]=Number($(id).value);storeTuning();chooseCustom(true);});
+   $(id).addEventListener('input',()=>{const vehicle=Number($('vehicle').value);tuningByVehicle[vehicle][key]=BNaviRouteTuning.normalize({[key]:Number($(id).value)},vehicle)[key];storeTuning();chooseCustom(true);});
  }
  for(const [key,id] of [['allowMotorway','tune-motorway'],['allowToll','tune-toll']]){
    $(id).addEventListener('change',()=>{const vehicle=Number($('vehicle').value);if(vehicle!==2)return;tuningByVehicle[vehicle][key]=$(id).checked;storeTuning();chooseCustom(true);});

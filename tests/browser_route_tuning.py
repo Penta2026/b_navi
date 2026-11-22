@@ -23,11 +23,15 @@ with sync_playwright() as p:
  assert page.locator('#mode').input_value()=='1'
  page.locator('#route-tuning-panel').evaluate('(e)=>e.open=true')
  assert page.locator('#tune-explore').input_value()=='0'
+ for field in ('tune-explore','tune-width','tune-scenic'):
+  assert page.locator('#'+field).get_attribute('min')=='-150'
+  assert page.locator('#'+field).get_attribute('max')=='150'
+  assert page.locator('#'+field).get_attribute('step')=='10'
  assert page.locator('#tuning-status').inner_text()=='カスタマイズOFF（調整値は保持）'
  assert not page.locator('#tune-big-options').is_visible()
- page.evaluate('''() => {const x=document.getElementById('tune-explore');x.value='65';x.dispatchEvent(new Event('input',{bubbles:true}));}''')
- assert page.locator('#tune-explore-value').inner_text()=='+65'
- assert '65' in page.locator('#tuning-status').inner_text()
+ page.evaluate('''() => {const x=document.getElementById('tune-explore');x.value='70';x.dispatchEvent(new Event('input',{bubbles:true}));}''')
+ assert page.locator('#tune-explore-value').inner_text()=='+70'
+ assert '70' in page.locator('#tuning-status').inner_text()
  assert 'bnavi.routeTuningByVehicle.v1' in page.evaluate('window.__localStore')
  page.locator('#vehicle').select_option('2')
  assert page.locator('#tune-explore').input_value()=='0'
@@ -36,7 +40,7 @@ with sync_playwright() as p:
  page.locator('#tune-toll').check()
  assert '高速' in page.locator('#tuning-status').inner_text()
  page.locator('#vehicle').select_option('1')
- assert page.locator('#tune-explore').input_value()=='65'
+ assert page.locator('#tune-explore').input_value()=='70'
  page.evaluate('''() => {
  document.getElementById('start').value='34.400000,132.450000';
  document.getElementById('goal').value='34.410000,132.460000';
@@ -51,12 +55,12 @@ with sync_playwright() as p:
  page.locator('#calculate').click(force=True)
  page.wait_for_function('window.__queryCalls.length===1')
  q=page.evaluate('__queryCalls[0]')
- assert q['vehicle']=='1' and q['mode']==1 and q['config']['explore']==65,q
- assert page.evaluate('state.activeRouteTuning.explore')==65
+ assert q['vehicle']=='1' and q['mode']==1 and q['config']['explore']==70,q
+ assert page.evaluate('state.activeRouteTuning.explore')==70
  page.evaluate('''() => {state.navActive=true;state.location=[34.401,132.451];state.activeTargets=[[34.41,132.46]];state.targetIndex=0;state.navPaused=false;}''')
  page.evaluate('''async()=>{await rerouteFromGps();}''')
  page.wait_for_function('window.__queryCalls.length===2')
- assert page.evaluate('__queryCalls[1].config.explore')==65
+ assert page.evaluate('__queryCalls[1].config.explore')==70
  page.evaluate("() => {const e=document.getElementById('vehicle');e.value='2';e.dispatchEvent(new Event('change',{bubbles:true}));}")
  page.evaluate("() => document.getElementById('tuning-reset').click()")
  assert page.locator('#tuning-status').inner_text()=='現在：一般ルート（変更なし）'

@@ -6,10 +6,11 @@
 (function(root){
 'use strict';
 const DEFAULT=Object.freeze({explore:0,width:0,scenic:0,allowMotorway:false,allowToll:false});
+const LIMIT=150, STEP=10; // three sliders, centred on each vehicle's general BRF
 const CLASSES=Object.freeze(['trunk|trunk_link','primary|primary_link','secondary|secondary_link','tertiary|tertiary_link','unclassified','residential','living_street','service']);
 function normalize(raw,vehicle){
  const obj=raw&&typeof raw==='object'?raw:{};
- const level=k=>{const n=Number(obj[k]);return Number.isFinite(n)?Math.max(-100,Math.min(100,Math.round(n/5)*5)):0};
+ const level=k=>{const n=Number(obj[k]);return Number.isFinite(n)?Math.max(-LIMIT,Math.min(LIMIT,Math.round(n/STEP)*STEP)):0};
  const big=Number(vehicle)===2;
  return {explore:level('explore'),width:level('width'),scenic:level('scenic'),allowMotorway:big&&obj.allowMotorway===true,allowToll:big&&obj.allowToll===true};
 }
@@ -34,7 +35,7 @@ function tuneProfile(base,raw,vehicle){
    const revised=original.replace(pattern,(_,before,num,after)=>before+Math.max(1.01,Math.min(9999,value)).toFixed(3)+after);
    out=out.slice(0,start)+revised+out.slice(end);
  };
- const d=v.explore/100,w=v.width/100,s=v.scenic/100;
+ const d=v.explore/100,w=v.width/100,s=v.scenic/100; // ±150 is 1.5× the former ±100 preference strength
  // Distance<->explore: moving left flattens legal-road cost differences,
  // moving right rewards tertiary/unclassified and deters trunk/primary.
  // Narrow<->wide: OSM highway class + lanes as imperfect width proxies.
@@ -62,7 +63,10 @@ function tuneProfile(base,raw,vehicle){
  const laneMatch=/^(\s*switch lanes=1\s+)([0-9]+(?:\.[0-9]+)?)(\s*)$/m;
  const laneHit=out.match(laneMatch);
  if(!laneHit)throw Error('基本BRFの車線幅推定コストが見つかりません');
- const lane=Math.max(0,Number(laneHit[2])+(w>0?2.3*w:-1.0*-w));
+ // At -100 preserve the former strength, then ease the last 50 points so
+ // the narrow-road end remains meaningful instead of flattening at zero.
+ const narrowReduction=-w<=1?-w:1+.20*(-w-1);
+ const lane=Math.max(0,Number(laneHit[2])+(w>0?2.3*w:-narrowReduction));
  out=out.replace(laneMatch,(_,before,num,after)=>before+lane.toFixed(3)+after);
  if(s>0){
    // Higher pseudo classes signal forest coverage / proximity to water, not
@@ -85,7 +89,7 @@ function tuneProfile(base,raw,vehicle){
  if(!/max 1\.01/.test(out))throw Error('基本BRFのコスト下限ガードが見つかりません');
  return out;
 }
-const api={DEFAULT,normalize,isDefault,key,tuneProfile};
+const api={DEFAULT,LIMIT,STEP,normalize,isDefault,key,tuneProfile};
 root.BNaviRouteTuning=api;
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof window==='undefined'?globalThis:window);

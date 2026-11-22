@@ -1,20 +1,17 @@
 {
-  "release": "2026-11-22-standard-mode-above-custom-v1",
-  "basis": "Penta2026/b_navi main at e85989e4f75e339263066c7138807f350c63b783 + main road continuity release",
+  "release": "2026-11-22-tuning-pm150-step10-v1",
+  "basis": "Penta2026/b_navi main 9f0b4dd81e489e7053050d9a8286ed6454e1197c",
   "features": [
-    "Displacement and beginner/general/explore mode selectors in one row",
-    "126cc fast travel retained",
-    "Custom three sliders and toll/motorway options below normal mode selector",
-    "Custom enabled only via switch, slider change, or named preset",
-    "Ordinary BRouter and GPS reroute preserve selected mode",
-    "Loaded route retains routing mode, customization state and geometry",
-    "Old nondefault tuning settings migrate as active customization"
+    "Three custom preferences -150..+150 step 10 for 50/125/126cc+",
+    "Center zero preserves original general BRF",
+    "Legacy five-step saved values and imported named presets round to closest ten",
+    "Narrow-side one-lane penalty remains distinguishable between -100 and -150",
+    "Normal beginner/general/explore mode alongside displacement remains unchanged",
+    "GPX actual tracks, saved routes, speedway/toll eligibility and main-road continuity retained"
   ],
-  "tests": [
-    "Node regression and Playwright browser simulations"
-  ],
-  "unverified": [
-    "Physical mobile GPS/BRouter live route comparison",
-    "OSM legality on actual roads"
-  ]
+  "verification": {
+    "node": "83/83 passed locally",
+    "browser": "Playwright smoke: tuning, named presets, modes, MyRoute library, reroute (mocked) passed",
+    "not_verified": "Physical GPS ride, live BRouter differences, public Pages deployment until GitHub reports success"
+  }
 }
