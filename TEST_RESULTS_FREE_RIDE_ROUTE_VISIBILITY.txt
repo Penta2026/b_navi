@@ -1,0 +1,551 @@
+TAP version 13
+# Address search pure tests passed 14
+# Subtest: tests/test_address_search.cjs
+ok 1 - tests/test_address_search.cjs
+  ---
+  duration_ms: 35.970233
+  type: 'test'
+  ...
+# 因島大橋 forward: JOIN 186 pts
+# 因島大橋 reverse: JOIN 186 pts
+# 生口橋 forward: JOIN 220 pts
+# 生口橋 reverse: JOIN 220 pts
+# 多々羅大橋 forward: JOIN 308 pts
+# 多々羅大橋 reverse: JOIN 183 pts
+# 大三島橋 forward: JOIN 41 pts
+# 大三島橋 reverse: JOIN 41 pts
+# 伯方・大島大橋 forward: JOIN 166 pts
+# 伯方・大島大橋 reverse: JOIN 166 pts
+# 来島海峡大橋 forward: JOIN 227 pts
+# 来島海峡大橋 reverse: JOIN 227 pts
+# Connected 12/12 bridge directions. Unjoined are intentionally not fabricated.
+# Subtest: tests/test_all_six_android_bridge_join.cjs
+ok 2 - tests/test_all_six_android_bridge_join.cjs
+  ---
+  duration_ms: 63.647952
+  type: 'test'
+  ...
+# PASS: Android 1.1.31 exact asset hash; 6 bridges forward/reverse; 13 approach/deck shapes; no false navigation; tampering rejected
+# Subtest: tests/test_android_approaches.cjs
+ok 3 - tests/test_android_approaches.cjs
+  ---
+  duration_ms: 36.369573
+  type: 'test'
+  ...
+# PASS: preview clipping + clearly distinct visual-only 100m gap connectors; no GPS/GPX modification
+# Subtest: tests/test_bridge_preview_clip.cjs
+ok 4 - tests/test_bridge_preview_clip.cjs
+  ---
+  duration_ms: 38.14009
+  type: 'test'
+  ...
+# Subtest: single row: plus minus GPS crosshair radar heading
+ok 5 - single row: plus minus GPS crosshair radar heading
+  ---
+  duration_ms: 1.442853
+  type: 'test'
+  ...
+# Subtest: CSS keeps zoom buttons visible in active guidance and free ride
+ok 6 - CSS keeps zoom buttons visible in active guidance and free ride
+  ---
+  duration_ms: 0.286402
+  type: 'test'
+  ...
+# Subtest: new service worker cache name activates the new markup and CSS
+ok 7 - new service worker cache name activates the new markup and CSS
+  ---
+  duration_ms: 0.231238
+  type: 'test'
+  ...
+# Subtest: GPS notification below all six map buttons
+ok 8 - GPS notification below all six map buttons
+  ---
+  duration_ms: 0.900807
+  type: 'test'
+  ...
+# Subtest: GPS and panning translate cached route SVG instead of regenerating each GPX point
+ok 9 - GPS and panning translate cached route SVG instead of regenerating each GPX point
+  ---
+  duration_ms: 26.928352
+  type: 'test'
+  ...
+# Subtest: viewport tile requests are bounded for phone portrait at north-up
+ok 10 - viewport tile requests are bounded for phone portrait at north-up
+  ---
+  duration_ms: 0.949741
+  type: 'test'
+  ...
+# Subtest: free ride hides rendered guidance geometry without clearing planned routes or S/G
+ok 11 - free ride hides rendered guidance geometry without clearing planned routes or S/G
+  ---
+  duration_ms: 1.307439
+  type: 'test'
+  ...
+# Subtest: free ride hides the line immediately and restores it on end, not on each GPS fix
+ok 12 - free ride hides the line immediately and restores it on end, not on each GPS fix
+  ---
+  duration_ms: 0.387875
+  type: 'test'
+  ...
+# Subtest: GPX routepoint itinerary is interpreted as ordered S/V/G, not straight road track
+ok 13 - GPX routepoint itinerary is interpreted as ordered S/V/G, not straight road track
+  ---
+  duration_ms: 1.02895
+  type: 'test'
+  ...
+# Subtest: GPX named stops render and keep retry option; true tracks remain separate
+ok 14 - GPX named stops render and keep retry option; true tracks remain separate
+  ---
+  duration_ms: 0.661676
+  type: 'test'
+  ...
+# Subtest: BRouter initial and reroute result is checked for bypassed intermediate stops
+ok 15 - BRouter initial and reroute result is checked for bypassed intermediate stops
+  ---
+  duration_ms: 0.615908
+  type: 'test'
+  ...
+# Subtest: course arrow rotates relative to north and heading-up map
+ok 16 - course arrow rotates relative to north and heading-up map
+  ---
+  duration_ms: 0.701306
+  type: 'test'
+  ...
+# Subtest: only reliable moving GPS bearings update, stationary holds previous heading
+ok 17 - only reliable moving GPS bearings update, stationary holds previous heading
+  ---
+  duration_ms: 0.267373
+  type: 'test'
+  ...
+# Subtest: offline voice is started only by user action and GPS update cannot talk with guidance off
+ok 18 - offline voice is started only by user action and GPS update cannot talk with guidance off
+  ---
+  duration_ms: 1.045545
+  type: 'test'
+  ...
+# Subtest: red GPS course arrow rotates inside map and touch rotation disables head-up auto
+ok 19 - red GPS course arrow rotates inside map and touch rotation disables head-up auto
+  ---
+  duration_ms: 0.546043
+  type: 'test'
+  ...
+# PASS: Innoshima Android moped-shared reference connects both directions; no 69m synthetic link; display only
+# Subtest: tests/test_innoshima_android_join.cjs
+ok 10 - tests/test_innoshima_android_join.cjs
+  ---
+  duration_ms: 31.258485
+  type: 'test'
+  ...
+# Subtest: 50cc/125cc/126cc ordinary general profiles apply a one-time 180m soft cost when entering OSM *_link roads
+ok 21 - 50cc/125cc/126cc ordinary general profiles apply a one-time 180m soft cost when entering OSM *_link roads
+  ---
+  duration_ms: 4.404445
+  type: 'test'
+  ...
+# Subtest: no prohibited road gates are loosened and only the three ordinary general profiles change
+ok 22 - no prohibited road gates are loosened and only the three ordinary general profiles change
+  ---
+  duration_ms: 0.446994
+  type: 'test'
+  ...
+# Subtest: 126cc motorway and toll options keep existing exclusions and the link-entry rule
+ok 23 - 126cc motorway and toll options keep existing exclusions and the link-entry rule
+  ---
+  duration_ms: 0.733435
+  type: 'test'
+  ...
+# Subtest: single map tap never updates S, G, or waypoints
+ok 24 - single map tap never updates S, G, or waypoints
+  ---
+  duration_ms: 0.869009
+  type: 'test'
+  ...
+# Subtest: long press still opens a menu and explicit action writes S, G or waypoint
+ok 25 - long press still opens a menu and explicit action writes S, G or waypoint
+  ---
+  duration_ms: 0.208153
+  type: 'test'
+  ...
+# Subtest: help texts describe long press rather than tap
+ok 26 - help texts describe long press rather than tap
+  ---
+  duration_ms: 0.158579
+  type: 'test'
+  ...
+# Subtest: displacement and normal modes share top row; independent custom section follows
+ok 27 - displacement and normal modes share top row; independent custom section follows
+  ---
+  duration_ms: 0.900837
+  type: 'test'
+  ...
+# Subtest: standard mode selection is passed to BRouter and kept through navigation re-routing
+ok 28 - standard mode selection is passed to BRouter and kept through navigation re-routing
+  ---
+  duration_ms: 0.510829
+  type: 'test'
+  ...
+# Subtest: my-route library requires a name, route geometry, and valid displacement
+ok 29 - my-route library requires a name, route geometry, and valid displacement
+  ---
+  duration_ms: 1.037663
+  type: 'test'
+  ...
+# Subtest: my-route library preserves calculated road geometry and independent tuning
+ok 30 - my-route library preserves calculated road geometry and independent tuning
+  ---
+  duration_ms: 0.671331
+  type: 'test'
+  ...
+# Subtest: my-route library stores bridge reference types without silently turning them into roads
+ok 31 - my-route library stores bridge reference types without silently turning them into roads
+  ---
+  duration_ms: 0.153281
+  type: 'test'
+  ...
+# Subtest: my-route library rejects >12MB serialized routes and trims long names
+ok 32 - my-route library rejects >12MB serialized routes and trims long names
+  ---
+  duration_ms: 59.267384
+  type: 'test'
+  ...
+# Subtest: single calm basemap: the old standard toggle is removed, prior preferences ignored
+ok 33 - single calm basemap: the old standard toggle is removed, prior preferences ignored
+  ---
+  duration_ms: 1.286849
+  type: 'test'
+  ...
+# Subtest: live guidance hides editor but keeps GPS, target, heading toggle and stop reachable
+ok 34 - live guidance hides editor but keeps GPS, target, heading toggle and stop reachable
+  ---
+  duration_ms: 1.839801
+  type: 'test'
+  ...
+# Subtest: navigation status displays existing GPX voice cues, not guessed intersections
+ok 35 - navigation status displays existing GPX voice cues, not guessed intersections
+  ---
+  duration_ms: 0.921098
+  type: 'test'
+  ...
+# Subtest: 地域つき入力を施設と地域に分ける
+ok 36 - 地域つき入力を施設と地域に分ける
+  ---
+  duration_ms: 1.32773
+  type: 'test'
+  ...
+# Subtest: 指定地域と施設名が合う候補だけを返す
+ok 37 - 指定地域と施設名が合う候補だけを返す
+  ---
+  duration_ms: 0.671972
+  type: 'test'
+  ...
+# Subtest: 無関係な社名や別地方の候補を返さない
+ok 38 - 無関係な社名や別地方の候補を返さない
+  ---
+  duration_ms: 0.300693
+  type: 'test'
+  ...
+# Subtest: Photon/Nominatim候補を共通の採用判定へ変換
+ok 39 - Photon/Nominatim候補を共通の採用判定へ変換
+  ---
+  duration_ms: 0.401725
+  type: 'test'
+  ...
+# Subtest: 重複座標と不正座標を除去
+ok 40 - 重複座標と不正座標を除去
+  ---
+  duration_ms: 1.189121
+  type: 'test'
+  ...
+# Subtest: Android B_Navi profile mapping matches Java server vehicle/mode indices
+ok 41 - Android B_Navi profile mapping matches Java server vehicle/mode indices
+  ---
+  duration_ms: 1.366559
+  type: 'test'
+  ...
+# Subtest: parses BRouter timode 3 voicehints from server, does not fabricate unmatched turns
+ok 42 - parses BRouter timode 3 voicehints from server, does not fabricate unmatched turns
+  ---
+  duration_ms: 4.770846
+  type: 'test'
+  ...
+# Subtest: sends original /profile POST and BRouter geojson + timode=3 GET, with via order
+ok 43 - sends original /profile POST and BRouter geojson + timode=3 GET, with via order
+  ---
+  duration_ms: 2.10494
+  type: 'test'
+  ...
+# Subtest: BRouter client reports upload and routing phases for user-facing wait diagnosis
+ok 44 - BRouter client reports upload and routing phases for user-facing wait diagnosis
+  ---
+  duration_ms: 0.626153
+  type: 'test'
+  ...
+# Subtest: ordinary guidance voice is suppressed only while radar view is active
+ok 45 - ordinary guidance voice is suppressed only while radar view is active
+  ---
+  duration_ms: 1.007858
+  type: 'test'
+  ...
+# Subtest: entering navigation radar cancels already-playing TTS, no standalone radar
+ok 46 - entering navigation radar cancels already-playing TTS, no standalone radar
+  ---
+  duration_ms: 0.170507
+  type: 'test'
+  ...
+# Subtest: arrival finalization in radar bypasses TTS and does not hang navigation
+ok 47 - arrival finalization in radar bypasses TTS and does not hang navigation
+  ---
+  duration_ms: 0.180072
+  type: 'test'
+  ...
+# Subtest: PWA cache revision includes new radar voice control code without purging route data
+ok 48 - PWA cache revision includes new radar voice control code without purging route data
+  ---
+  duration_ms: 0.132119
+  type: 'test'
+  ...
+# Subtest: pre-navigation ride panel offers free ride only; radar returns to voice guidance
+ok 49 - pre-navigation ride panel offers free ride only; radar returns to voice guidance
+  ---
+  duration_ms: 0.99612
+  type: 'test'
+  ...
+# Subtest: free ride end exposes the original GPX save panel, while nav radar shares GPS without recording own ride
+ok 50 - free ride end exposes the original GPX save panel, while nav radar shares GPS without recording own ride
+  ---
+  duration_ms: 0.576338
+  type: 'test'
+  ...
+# Subtest: point-to-polyline distance is based on segments, not distant track vertices
+ok 51 - point-to-polyline distance is based on segments, not distant track vertices
+  ---
+  duration_ms: 1.046186
+  type: 'test'
+  ...
+# Subtest: Android-style reroute is accuracy-aware, 3 independent fixes, 1.2s, 12s cooldown
+ok 52 - Android-style reroute is accuracy-aware, 3 independent fixes, 1.2s, 12s cooldown
+  ---
+  duration_ms: 0.344288
+  type: 'test'
+  ...
+# Subtest: waypoint and destination arrival require two precise samples within 20m
+ok 53 - waypoint and destination arrival require two precise samples within 20m
+  ---
+  duration_ms: 0.248414
+  type: 'test'
+  ...
+# Subtest: app integrates live route recovery and end-of-trip without changing original S/G
+ok 54 - app integrates live route recovery and end-of-trip without changing original S/G
+  ---
+  duration_ms: 1.084734
+  type: 'test'
+  ...
+# Subtest: radar switching uses navigation GPS without duplicate watcher; free ride hides chrome
+ok 55 - radar switching uses navigation GPS without duplicate watcher; free ride hides chrome
+  ---
+  duration_ms: 2.265583
+  type: 'test'
+  ...
+# Subtest: MotionGate blocks stationary jitter, then permits sustained speed fixes
+ok 56 - MotionGate blocks stationary jitter, then permits sustained speed fixes
+  ---
+  duration_ms: 0.46455
+  type: 'test'
+  ...
+# Subtest: MotionGate permits coherent GPS travel when speed is missing
+ok 57 - MotionGate permits coherent GPS travel when speed is missing
+  ---
+  duration_ms: 0.397569
+  type: 'test'
+  ...
+# Subtest: named presets: save multiple per displacement and preserve named values
+ok 58 - named presets: save multiple per displacement and preserve named values
+  ---
+  duration_ms: 10.008856
+  type: 'test'
+  ...
+# Subtest: preset overwrite is opt-in; does not mutate other entries; deleting does not alter active tuning
+ok 59 - preset overwrite is opt-in; does not mutate other entries; deleting does not alter active tuning
+  ---
+  duration_ms: 0.526233
+  type: 'test'
+  ...
+# Subtest: zeroed centre remains original general profile after saving/loading
+ok 60 - zeroed centre remains original general profile after saving/loading
+  ---
+  duration_ms: 3.521665
+  type: 'test'
+  ...
+# Subtest: 50cc/125cc may never inherit motorway/toll permission from edited backup
+ok 61 - 50cc/125cc may never inherit motorway/toll permission from edited backup
+  ---
+  duration_ms: 0.4116
+  type: 'test'
+  ...
+# Subtest: backup roundtrip merges without replacing existing same-name settings
+ok 62 - backup roundtrip merges without replacing existing same-name settings
+  ---
+  duration_ms: 0.547455
+  type: 'test'
+  ...
+# Subtest: cap at 50 entries, sanitized names and invalid records skipped
+ok 63 - cap at 50 entries, sanitized names and invalid records skipped
+  ---
+  duration_ms: 0.626343
+  type: 'test'
+  ...
+# Subtest: centre preserves all three real original general BRFs EXACTLY
+ok 64 - centre preserves all three real original general BRFs EXACTLY
+  ---
+  duration_ms: 1.19523
+  type: 'test'
+  ...
+# Subtest: settings clamp and disallow 50/125 motorway and toll even when requested
+ok 65 - settings clamp and disallow 50/125 motorway and toll even when requested
+  ---
+  duration_ms: 1.916467
+  type: 'test'
+  ...
+# Subtest: distance versus exploration changes base allowed-road costs, not legal gates
+ok 66 - distance versus exploration changes base allowed-road costs, not legal gates
+  ---
+  duration_ms: 2.117179
+  type: 'test'
+  ...
+# Subtest: width axis uses lanes and categories; scenery axis uses forest and river estimates + turncost
+ok 67 - width axis uses lanes and categories; scenery axis uses forest and river estimates + turncost
+  ---
+  duration_ms: 0.81024
+  type: 'test'
+  ...
+# Subtest: 126cc+ highway / toll independent and never overrides motorcycle=no
+ok 68 - 126cc+ highway / toll independent and never overrides motorcycle=no
+  ---
+  duration_ms: 0.614987
+  type: 'test'
+  ...
+# Subtest: different custom settings create isolated BRouter uploaded profiles; repeated one reuses upload
+ok 69 - different custom settings create isolated BRouter uploaded profiles; repeated one reuses upload
+  ---
+  duration_ms: 2.261887
+  type: 'test'
+  ...
+# PASS: Shimanami GPS pause/resume (65m/160m/90m)
+# Subtest: tests/test_shimanami_gps_handoff.cjs
+ok 23 - tests/test_shimanami_gps_handoff.cjs
+  ---
+  duration_ms: 40.113964
+  type: 'test'
+  ...
+# PASS: waypoint order respected across standard road + two island crossings
+# Subtest: tests/test_shimanami_via_order.cjs
+ok 24 - tests/test_shimanami_via_order.cjs
+  ---
+  duration_ms: 25.383805
+  type: 'test'
+  ...
+# Subtest: all six bridge overlays forward: 7 island road legs / 6 reference bridges, no fake rideable GPX
+ok 72 - all six bridge overlays forward: 7 island road legs / 6 reference bridges, no fake rideable GPX
+  ---
+  duration_ms: 10.545865
+  type: 'test'
+  ...
+# Subtest: all six bridges reverse: order is 6..1; islands rejoined
+ok 73 - all six bridges reverse: order is 6..1; islands rejoined
+  ---
+  duration_ms: 2.603211
+  type: 'test'
+  ...
+# Subtest: waypoint within same island, across 6 bridges, then reversing one bridge; checkpoints ordered
+ok 74 - waypoint within same island, across 6 bridges, then reversing one bridge; checkpoints ordered
+  ---
+  duration_ms: 1.800061
+  type: 'test'
+  ...
+# Subtest: only guide endpoints, no bypass of missing reference or fabricated straight spans
+ok 75 - only guide endpoints, no bypass of missing reference or fabricated straight spans
+  ---
+  duration_ms: 0.680395
+  type: 'test'
+  ...
+# Subtest: reject BRouter route with far-away road snap, no silent off-island detour
+ok 76 - reject BRouter route with far-away road snap, no silent off-island detour
+  ---
+  duration_ms: 0.418
+  type: 'test'
+  ...
+# Subtest: only special on cross-island trips with 50cc and <=125cc; normal local routing unaffected
+ok 77 - only special on cross-island trips with 50cc and <=125cc; normal local routing unaffected
+  ---
+  duration_ms: 0.183416
+  type: 'test'
+  ...
+# Subtest: Android bridge audit rejects tampering before the user can trust a route
+ok 78 - Android bridge audit rejects tampering before the user can trust a route
+  ---
+  duration_ms: 1.0288
+  type: 'test'
+  ...
+# Subtest: parallel island-road requests share one BRF upload, not duplicate posts
+ok 79 - parallel island-road requests share one BRF upload, not duplicate posts
+  ---
+  duration_ms: 13.377305
+  type: 'test'
+  ...
+# Subtest: three tuning sliders expose ±150 with step 10
+ok 80 - three tuning sliders expose ±150 with step 10
+  ---
+  duration_ms: 0.79054
+  type: 'test'
+  ...
+# Subtest: clamp, quantization, legacy five-step settings and custom profile keys
+ok 81 - clamp, quantization, legacy five-step settings and custom profile keys
+  ---
+  duration_ms: 2.198542
+  type: 'test'
+  ...
+# Subtest: ±150 extremes preserve hard access restrictions, and lane bias still changes
+ok 82 - ±150 extremes preserve hard access restrictions, and lane bias still changes
+  ---
+  duration_ms: 2.99407
+  type: 'test'
+  ...
+# Subtest: old preset backups remain importable, snapping five-step values to new ten-step grid
+ok 83 - old preset backups remain importable, snapping five-step values to new ten-step grid
+  ---
+  duration_ms: 2.080663
+  type: 'test'
+  ...
+# Subtest: voice default is a slightly faster 1.15× and keeps reasonable ranges
+ok 84 - voice default is a slightly faster 1.15× and keeps reasonable ranges
+  ---
+  duration_ms: 1.07585
+  type: 'test'
+  ...
+# Subtest: settings remain local and support recovery from corrupt storage
+ok 85 - settings remain local and support recovery from corrupt storage
+  ---
+  duration_ms: 0.278169
+  type: 'test'
+  ...
+# Subtest: SpeechSynthesisUtterance uses stored rate, pitch, volume, Japanese voice
+ok 86 - SpeechSynthesisUtterance uses stored rate, pitch, volume, Japanese voice
+  ---
+  duration_ms: 0.319851
+  type: 'test'
+  ...
+# Subtest: compact shared settings UI is available with no device-specific explanatory text
+ok 87 - compact shared settings UI is available with no device-specific explanatory text
+  ---
+  duration_ms: 0.744241
+  type: 'test'
+  ...
+1..87
+# tests 87
+# suites 0
+# pass 87
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 469.135697

@@ -172,7 +172,12 @@ function bindPresetUI(){
 function renderVia(){const el=$('via-list');el.replaceChildren();state.via.forEach((v,i)=>{const row=document.createElement('div');row.className='via-row';const info=document.createElement('div');info.className='via-info';const label=document.createElement('strong');label.textContent=(i+1)+'. '+pointLabel(v);info.append(label);const details=document.createElement('details');details.className='coordinate-details';const summary=document.createElement('summary');summary.textContent='座標を確認・編集';details.append(summary);const input=document.createElement('input');input.setAttribute('aria-label',`経由地${i+1}の座標`);input.value=v;input.placeholder='緯度,経度';input.addEventListener('input',()=>{state.via[i]=input.value;label.textContent=(i+1)+'. '+pointLabel(input.value);refreshMap();persist();});details.append(input);info.append(details);row.append(info);for(const [sym,title,action] of [['↑','上へ',()=>swapVia(i,i-1)],['↓','下へ',()=>swapVia(i,i+1)],['×','削除',()=>{state.via.splice(i,1);renderVia();refreshMap();persist();}]]){const b=document.createElement('button');b.textContent=sym;b.type='button';b.title=title;b.setAttribute('aria-label',`経由地${i+1}を${title}`);b.disabled=(sym==='↑'&&i===0)||(sym==='↓'&&i===state.via.length-1);b.addEventListener('click',action);row.append(b);}el.append(row);});$('via-count').textContent=String(state.via.length);updatePointSummaries();}
 function swapVia(a,b){if(b<0||b>=state.via.length)return;[state.via[a],state.via[b]]=[state.via[b],state.via[a]];renderVia();refreshMap();persist();}
 function getMarkers(){const markers=[];try{const p=inputPoint('start');if(p)markers.push({point:p,label:'出発',symbol:'S',color:'#15955f'});}catch{}state.via.forEach((str,i)=>{try{markers.push({point:parsePoint(str),label:'経由'+(i+1),symbol:String((i+1)%10),color:'#df9237'});}catch{}});try{const p=inputPoint('goal');if(p)markers.push({point:p,label:'目的地',symbol:'G',color:'#cc4f57'});}catch{}return markers;}
-function refreshMap(){map.setData(state.routes,getMarkers(),state.location);}
+function refreshMap(){
+ // Free ride hides ONLY the planned route geometry, never its data or markers.
+ // Preserve S/G, via, GPX and the current route for normal navigation after a ride.
+ const paths=document.body.classList.contains('free-ride-active')?[]:state.routes;
+ map.setData(paths,getMarkers(),state.location);
+}
 function persist(){try{localStorage.setItem('bnavi.pc.v1',JSON.stringify({start:$('start').value,goal:$('goal').value,via:state.via,vehicle:$('vehicle').value,mode:$('mode').value,customEnabled}));}catch{}}
 function restore(){try{
  const x=JSON.parse(localStorage.getItem('bnavi.pc.v1')||'null');if(!x)return;

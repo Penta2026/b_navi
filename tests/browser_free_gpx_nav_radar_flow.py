@@ -38,18 +38,40 @@ with sync_playwright() as p:
   page.wait_for_timeout(90)
   assert page.locator('#ride-radar').count()==0
   assert page.locator('#nav-radar-toggle').is_hidden()
+  # A previously calculated route must disappear only from the screen in free mode.
+  # S/G coordinates and markers, and the underlying route geometry, all survive.
+  page.evaluate('''gpx=>{
+    document.getElementById('start').value='34.4,132.45';
+    document.getElementById('goal').value='34.405,132.455';
+    routeView('normal',[{type:'road',points:[[34.4,132.45],[34.405,132.455]],gpx,label:'planned-route'}],gpx,'route loaded');
+  }''',GPX)
+  page.wait_for_timeout(80)
+  assert page.evaluate('map.pathLayer.children.length')==1, 'planned route missing before free ride'
+  assert set(page.evaluate('map.markers.map(x=>x.symbol)'))=={'S','G'}
   page.locator('#mobile-ride').click()
   assert page.locator('#ride-free').is_visible()
   page.locator('#ride-free').click()
   assert page.evaluate('BNaviRideMode.getMode()')=='free'
   assert page.evaluate('window.__watchCount')==1
+  page.wait_for_timeout(80)
+  assert page.evaluate('map.paths.length')==0, 'free ride must hide route geometry immediately'
+  assert page.evaluate('map.pathLayer.children.length')==0, 'guidance line still visible'
+  assert set(page.evaluate('map.markers.map(x=>x.symbol)'))=={'S','G'}, 'S/G markers disappeared'
+  assert page.evaluate('state.routes.length')==1, 'free ride erased planned route'
+  assert page.locator('#start').input_value()=='34.4,132.45'
+  assert page.locator('#goal').input_value()=='34.405,132.455'
   page.evaluate('window.__gps(34.4,132.45,1700000000000)')
   page.evaluate('window.__gps(34.4002,132.4502,1700000003000)')
   assert page.evaluate('BNaviTrack.getState().count')==2
+  page.wait_for_timeout(80)
+  assert page.evaluate('map.pathLayer.children.length')==0, 'GPS fix restored unwanted route'
   page.locator('#ride-stop').click()
   page.wait_for_timeout(150)
   assert page.evaluate('BNaviRideMode.getMode()')=='off'
   assert not page.evaluate('document.body.classList.contains("free-ride-active")')
+  page.wait_for_timeout(80)
+  assert page.evaluate('map.pathLayer.children.length')==1, 'planned route not restored after free ride'
+  assert set(page.evaluate('map.markers.map(x=>x.symbol)'))=={'S','G'}
   assert page.locator('#track-panel').get_attribute('data-state')=='ready'
   assert page.locator('#sidebar').evaluate('(e)=>e.classList.contains("sheet-open")')
   assert page.locator('#track-save').is_visible()

@@ -1,37 +1,32 @@
 {
-  "name": "B_Navi PWA Free ride GPX and navigation radar switch",
+  "name": "B_Navi PWA free ride hides route geometry while retaining S/G",
   "date": "2026-11-22",
   "source": "Penta2026/b_navi",
-  "changes": "Pre-nav free-only. End free ride opens GPX actions. Route then normal voice and navigation-only radar toggle.",
+  "behavior": "Free ride immediately hides only route drawing; keeps S/G and via pins, planned route/GPX data; line reappears when free ride ends.",
   "nodeTests": {
-    "total": 85,
-    "pass": 85
+    "pass": 87,
+    "total": 87
   },
   "browserSimulations": {
     "pass": 18,
-    "blocked": 1
+    "total": 18
   },
   "limitations": [
-    "actual Android/iOS ride not verified",
-    "localhost offline restore blocked in test environment"
+    "Android/iOS real riding test not performed",
+    "actual offline cold-start and persistence tests not verified"
   ],
   "changedFileSha256": {
-    "index.html": "c7db0380cf25e0e4d2f600e9b9c70de353fcbe3dee073b60599a50a41fe734eb",
-    "ride-radar.js": "12ac43740bb098f97f46785cfdfa38833c4ed8e1889bf64b0e17798913db90b2",
-    "mobile-ui.js": "f4a65c1c9b81eac6a9066fce4cc92d8ae9b2d59b75be361f67fb93ab10824f14",
-    "style.css": "de7c81acc599a93f46e41db6c4f4b5d0420bf7006d0c46586aa02bbee48cdc66",
-    "sw.js": "d3d55b903165241e1642fba9ac1016fd081fb8c16c67d242618054678be7360d",
-    "tests/test_ride_flow_modes.cjs": "6d56157d57d8d3c6efbed1c9a4641deec4db2bbe166e43a76f45763fbe3fc864",
-    "tests/test_ride_logic.cjs": "64690412f631180b7294a31f07a20620919e8ce35f12c69a5ff81e2b2ff40a76",
-    "tests/test_radar_voice_mute.cjs": "5f8c739704929e0c87ca9ec7ffd8d0e1e62293a5a225a8b4cb52e3bc52d0b33b",
-    "tests/browser_ride_integration.py": "a152ea457d89b38fda799dbf2d15149bc1fb0f8e589505f30bd18b11616fe165",
-    "tests/browser_radar_voice_mute.py": "6b225330853d367a16a3a4f7ac2e7a950658de83019f2bb951c0d0d64bbe8c79",
-    "tests/browser_free_gpx_nav_radar_flow.py": "448ba6d33c77b3473be49f6c90508abe44c9e8d7d8f61e95aa05e2aa385a661e",
-    "docs/FREE_RIDE_NAV_RADAR_20261122.md": "de65b3b4bbb8881aaa7a561350b9624c55724b75e3e39bbbc82ad2b6995cbae8",
-    "TEST_RESULTS_RIDE_FLOW_20261122.txt": "80c1f3c855a2c38442acd3e256185afd11bdc275ed8f0af858fa5e691a7c8527",
-    "README.md": "80e0dea546de4a014ec22e0c856237fe0faa90291aa4162d93801efa153a1b1b",
-    "CHANGELOG_B_Navi.md": "86dffef27753031bcd8f612b84bfe3d1220608d236e759421d6990de247b6bf4",
-    "HANDOFF_CURRENT.md": "8b9ed655fbe91627025398dc62d9a05052535855aba3dd57ca0e3b7b3c0c7810",
-    "NEXT_STEPS.md": "b7e75e4eeb9e26c0b11395782556f49ac916ff6d60f0605504e793ec01b1dd9f"
+    "app.js": "f37df7ad9295237ceb154d78441aa90c0604f0556c133921909374c745a47982",
+    "ride-radar.js": "10455d1eaacd92bd01c21a398c78f2cf2257625f32d06b435a54c9d52b4c5934",
+    "sw.js": "b4bed7f564aaaf6bf9ff45da7f2506416e89b43242a8e85ada50fb48aaa31b76",
+    "tests/test_free_ride_map_visibility.cjs": "a9f12504c7e5933bf31d68778883202559d2a7bd793e7b3c1696695e8b95467e",
+    "tests/browser_free_gpx_nav_radar_flow.py": "1be86237421ae9353af0333b2a1679860237e8ff013e812e0ee523e6f95c1b17",
+    "docs/FREE_RIDE_ROUTE_VISIBILITY_20261122.md": "8ebaf50b1360089108a264ad248050715cbdef7d72f594b67759c8802f4629c8",
+    "TEST_RESULTS_FREE_RIDE_ROUTE_VISIBILITY.txt": "f780db3a3753b4ef90809ccd6e3e0fb18442a3b53bb1335f5ba1a7c670bda886",
+    "BROWSER_RESULTS_FREE_RIDE_ROUTE_VISIBILITY.txt": "b18ecb41bbd9423355dbbe7941fac6055725592e9f3b9a68143b02a3777ad1a8",
+    "README.md": "c4e889725b374bd371e0ead19215d08ad6e5a6340d848b48af9a883cf5d33d4c",
+    "HANDOFF_CURRENT.md": "52ac3208ae3da86addbb5dd69f83a0572231be03a099f18105f7dedc66d24549",
+    "CHANGELOG_B_Navi.md": "56489fd8a33f18c3bea7268f740a933eb90b2bf3e339511eccad37f4f952ff1f",
+    "NEXT_STEPS.md": "b55b5a7473c0b27f546da40f1e5e7c341f878f91bf8c582077b5b0be4205f2b1"
   }
 }

@@ -1,8 +1,5 @@
-B_Navi PWA 名前付きルート調整プリセット 2026-11-21
-正本: この統合ZIPの実コード
-土台: B_Navi_PWA_Custom_Route_Tuning_2026-11-21.zip
-変更: route-presets.js, app.js, index.html, style.css, sw.js, tests, 引継ぎ資料
-Node 70/70 PASS
-Chromium模擬ブラウザ12種類 PASS（プリセット保存・GPX・ナビ・レーダー・音声等）
-GitHub Pagesには未公開。公開BRouter実通信・Android/iPhone実機は未検証。
-保存は計算パラメータのみ。走行線GPX保存とは別。
+Release: B_Navi PWA 2026-11-22 free-ride route-line hidden
+Node: 87 passed / 0 failed
+Phone browser smoke: 18 passed / 0 failed
+Verified: free route line hidden before first GPS fix, no line on GPS updates, S/G pins retained, original route restored after free ride, GPX recording preserved
+Not verified: real GPS ride; actual offline cold-start

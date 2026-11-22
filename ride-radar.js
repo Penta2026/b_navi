@@ -17,8 +17,10 @@
   const wasFree=mode==='free';
   if(wasFree)window.BNaviTrack?.stop();
   if(watch!==null){navigator.geolocation.clearWatch(watch);watch=null}
-  if(wasFree){state.location=null;map.setGpsHeading(null);refreshMap();}
-  document.body.classList.remove('free-ride-active');mode='off';screen.hidden=true;$('ride-pill').hidden=true;
+  if(wasFree){state.location=null;map.setGpsHeading(null);}
+  document.body.classList.remove('free-ride-active');mode='off';
+  if(wasFree)refreshMap(); // Restore planned route visibility only after free mode is cleared.
+  screen.hidden=true;$('ride-pill').hidden=true;
   $('ride-free').textContent='🏍 フリー走行開始';$('ride-free').classList.remove('active');
   if(!silent)status('停止中');
   // Reveal the existing, non-floating GPX actions after a real free ride ends.
@@ -38,6 +40,7 @@
   state.heading={heading:null,at:-Infinity};map.setGpsHeading(null);setOrientationMode('head');
   mode='free';window.BNaviTrack?.start('free');heading=NaN;scale=-1;lastChange=0;fix=null;
   document.body.classList.add('free-ride-active');
+  refreshMap(); // Remove the guidance line immediately, even before the first GPS fix.
   $('ride-free').textContent='■ フリー走行終了';$('ride-free').classList.add('active');$('ride-pill').hidden=false;panel.hidden=true;
   status('GPSを取得中…');
   // Free ride owns its GPS watch, while navigation radar uses only the navigation watch.
