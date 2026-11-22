@@ -47,7 +47,8 @@ test('radar switching uses navigation GPS without duplicate watcher; free ride h
  assert.match(radar,/function openNavRadar\(/);
  assert.match(radar,/function updateNavigationRadar\(/);
  assert.match(radar,/mode='nav-radar'/);
- assert.match(radar,/window\.BNaviObserveDestination/);
+ assert.doesNotMatch(radar,/start\('radar'\)/);
+ assert.match(radar,/window\.BNaviShowRecordedTrackActions/);
  assert.match(css,/body\.free-ride-active \.topbar/);
  for(const id of ['nav-radar-toggle','map-controls','zoom-in','zoom-out','next-destination-dialog'])assert.ok(html.includes(`id="${id}"`));
 });

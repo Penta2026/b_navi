@@ -5,6 +5,13 @@
  let picked=null, searchBusy=false, lastSearch=0;
  const sheet=$('sidebar');
  window.BNaviCloseRouteSheet=()=>toggleSheet(false);
+ // On free-ride completion, expose the existing GPX save/share actions at the
+ // bottom of the sheet. A failed/no-fix ride does not create a fake GPX.
+ window.BNaviShowRecordedTrackActions=()=>{
+   const track=$('track-panel');if(!track||track.dataset.state!=='ready')return;
+   toggleSheet(true);
+   requestAnimationFrame(()=>{sheet.scrollTop=sheet.scrollHeight;});
+ };
  function toggleSheet(open){sheet.classList.toggle('sheet-open',open);$('mobile-route').classList.toggle('tool-active',open);$('mobile-map').classList.toggle('tool-active',!open);setTimeout(()=>{if(typeof map!=='undefined'&&map.resize)map.resize();},230)}
  document.querySelectorAll('.pick').forEach(btn=>btn.addEventListener('click',()=>{if(isMobile())toggleSheet(false)}));
  $('start-pick').addEventListener('click',()=>{if(isMobile())toggleSheet(false)});$('goal-pick').addEventListener('click',()=>{if(isMobile())toggleSheet(false)});$('add-via').addEventListener('click',()=>{if(isMobile())toggleSheet(false)});

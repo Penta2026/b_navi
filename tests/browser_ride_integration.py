@@ -102,23 +102,17 @@ with sync_playwright() as playwright:
  assert page.evaluate('document.body.classList.contains("free-ride-active")')
  assert page.locator('.topbar').evaluate('(e)=>getComputedStyle(e).display')=='none'
  assert page.locator('#map-controls #zoom-in').is_visible() and page.locator('#map-controls #zoom-out').is_visible()
+ page.evaluate('window.__gps(34.4008,132.45,5)')
  page.locator('#ride-stop').click()
  assert not page.evaluate('document.body.classList.contains("free-ride-active")')
- # Stand-alone radar also progresses through via -> destination.
- page.evaluate("state.via=['34.400900,132.450000'];state.targetIndex=0;state.activeTargets=[];renderVia();")
- page.locator('#mobile-ride').click()
- page.locator('#ride-radar').click()
- assert page.evaluate('BNaviRideMode.getMode()')=='radar'
- page.evaluate('window.__gps(34.40083,132.45,5)')
- page.evaluate('window.__gps(34.40086,132.45,5)')
- page.wait_for_timeout(60)
- assert page.locator('#next-destination-dialog').is_visible(),'standalone radar missed via'
- page.locator('#next-destination-continue').click()
- assert page.evaluate('state.targetIndex')==1
- page.evaluate('window.__gps(34.40174,132.45,5)')
- page.evaluate('window.__gps(34.40176,132.45,5)')
- page.wait_for_timeout(120)
- assert page.evaluate('BNaviRideMode.getMode()')=='off', 'standalone radar did not stop at destination'
+ assert page.locator('#track-panel').get_attribute('data-state')=='ready'
+ assert page.locator('#track-save').is_enabled()
+ # A free ride now owns the only pre-navigation ride mode. Ending it shows GPX actions.
+ assert page.locator('#ride-radar').count()==0
+ assert page.locator('#track-panel').get_attribute('data-state') in ('ready','idle')
+ assert page.locator('#sidebar').evaluate('(e)=>e.classList.contains("sheet-open")')
+ # Previous route navigation radar is still available only during guidance.
+ assert page.locator('#nav-radar-toggle').is_hidden()
  assert not errors,errors
  print('PASS phone GPS: waypoint prompt, continuing, single GPS radar toggle, 20m right turn, final TTS end, free-ride full-screen')
  browser.close()

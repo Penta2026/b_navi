@@ -1,0 +1,19 @@
+B_Navi 2026-11-22: free ride -> GPX; voice navigation <-> radar
+
+NODE:
+  node --test tests/test_*.cjs
+  85 tests, 85 passed, 0 failed
+
+PHONE-BROWSER MOCK:
+  tests/browser_free_gpx_nav_radar_flow.py
+  PASS (320px and 390px): free ride GPS points, stop, track panel auto-opens, GPX download,
+  voice navigation starts in default mode, nav-only radar, no extra GPS watch, radar back to voice.
+
+REGRESSION:
+  18 browser_*.py tests passed (including new flow, navigation voice mute, GPX, route presets,
+  custom routing, saved routes, Shimanami simulation, control layout, voice settings).
+
+NOT COMPLETED:
+  tests/browser_shimanami_offline_restore.py: browser localhost refused by test environment
+  (net::ERR_BLOCKED_BY_ADMINISTRATOR). Not a regression assertion failure.
+  Actual street riding, iPhone/Android real GPS/voice and screen-off behavior not field-verified.

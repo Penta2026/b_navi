@@ -1,17 +1,37 @@
 {
-  "release": "2026-11-22-tuning-pm150-step10-v1",
-  "basis": "Penta2026/b_navi main 9f0b4dd81e489e7053050d9a8286ed6454e1197c",
-  "features": [
-    "Three custom preferences -150..+150 step 10 for 50/125/126cc+",
-    "Center zero preserves original general BRF",
-    "Legacy five-step saved values and imported named presets round to closest ten",
-    "Narrow-side one-lane penalty remains distinguishable between -100 and -150",
-    "Normal beginner/general/explore mode alongside displacement remains unchanged",
-    "GPX actual tracks, saved routes, speedway/toll eligibility and main-road continuity retained"
+  "name": "B_Navi PWA Free ride GPX and navigation radar switch",
+  "date": "2026-11-22",
+  "source": "Penta2026/b_navi",
+  "changes": "Pre-nav free-only. End free ride opens GPX actions. Route then normal voice and navigation-only radar toggle.",
+  "nodeTests": {
+    "total": 85,
+    "pass": 85
+  },
+  "browserSimulations": {
+    "pass": 18,
+    "blocked": 1
+  },
+  "limitations": [
+    "actual Android/iOS ride not verified",
+    "localhost offline restore blocked in test environment"
   ],
-  "verification": {
-    "node": "83/83 passed locally",
-    "browser": "Playwright smoke: tuning, named presets, modes, MyRoute library, reroute (mocked) passed",
-    "not_verified": "Physical GPS ride, live BRouter differences, public Pages deployment until GitHub reports success"
+  "changedFileSha256": {
+    "index.html": "c7db0380cf25e0e4d2f600e9b9c70de353fcbe3dee073b60599a50a41fe734eb",
+    "ride-radar.js": "12ac43740bb098f97f46785cfdfa38833c4ed8e1889bf64b0e17798913db90b2",
+    "mobile-ui.js": "f4a65c1c9b81eac6a9066fce4cc92d8ae9b2d59b75be361f67fb93ab10824f14",
+    "style.css": "de7c81acc599a93f46e41db6c4f4b5d0420bf7006d0c46586aa02bbee48cdc66",
+    "sw.js": "d3d55b903165241e1642fba9ac1016fd081fb8c16c67d242618054678be7360d",
+    "tests/test_ride_flow_modes.cjs": "6d56157d57d8d3c6efbed1c9a4641deec4db2bbe166e43a76f45763fbe3fc864",
+    "tests/test_ride_logic.cjs": "64690412f631180b7294a31f07a20620919e8ce35f12c69a5ff81e2b2ff40a76",
+    "tests/test_radar_voice_mute.cjs": "5f8c739704929e0c87ca9ec7ffd8d0e1e62293a5a225a8b4cb52e3bc52d0b33b",
+    "tests/browser_ride_integration.py": "a152ea457d89b38fda799dbf2d15149bc1fb0f8e589505f30bd18b11616fe165",
+    "tests/browser_radar_voice_mute.py": "6b225330853d367a16a3a4f7ac2e7a950658de83019f2bb951c0d0d64bbe8c79",
+    "tests/browser_free_gpx_nav_radar_flow.py": "448ba6d33c77b3473be49f6c90508abe44c9e8d7d8f61e95aa05e2aa385a661e",
+    "docs/FREE_RIDE_NAV_RADAR_20261122.md": "de65b3b4bbb8881aaa7a561350b9624c55724b75e3e39bbbc82ad2b6995cbae8",
+    "TEST_RESULTS_RIDE_FLOW_20261122.txt": "80c1f3c855a2c38442acd3e256185afd11bdc275ed8f0af858fa5e691a7c8527",
+    "README.md": "80e0dea546de4a014ec22e0c856237fe0faa90291aa4162d93801efa153a1b1b",
+    "CHANGELOG_B_Navi.md": "86dffef27753031bcd8f612b84bfe3d1220608d236e759421d6990de247b6bf4",
+    "HANDOFF_CURRENT.md": "8b9ed655fbe91627025398dc62d9a05052535855aba3dd57ca0e3b7b3c0c7810",
+    "NEXT_STEPS.md": "b7e75e4eeb9e26c0b11395782556f49ac916ff6d60f0605504e793ec01b1dd9f"
   }
 }

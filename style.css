@@ -13,7 +13,7 @@
 .ride-title,.ride-buttons,.radar-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.ride-panel p,.ride-panel small{font-size:13px;line-height:1.55}.ride-buttons button,.radar-top button,#ride-stop{border:1px solid #95b8bd;border-radius:9px;padding:10px;background:#e7f3f4;color:#173b44;font-weight:700}.ride-buttons button{flex:1}.ride-buttons button.active{background:#0b7890;color:white}
 #ride-status{font-weight:700;color:#066d7d}#ride-pill{position:fixed;z-index:100;left:50%;bottom:85px;transform:translateX(-50%);background:#103e4e;color:white;border-radius:50px;padding:5px 6px 5px 15px;font-size:13px;box-shadow:0 3px 18px #102a3b66;white-space:nowrap}
 #radar-screen{position:fixed;inset:0;z-index:180;background:#0a231e;color:#fff;display:flex;flex-direction:column;padding:env(safe-area-inset-top,12px) 10px env(safe-area-inset-bottom,14px);box-sizing:border-box}
-.radar-top{flex-shrink:0;padding:8px 12px;min-height:43px}#radar-canvas{width:100%;min-height:0;flex:1;display:block}#radar-readout{text-align:center;padding:10px 0;font-weight:700;font-size:15px;color:#d2f5dd}
+.radar-top{flex-shrink:0;padding:8px 12px;min-height:43px}.radar-top button{font-size:13px;min-height:44px}.radar-note{display:block;flex-shrink:0;text-align:center;font-size:11px;color:#a8d8bd;padding:0 10px 8px}#radar-canvas{width:100%;min-height:0;flex:1;display:block}#radar-readout{text-align:center;padding:10px 0;font-weight:700;font-size:15px;color:#d2f5dd}
 @media(min-width:801px){.ride-panel{bottom:25px;left:25px}#ride-pill{bottom:20px}#mobile-ride{display:inline-flex}}
 
 /* Allow finger panning while disabling the browser long-press callout on the custom map. */

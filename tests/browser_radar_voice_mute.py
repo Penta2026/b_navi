@@ -53,10 +53,11 @@ with sync_playwright() as pw:
  assert page.evaluate("speak('地図に戻りました')") is True
  assert page.evaluate('window.__spoken.at(-1)')=='地図に戻りました','voice did not resume'
  page.locator('#nav-stop-quick').click()
+ assert page.locator('#nav-radar-toggle').is_hidden()
  page.locator('#mobile-ride').click()
- page.locator('#ride-radar').click()
- assert page.evaluate('BNaviRideMode.getMode()')=='radar'
- assert page.evaluate("speak('左折です')") is False
+ assert page.locator('#ride-free').is_visible()
+ assert page.locator('#ride-radar').count()==0
+ assert page.locator('#radar-screen').is_hidden()
  assert errors==[],errors
- print('PASS browser: nav radar cancels current speech, mutes turn/arrival, preserves GPS, returns voice on map, standalone radar silent')
+ print('PASS browser: navigation-only radar mutes voice, shares GPS, restores voice on return; pre-nav menu is free-only')
  browser.close()
