@@ -37,8 +37,26 @@ try{Object.assign(placeLabels,JSON.parse(localStorage.getItem('bnavi.placeLabels
 function fmt(p){return `${Number(p[0]).toFixed(6)},${Number(p[1]).toFixed(6)}`;}
 function parsePoint(s){const arr=s.trim().split(',').map(x=>Number(x.trim()));if(arr.length!==2||!arr.every(Number.isFinite)||arr[0]<20||arr[0]>46||arr[1]<122||arr[1]>154)throw new Error('地点は「緯度,経度」で入力してね（日本国内の座標）。');return arr;}
 function inputPoint(id){return $(id).value.trim()?parsePoint($(id).value):null;}
-function updatePolicy(){const el=$('route-policy');if(el)el.textContent=ROUTE_POLICIES[1]+' 道路コストを3本のスライダーで調整できます。';}
-function updateModes(){const i=Number($('vehicle').value),sel=$('mode'),prev=sel.value;sel.replaceChildren();MODES[i].forEach((m,n)=>{const o=document.createElement('option');o.value=String(n);o.textContent=m;sel.append(o);});sel.value='1';updatePolicy();}
+let customEnabled=false;
+function routingMode(){return customEnabled?1:Number($('mode').value)}
+function updatePolicy(){
+ const el=$('route-policy');if(!el)return;
+ el.textContent=customEnabled?ROUTE_POLICIES[1]+' カスタマイズON：保存中の3軸調整値で一般BRFを変更します。':ROUTE_POLICIES[Number($('mode').value)]+' カスタマイズはOFFです。';
+}
+function updateModes(){
+ const i=Number($('vehicle').value),sel=$('mode'),prev=sel.value;
+ sel.replaceChildren();MODES[i].forEach((m,n)=>{const o=document.createElement('option');o.value=String(n);o.textContent=m;sel.append(o);});
+ sel.value=prev!==''&&MODES[i][Number(prev)]!==undefined?prev:'1';
+ if(customEnabled)sel.value='1';
+ updatePolicy();
+}
+function chooseCustom(enabled,openPanel=false){
+ customEnabled=Boolean(enabled);
+ if(customEnabled)$('mode').value='1';
+ if(openPanel)$('route-tuning-panel').open=true;
+ updateTuningUI();updatePolicy();persist();
+}
+
 // Independent tuning settings for each capacity. Original general BRFs are
 // transmitted byte-for-byte at 0/0/0 with no 126cc exemptions.
 const TUNING_STORE='bnavi.routeTuningByVehicle.v1';
@@ -58,16 +76,20 @@ function updateTuningUI(){
  }
  $('tune-big-options').hidden=vehicle!==2;
  $('tune-motorway').checked=v.allowMotorway;$('tune-toll').checked=v.allowToll;
- $('tuning-status').textContent=tuningDescription(v,vehicle);
+ $('tuning-enabled').checked=customEnabled;
+ $('tuning-tag').textContent=customEnabled?'ON：一般を調整':'OFF';
+ $('route-tuning-panel').dataset.active=String(customEnabled);
+ $('tuning-status').textContent=customEnabled?tuningDescription(v,vehicle):'カスタマイズOFF（調整値は保持）';
  $('tuning-reset').disabled=BNaviRouteTuning.isDefault(v,vehicle);
 }
 function bindTuning(){
  loadTuning();updateTuningUI();
+ $('tuning-enabled').addEventListener('change',()=>chooseCustom($('tuning-enabled').checked));
  for(const [key,id] of [['explore','tune-explore'],['width','tune-width'],['scenic','tune-scenic']]){
-   $(id).addEventListener('input',()=>{const vehicle=Number($('vehicle').value);tuningByVehicle[vehicle][key]=Number($(id).value);storeTuning();updateTuningUI();});
+   $(id).addEventListener('input',()=>{const vehicle=Number($('vehicle').value);tuningByVehicle[vehicle][key]=Number($(id).value);storeTuning();chooseCustom(true);});
  }
  for(const [key,id] of [['allowMotorway','tune-motorway'],['allowToll','tune-toll']]){
-   $(id).addEventListener('change',()=>{const vehicle=Number($('vehicle').value);if(vehicle!==2)return;tuningByVehicle[vehicle][key]=$(id).checked;storeTuning();updateTuningUI();});
+   $(id).addEventListener('change',()=>{const vehicle=Number($('vehicle').value);if(vehicle!==2)return;tuningByVehicle[vehicle][key]=$(id).checked;storeTuning();chooseCustom(true);});
  }
  $('tuning-reset').addEventListener('click',()=>{const vehicle=Number($('vehicle').value);tuningByVehicle[vehicle]=BNaviRouteTuning.normalize(null,vehicle);storeTuning();updateTuningUI();});
 }
@@ -115,7 +137,7 @@ function bindPresetUI(){
  $('preset-load').addEventListener('click',()=>{
   const selected=presetSelected();if(!selected)return;
   const vehicle=Number($('vehicle').value);
-  tuningByVehicle[vehicle]=BNaviRouteTuning.normalize(selected.tuning,vehicle);storeTuning();updateTuningUI();
+  tuningByVehicle[vehicle]=BNaviRouteTuning.normalize(selected.tuning,vehicle);storeTuning();chooseCustom(true,true);
   $('preset-name').value=selected.name;
   presetStatus('「'+selected.name+'」を読み込んだよ。「ルート検索」でこの設定を使えます。');
  });
@@ -151,8 +173,21 @@ function renderVia(){const el=$('via-list');el.replaceChildren();state.via.forEa
 function swapVia(a,b){if(b<0||b>=state.via.length)return;[state.via[a],state.via[b]]=[state.via[b],state.via[a]];renderVia();refreshMap();persist();}
 function getMarkers(){const markers=[];try{const p=inputPoint('start');if(p)markers.push({point:p,label:'出発',symbol:'S',color:'#15955f'});}catch{}state.via.forEach((str,i)=>{try{markers.push({point:parsePoint(str),label:'経由'+(i+1),symbol:String((i+1)%10),color:'#df9237'});}catch{}});try{const p=inputPoint('goal');if(p)markers.push({point:p,label:'目的地',symbol:'G',color:'#cc4f57'});}catch{}return markers;}
 function refreshMap(){map.setData(state.routes,getMarkers(),state.location);}
-function persist(){try{localStorage.setItem('bnavi.pc.v1',JSON.stringify({start:$('start').value,goal:$('goal').value,via:state.via,vehicle:$('vehicle').value,mode:$('mode').value}));}catch{}}
-function restore(){try{const x=JSON.parse(localStorage.getItem('bnavi.pc.v1')||'null');if(!x)return;$('start').value=x.start||'';$('goal').value=x.goal||'';state.via=Array.isArray(x.via)?x.via.slice(0,50).map(String):[];$('vehicle').value=['0','1','2'].includes(x.vehicle)?x.vehicle:'1';updateModes();$('mode').value='1';updatePolicy();}catch{}}
+function persist(){try{localStorage.setItem('bnavi.pc.v1',JSON.stringify({start:$('start').value,goal:$('goal').value,via:state.via,vehicle:$('vehicle').value,mode:$('mode').value,customEnabled}));}catch{}}
+function restore(){try{
+ const x=JSON.parse(localStorage.getItem('bnavi.pc.v1')||'null');if(!x)return;
+ $('start').value=x.start||'';$('goal').value=x.goal||'';state.via=Array.isArray(x.via)?x.via.slice(0,50).map(String):[];
+ $('vehicle').value=['0','1','2'].includes(x.vehicle)?x.vehicle:'1';
+ // Older versions always calculated with the current custom settings.
+ // Migrate a nondefault old tuning into active custom mode instead of silently discarding it.
+ const v=Number($('vehicle').value);
+ customEnabled=typeof x.customEnabled==='boolean'?x.customEnabled:!BNaviRouteTuning.isDefault(tuningByVehicle[v],v);
+ updateModes();
+ const savedMode=String(x.mode??'1');
+ if(!customEnabled&&MODES[v][Number(savedMode)]!==undefined)$('mode').value=savedMode;
+ if(customEnabled){$('mode').value='1';$('route-tuning-panel').open=true;}
+ updatePolicy();
+}catch{}}
 function getRequestPoints(){if(!$('start').value.trim()||!$('goal').value.trim())throw new Error('出発地と目的地は、地図の長押しメニューや検索から登録してね。');const a=[parsePoint($('start').value)];for(const text of state.via)a.push(parsePoint(text));a.push(parsePoint($('goal').value));if(a.length>52)throw new Error('地点が多すぎます。');return a;}
 function gpxTurnCues(xml){const doc=new DOMParser().parseFromString(xml,'application/xml');return [...doc.getElementsByTagNameNS('*','rtept')].map(n=>{const d=n.getElementsByTagNameNS('*','desc')[0]?.textContent||'';const offsetNode=n.getElementsByTagNameNS('*','offset')[0];return {desc:d,offset:offsetNode?Number(offsetNode.textContent):NaN,lat:Number(n.getAttribute('lat')),lon:Number(n.getAttribute('lon'))};}).filter(x=>Number.isFinite(x.offset)&&Number.isFinite(x.lat)&&Number.isFinite(x.lon));}
 function gpxPoints(xml){const doc=new DOMParser().parseFromString(xml,'application/xml');if(doc.getElementsByTagName('parsererror').length)throw new Error('GPXの解析に失敗しました');let nodes=[...doc.getElementsByTagNameNS('*','trkpt')];if(!nodes.length)nodes=[...doc.getElementsByTagNameNS('*','rtept')];const pts=nodes.map(x=>[Number(x.getAttribute('lat')),Number(x.getAttribute('lon'))]).filter(x=>x.every(Number.isFinite));if(pts.length<2)throw new Error('GPXに道路の軌跡点がありません。');return pts;}
@@ -186,7 +221,7 @@ async function calculatePublicRoute(points){
  if(needsDedicatedApi(points))throw Error('しまなみ・関門の原付専用案内は公開BRouterでは再現できません。専用B_Navi Javaサーバー接続が必要です。');
  if(typeof BNaviPublicBrouter==='undefined')throw Error('旧PWAのBRouterクライアントを読み込めません');
  setMessage('公開BRouter：経路計算の準備中…');
- const result=await BNaviPublicBrouter.query(points,$('vehicle').value,'1',fetch,progress=>{setMessage(progress.message);},state.activeRouteTuning);
+ const result=await BNaviPublicBrouter.query(points,$('vehicle').value,state.activeRoutingMode,fetch,progress=>{setMessage(progress.message);},state.activeRouteTuning);
  // Verify that the remote route actually passes every requested intermediate stop.
  // A matching start/end alone is not sufficient for an ordered itinerary.
  if(points.length>2){
@@ -208,8 +243,8 @@ function updateApiSettings(){const u=localStorage.getItem(API_CONFIG_KEY)||'';$(
 $('route-api-save').addEventListener('click',()=>{try{const raw=$('route-api-base').value.trim();if(!raw)throw Error('URLを入力してください');const url=new URL(raw);if(url.protocol!=='https:'&&!(url.hostname==='localhost'&&url.protocol==='http:'))throw Error('HTTPSのURLを指定してください');localStorage.setItem(API_CONFIG_KEY,url.href);updateApiSettings();refreshServer()}catch(e){$('route-api-status').textContent='設定エラー：'+e.message}});
 $('route-api-clear').addEventListener('click',()=>{localStorage.removeItem(API_CONFIG_KEY);updateApiSettings();refreshServer()});
 updateApiSettings();
-async function postApi(path,points){const form=new URLSearchParams({vehicle:$('vehicle').value,mode:$('mode').value,points:points.map(fmt).join('|')});const response=await fetch(apiUrl(path),{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:form});const text=await response.text();if(!response.ok)throw new Error(text.slice(0,300));return {response,text};}
-async function calculate(){const btn=$('calculate');btn.disabled=true;clearResult();try{const points=getRequestPoints();state.activeRoutingVehicle=Number($('vehicle').value);state.activeRouteTuning=tuningNow();persist();if(!usePublicBrouter()&&!BNaviRouteTuning.isDefault(state.activeRouteTuning,state.activeRoutingVehicle))throw Error('詳細ルート調整は公開BRouter用です。専用Java APIはパラメータ非対応のため、調整したフリで計算しません。GitHub Pagesから専用API設定を解除して利用してください。');setMessage('BRouter計算中。道路データを照合しています…');
+async function postApi(path,points){const form=new URLSearchParams({vehicle:$('vehicle').value,mode:String(state.activeRoutingMode??routingMode()),points:points.map(fmt).join('|')});const response=await fetch(apiUrl(path),{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:form});const text=await response.text();if(!response.ok)throw new Error(text.slice(0,300));return {response,text};}
+async function calculate(){const btn=$('calculate');btn.disabled=true;clearResult();try{const points=getRequestPoints();state.activeRoutingVehicle=Number($('vehicle').value);state.activeRoutingMode=routingMode();state.activeRouteTuning=customEnabled?tuningNow():null;state.customRouting=customEnabled;persist();if(!usePublicBrouter()&&customEnabled&&!BNaviRouteTuning.isDefault(state.activeRouteTuning,state.activeRoutingVehicle))throw Error('詳細ルート調整は公開BRouter用です。専用Java APIはパラメータ非対応のため、調整したフリで計算しません。GitHub Pagesから専用API設定を解除して利用してください。');setMessage('BRouter計算中。道路データを照合しています…');
  if(usePublicBrouter()){
    if(typeof BNaviShimanamiWebRouter!=='undefined'&&BNaviShimanamiWebRouter.needsSpecialJourney(points,$('vehicle').value))await calculateShimanamiWeb(points);
    else await calculatePublicRoute(points);
@@ -339,7 +374,7 @@ async function calculateWaypointJourney(points){
 async function calculateShimanamiWeb(points){
  if(typeof BNaviShimanamiWebRouter==='undefined'||typeof BNaviBridgeReferences==='undefined')throw Error('しまなみ橋参考資料が読み込まれていません。通信を確認してください。');
  setMessage('しまなみ：島内道路と橋の接続を検証中…');
- const result=await BNaviShimanamiWebRouter.compose(points,$('vehicle').value,$('mode').value,{
+ const result=await BNaviShimanamiWebRouter.compose(points,$('vehicle').value,state.activeRoutingMode,{
   geometry:BNaviShimanamiGeometry,refs:BNaviBridgeReferences,
   query:(pair,v,m)=>BNaviPublicBrouter.query(pair,v,m,fetch,null,state.activeRouteTuning),
   bridgePreview:androidBridgePreview,
@@ -525,7 +560,7 @@ async function rerouteShimanamiFromGps(){
  const sectionIndex=leg.sectionIndex;
  $('nav-status').textContent='現在の島内道路を再探索中…';speak('島内道路を再探索します。');
  try{
-  const result=await BNaviPublicBrouter.query([current.slice(),finish.slice()],state.activeRoutingVehicle??$('vehicle').value,'1',fetch,null,state.activeRouteTuning);
+  const result=await BNaviPublicBrouter.query([current.slice(),finish.slice()],state.activeRoutingVehicle??$('vehicle').value,state.activeRoutingMode??1,fetch,null,state.activeRouteTuning);
   BNaviShimanamiWebRouter.validateRoad({from:current,to:finish,island:BNaviShimanamiWebRouter.island(finish)},result.track);
   if(leg.bridgeAfter&&BNaviShimanamiWebRouter.meters(result.track.points.at(-1),finish)>25)throw Error('橋入口に正確につながらないため新経路を採用できません');
   if(!state.navActive||state.navPaused||state.islandLegs[state.islandIndex]!==leg)return;
@@ -551,7 +586,7 @@ async function rerouteFromGps(){
  speak('ルートを再探索します。');
  try{
   if(usePublicBrouter()){
-   const r=await BNaviPublicBrouter.query(points,state.activeRoutingVehicle??$('vehicle').value,'1',fetch,null,state.activeRouteTuning);
+   const r=await BNaviPublicBrouter.query(points,state.activeRoutingVehicle??$('vehicle').value,state.activeRoutingMode??1,fetch,null,state.activeRouteTuning);
    if(points.length>2){
     const missed=points.slice(1,-1).map((p,i)=>({n:i+1,d:BNaviRideLogic.distanceToPolyline(p,r.track.points)})).filter(v=>v.d>300);
     if(missed.length)throw Error('リルートで経由地を通れません。残りの中継地点を維持します。');
@@ -674,7 +709,7 @@ function updateGpsProgress(demo=false){if(!state.location||state.navPaused||stat
  if(until<=20&&until>=0&&nearest<.035&&state.gpsAccuracy<=25&&!state.saidCues.has('now-'+next.offset)){state.saidCues.add('now-'+next.offset);state.saidCues.add(next.offset);speak(cueText(next.desc));}
  else if(until<=130&&!state.saidCues.has(next.offset)){state.saidCues.add(next.offset);speak(`およそ${Math.max(10,Math.round(until/10)*10)}メートル先、${cueText(next.desc)}`);}
  }}$('nav-status').textContent=`${demo?'案内デモ':'GPS'}：経路まで約${Math.round(nearest*1000)}m／残り約${remaining.toFixed(1)}km${instruction}${nearest>.08?'（経路から離れています）':''}。GPX指示に基づく概算案内。`;}
-$('vehicle').addEventListener('change',()=>{updateModes();updateTuningUI();updatePresetUI('');$('preset-name').value='';persist();});$('mode').addEventListener('change',()=>{updatePolicy();persist();});
+$('vehicle').addEventListener('change',()=>{updateModes();updateTuningUI();updatePresetUI('');$('preset-name').value='';persist();});$('mode').addEventListener('change',()=>{chooseCustom(false);});
 for(const b of document.querySelectorAll('.pick'))b.addEventListener('click',()=>setPick(b.dataset.pick));$('start-pick').addEventListener('click',()=>setPick('start'));$('goal-pick').addEventListener('click',()=>setPick('goal'));
 $('start').addEventListener('input',()=>{updatePointSummaries();refreshMap();persist();});$('goal').addEventListener('input',()=>{updatePointSummaries();refreshMap();persist();});
 $('add-via').addEventListener('click',()=>{if(state.via.length>=50){setMessage('経由地は50件まで。',true);return;}setPick('via');setMessage('地図を長押しし、表示されたメニューから「経由地に追加」を選んでね。');});$('clear-vias').addEventListener('click',()=>{state.via=[];renderVia();refreshMap();persist();});
@@ -683,7 +718,7 @@ for(const id of ['hiroshima','shimanami','kanmon'])$(`sample-${id}`).addEventLis
 $('zoom-in').addEventListener('click',()=>map.setZoom(map.zoom+1));$('zoom-out').addEventListener('click',()=>map.setZoom(map.zoom-1));$('center-hiroshima').addEventListener('click',()=>map.center(34.4,132.46,11));$('map-location').addEventListener('click',startGps);$('nav-radar-toggle').addEventListener('click',()=>window.BNaviRideMode?.openNavRadar?.());$('compass-reset').addEventListener('click',()=>setOrientationMode('north'));$('help-btn').addEventListener('click',()=>$('help-dialog').showModal());$('gps-on').addEventListener('click',startGps);$('gps-off').addEventListener('click',stopGps);$('demo-on').addEventListener('click',startDemo);$('demo-off').addEventListener('click',stopDemo);for(const id of ['nav-start','nav-start-quick'])$(id).addEventListener('click',startVoiceGuidance);for(const id of ['nav-stop','nav-stop-quick'])$(id).addEventListener('click',()=>stopVoiceGuidance(true));for(const id of ['voice-test','voice-test-quick'])$(id).addEventListener('click',voiceTest);
 let restoringOffline=false;
 let offlineSaveTimer=null;
-function offlinePayload(){return {type:state.routeType,activeRouteTuning:state.activeRouteTuning,activeRoutingVehicle:state.activeRoutingVehicle,sections:state.routes.map(x=>({type:x.type,points:x.points,color:x.color,width:x.width,dash:x.dash,label:x.label,gpx:x.gpx,bridgeIndex:x.bridgeIndex,referenceOnly:x.referenceOnly,stageCheckpoint:x.stageCheckpoint})),mainGpx:state.currentGpx,shimanamiPlanPoints:state.shimanamiPlanPoints,shimanamiWebBuilt:state.shimanamiWebBuilt,islandLegs:state.islandLegs.map(x=>({name:x.name,points:x.points,turnCues:x.turnCues,bridgeAfter:x.bridgeAfter,sectionIndex:x.sectionIndex,checkpointAfter:x.checkpointAfter}))}}
+function offlinePayload(){return {type:state.routeType,activeRouteTuning:state.activeRouteTuning,activeRoutingVehicle:state.activeRoutingVehicle,activeRoutingMode:state.activeRoutingMode,customRouting:state.customRouting,sections:state.routes.map(x=>({type:x.type,points:x.points,color:x.color,width:x.width,dash:x.dash,label:x.label,gpx:x.gpx,bridgeIndex:x.bridgeIndex,referenceOnly:x.referenceOnly,stageCheckpoint:x.stageCheckpoint})),mainGpx:state.currentGpx,shimanamiPlanPoints:state.shimanamiPlanPoints,shimanamiWebBuilt:state.shimanamiWebBuilt,islandLegs:state.islandLegs.map(x=>({name:x.name,points:x.points,turnCues:x.turnCues,bridgeAfter:x.bridgeAfter,sectionIndex:x.sectionIndex,checkpointAfter:x.checkpointAfter}))}}
 function queueOfflineSave(){if(restoringOffline)return;if(offlineSaveTimer)clearTimeout(offlineSaveTimer);offlineSaveTimer=setTimeout(()=>saveOfflineRoute(),200)}
 async function saveOfflineRoute(){try{if(!state.routeType||!state.routes.length)throw Error('ルートまたはGPXを先に読み込んでね');await BNaviOfflineRouteStore.save(offlinePayload());$('offline-status').textContent='この端末に経路を保存したよ。通信がなくても読み込めます。'}catch(e){$('offline-status').textContent='端末保存できませんでした：'+e.message}}
 async function restoreOfflineRoute(){try{const data=await BNaviOfflineRouteStore.load();if(!data){$('offline-status').textContent='まだ保存済みの経路はありません。';return}if(!Array.isArray(data.sections)||!data.sections.length)throw Error('保存データが壊れています');restoringOffline=true;
@@ -719,7 +754,7 @@ function bindMyRouteUI(){
    const vehicle=state.activeRoutingVehicle??Number($('vehicle').value);
    const prior=myRouteSummaries.find(x=>x.vehicle===vehicle&&x.name.toLocaleLowerCase('ja-JP')===name.toLocaleLowerCase('ja-JP'));
    if(prior&&!window.confirm('「'+name+'」の経路線とパラメータを上書きする？'))return;
-   const saved=await BNaviMyRouteLibrary.save({name,vehicle,tuning:BNaviRouteTuning.normalize(state.activeRouteTuning??tuningNow(),vehicle),start:$('start').value,goal:$('goal').value,via:state.via,route:offlinePayload()},prior?.id);
+   const saved=await BNaviMyRouteLibrary.save({name,vehicle,tuning:BNaviRouteTuning.normalize(state.activeRouteTuning??null,vehicle),start:$('start').value,goal:$('goal').value,via:state.via,route:offlinePayload()},prior?.id);
    await refreshMyRouteList(saved.id);myRouteStatus('「'+saved.name+'」を'+(saved.replaced?'上書き':'保存')+'したよ。道路線と計算条件をまとめて保管しています。');
   }catch(err){myRouteStatus('保存できませんでした：'+err.message,true)}
  });
@@ -731,8 +766,12 @@ function bindMyRouteUI(){
    if(!stored.route?.sections?.length)throw Error('保存データが壊れています。');
    if(state.routeType&&state.routes.length&&!window.confirm('現在表示中の経路を「'+stored.name+'」に切り替える？'))return;
    const vehicle=stored.vehicle;
-   $('vehicle').value=String(vehicle);updateModes();
-   tuningByVehicle[vehicle]=BNaviRouteTuning.normalize(stored.tuning,vehicle);storeTuning();updateTuningUI();updatePresetUI('');
+   $('vehicle').value=String(vehicle);
+   customEnabled=Boolean(stored.route?.customRouting??!BNaviRouteTuning.isDefault(stored.tuning,vehicle));
+   updateModes();
+   if(!customEnabled&&MODES[vehicle][Number(stored.route?.activeRoutingMode)]!==undefined)$('mode').value=String(stored.route.activeRoutingMode);
+   if(customEnabled){$('mode').value='1';$('route-tuning-panel').open=true;}
+   tuningByVehicle[vehicle]=BNaviRouteTuning.normalize(stored.tuning,vehicle);storeTuning();updateTuningUI();updatePolicy();updatePresetUI('');
    $('start').value=stored.start||'';$('goal').value=stored.goal||'';state.via=[...(stored.via||[])];
    renderVia();updatePointSummaries();persist();
    restoringOffline=true;
@@ -753,7 +792,10 @@ function bindMyRouteUI(){
 async function displayStoredRoute(data,message){
  if(!Array.isArray(data.sections)||!data.sections.length)throw Error('保存した経路データがありません。');
  state.activeRoutingVehicle=data.activeRoutingVehicle??Number($('vehicle').value);
- state.activeRouteTuning=BNaviRouteTuning.normalize(data.activeRouteTuning??tuningNow(),state.activeRoutingVehicle);
+ state.activeRoutingMode=Number.isInteger(data.activeRoutingMode)?data.activeRoutingMode:1;
+ // Read old saved routes as general unless their stored tuning was nondefault.
+ state.customRouting=Boolean(data.customRouting??!BNaviRouteTuning.isDefault(data.activeRouteTuning,state.activeRoutingVehicle));
+ state.activeRouteTuning=state.customRouting?BNaviRouteTuning.normalize(data.activeRouteTuning??null,state.activeRoutingVehicle):null;
  routeView(data.type,data.sections,data.mainGpx||null,message);
  if(data.type==='shimanami'&&Array.isArray(data.islandLegs)&&data.islandLegs.length){
   state.islandLegs=data.islandLegs;
@@ -765,4 +807,4 @@ async function displayStoredRoute(data,message){
 $('shimanami-desk-verify').addEventListener('click',verifyShimanamiDesk);
 $('offline-save').addEventListener('click',saveOfflineRoute);
 $('offline-load').addEventListener('click',restoreOfflineRoute);
-updateModes();restore();bindTuning();bindPresetUI();bindMyRouteUI();renderVia();updatePointSummaries();syncNavigationButtons();refreshMap();fitMarkers();refreshServer();setPick('start');if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});restoreOfflineRoute();
+updateModes();loadTuning();restore();bindTuning();bindPresetUI();bindMyRouteUI();renderVia();updatePointSummaries();syncNavigationButtons();refreshMap();fitMarkers();refreshServer();setPick('start');if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});restoreOfflineRoute();

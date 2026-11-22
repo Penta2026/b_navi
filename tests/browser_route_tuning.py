@@ -21,8 +21,9 @@ with sync_playwright() as p:
  }''')
  for name in names:page.add_script_tag(content=(BASE/name).read_text())
  assert page.locator('#mode').input_value()=='1'
+ page.locator('#route-tuning-panel').evaluate('(e)=>e.open=true')
  assert page.locator('#tune-explore').input_value()=='0'
- assert page.locator('#tuning-status').inner_text()=='現在：一般ルート（変更なし）'
+ assert page.locator('#tuning-status').inner_text()=='カスタマイズOFF（調整値は保持）'
  assert not page.locator('#tune-big-options').is_visible()
  page.evaluate('''() => {const x=document.getElementById('tune-explore');x.value='65';x.dispatchEvent(new Event('input',{bubbles:true}));}''')
  assert page.locator('#tune-explore-value').inner_text()=='+65'
@@ -50,7 +51,7 @@ with sync_playwright() as p:
  page.locator('#calculate').click(force=True)
  page.wait_for_function('window.__queryCalls.length===1')
  q=page.evaluate('__queryCalls[0]')
- assert q['vehicle']=='1' and q['mode']=='1' and q['config']['explore']==65,q
+ assert q['vehicle']=='1' and q['mode']==1 and q['config']['explore']==65,q
  assert page.evaluate('state.activeRouteTuning.explore')==65
  page.evaluate('''() => {state.navActive=true;state.location=[34.401,132.451];state.activeTargets=[[34.41,132.46]];state.targetIndex=0;state.navPaused=false;}''')
  page.evaluate('''async()=>{await rerouteFromGps();}''')

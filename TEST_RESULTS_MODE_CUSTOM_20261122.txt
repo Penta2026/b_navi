@@ -1,0 +1,21 @@
+B_Navi PWA 2026-11-22 排気量／走り方＋カスタマイズ配置
+
+Node.js: 79 / 79 PASS (node --test tests/test_*.cjs)
+Browser PASS (Chromium mock, no live BRouter/GPS):
+ - browser_mode_custom_under.py: selected standard profiles 0/1/2, custom ON/OFF, 126cc fast travel, GPS reroute preserves mode
+ - browser_route_tuning.py: sliders, capacities, toll/motorway, snapshot, reroute
+ - browser_route_presets.py: named saved setting, export/import
+ - browser_my_route_library.py: IndexedDB mock route save/load/delete
+ - browser_gpx_itinerary.py
+ - browser_ride_integration.py
+ - browser_radar_voice_mute.py
+ - browser_track_panel_bottom.py
+ - browser_control_row.py (320/360/390/430px)
+ - browser_smoke.py
+ - browser_shimanami_payload.py
+ - browser_shimanami_via_reroute.py
+ - browser_shimanami_web_flow.py
+ - browser_voice_settings.py
+ - browser_long_press.py
+Not run: browser_shimanami_offline_restore.py (localhost HTTP access blocked by test environment).
+Not verified: real BRouter routing, real device GPS, saved settings persist across PWA update in real devices.

@@ -21,6 +21,7 @@ with sync_playwright() as p:
  }''')
  for name in names: page.add_script_tag(content=(BASE/name).read_text())
  assert page.locator('#mode').input_value()=='1'
+ page.locator('#route-tuning-panel').evaluate('(el)=>el.open=true')
  page.locator('#route-preset-panel').evaluate('(el)=>el.open=true')
  page.locator('#tune-explore').evaluate('(e)=>{e.value="55";e.dispatchEvent(new Event("input",{bubbles:true}))}')
  page.locator('#tune-scenic').evaluate('(e)=>{e.value="70";e.dispatchEvent(new Event("input",{bubbles:true}))}')

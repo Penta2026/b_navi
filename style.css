@@ -282,3 +282,16 @@ body.navigation-active #track-panel,body.free-ride-active #track-panel{display:n
 .my-route-panel button{min-height:42px;font-size:13px;padding:9px 10px;border:1px solid #b6cfd5;border-radius:9px}
 #my-route-save{width:100%;margin-top:9px}
 #my-route-status.error{color:#aa3333}
+
+/* Keep displacement and the original riding modes side by side. Custom controls live below. */
+.fieldrow label{min-width:0}
+.fieldrow select{min-width:0;max-width:100%;font-size:13px}
+.route-tuning-panel{margin-top:10px}
+.route-tuning-panel:not([open]){padding-top:4px;padding-bottom:4px;background:#f7fafb}
+.tuning-switch{display:flex;align-items:center;gap:12px;margin:10px 0 7px;padding:10px 12px;border-radius:10px;border:1px solid #b8d5df;background:#ecf6f8;cursor:pointer}
+.tuning-switch input{width:21px;height:21px;margin:0;flex:0 0 auto;accent-color:#08718c}
+.tuning-switch strong{font-size:13px;display:block;color:#154b61}
+.tuning-switch small{display:block;font-size:10px;margin-top:2px;color:#5f7e89}
+.route-tuning-panel[data-active="true"]{border-color:#4a99b2}
+.route-tuning-panel[data-active="true"] .tuning-tag{color:#fff;background:#08718c}
+@media(max-width:390px){.fieldrow{gap:6px}.fieldrow select{padding:9px 5px;font-size:12px}}

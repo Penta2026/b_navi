@@ -1,30 +1,20 @@
 {
-  "release": "2026-11-22-track-gpx-local-filename-v1",
-  "basis_archive": "B_Navi_PWA_GPX_Status_Bottom_2026-11-21.zip",
-  "deployment_target": "Penta2026/b_navi main / GitHub Pages https://penta2026.github.io/b_navi/",
-  "change_summary": [
-    "Use 実走GPX-YYYY-MM-DD-HH-mm.gpx for actual track GPX download and file sharing",
-    "Use device-local time captured at the first save/share, then retain the filename across reload",
-    "Bump PWA cache while retaining existing GPS track points and GPX XML"
+  "release": "2026-11-22-standard-mode-above-custom-v1",
+  "basis": "Penta2026/b_navi main at e85989e4f75e339263066c7138807f350c63b783 + main road continuity release",
+  "features": [
+    "Displacement and beginner/general/explore mode selectors in one row",
+    "126cc fast travel retained",
+    "Custom three sliders and toll/motorway options below normal mode selector",
+    "Custom enabled only via switch, slider change, or named preset",
+    "Ordinary BRouter and GPS reroute preserve selected mode",
+    "Loaded route retains routing mode, customization state and geometry",
+    "Old nondefault tuning settings migrate as active customization"
   ],
-  "tested_node": "77/77 PASS",
-  "tested_browser_simulation": [
-    "tests/browser_track_panel_bottom.py at 390px and 320px (idle, recorded, discard and sheet placement)",
-    "tests/browser_route_presets.py",
-    "tests/browser_my_route_library.py (mock IndexedDB)",
-    "tests/browser_ride_integration.py"
+  "tests": [
+    "Node regression and Playwright browser simulations"
   ],
-  "not_verified": [
-    "Android/iPhone actual GPX file naming",
-    "LINE actual file sharing",
-    "Live GPS recording on device",
-    "Live BRouter service"
-  ],
-  "changed_sha256": {
-    "track-recorder.js": "8a7f89bf3b1eccc62389d2e93fd20e63e6833226500f756543633bcb58539f1d",
-    "sw.js": "ae56568f220d8759e92ce486c814ac64b6338d507d2b4b835bebf3c9dc918a6f",
-    "tests/test_control_row.cjs": "fe842c5e830bbd5e11bd3433dc2188e91e9ae1b4e3e7f503c0da0bf3bfe2dfcb",
-    "tests/test_radar_voice_mute.cjs": "76d46017a9631394562f339336879878077a17a1466d2add97c435d5035118df",
-    "tests/test_track_filename.cjs": "44213b03e379c7492f49d125c9d545ba1dbd9a42dc1355533d391328473c19c4"
-  }
+  "unverified": [
+    "Physical mobile GPS/BRouter live route comparison",
+    "OSM legality on actual roads"
+  ]
 }
