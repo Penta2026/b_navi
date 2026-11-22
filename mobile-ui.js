@@ -93,10 +93,8 @@
   function showStationResults(rows,el){
     el.replaceChildren();
     const summary=document.createElement('p');summary.className='search-summary';
-    summary.textContent='JR駅の候補 '+rows.length+'件（旧PWAの駅データ）';el.append(summary);
-    rows.forEach(row=>showSearchResult(row,el));
-    const note=document.createElement('p');note.className='smallprint';
-    note.textContent='駅の座標は参考位置です。入口や道路への接続位置は地図上で確認してね。';el.append(note);
+    summary.textContent='検索結果 '+rows.length+'件';el.append(summary);
+    rows.forEach(row=>showSearchResult(row,el,'station'));
   }
  const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  async function searchNominatim(q){
@@ -123,8 +121,10 @@
    const card=document.createElement('div');card.className='place-result';
    const button=document.createElement('button');button.type='button';button.className='place-main';
    button.textContent=row.name;
-   const small=document.createElement('small');small.textContent=kind==='address'?'住所の候補・位置は概略（番地までの確定位置ではありません） · '+row.source:(row.address||'所在地の詳細なし')+' · '+row.source;
-   button.append(small);
+   if(kind!=='station'){
+    const small=document.createElement('small');small.textContent=kind==='address'?'住所の候補・位置は概略（番地までの確定位置ではありません） · '+row.source:(row.address||'所在地の詳細なし')+' · '+row.source;
+    button.append(small);
+   }
    button.onclick=()=>selectPlace(row.name,row.lat.toFixed(6)+','+row.lon.toFixed(6));
    card.append(button);
    if(kind==='address'){

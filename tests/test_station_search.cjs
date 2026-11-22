@@ -51,3 +51,15 @@ test('station index is cached with PWA app shell and used before remote POI sear
  assert.match(app,/BNaviStationSearch/);
  assert.match(app,/searchStations\(q\)/);
 });
+
+test('station results avoid technical provenance and entrance disclaimers in public search UI',()=>{
+ const row=station.rank(testRows,'尾道駅')[0];
+ assert.equal(row.address,'');
+ assert.equal(row.source,'JR駅');
+ const mobile=fs.readFileSync(path.join(root,'mobile-ui.js'),'utf8');
+ const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+ assert.match(mobile,/showSearchResult\(row,el,'station'\)/);
+ assert.match(mobile,/if\(kind!=='station'\)/);
+ assert.doesNotMatch(mobile,/旧PWAの駅データ|駅の座標は参考位置です/);
+ assert.doesNotMatch(html,/旧PWAの駅データ|駅入口・乗車位置/);
+});

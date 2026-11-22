@@ -28,7 +28,7 @@
    const name=normalized(row?.name),lat=Number(row?.lat),lon=Number(row?.lng??row?.lon);
    if(name!==wanted.name||seen.has(name+'|'+lat+'|'+lon)||!Number.isFinite(lat)||!Number.isFinite(lon)||lat<20||lat>46||lon<122||lon>154)continue;
    seen.add(name+'|'+lat+'|'+lon);
-   found.push({name:name+'駅',address:'旧PWAのJR駅データから取得（駅入口・乗車位置とは異なる場合があります）',lat,lon,source:'JR駅データ（参考位置）',precision:'station',score:130});
+   found.push({name:name+'駅',address:'',lat,lon,source:'JR駅',precision:'station',score:130});
    if(found.length===12)break;
   }
   return found;
