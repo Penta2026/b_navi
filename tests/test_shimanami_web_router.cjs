@@ -46,7 +46,7 @@ test('reject BRouter route with far-away road snap, no silent off-island detour'
  const far=async pair=>({track:{points:[pair[0],[34.4,133.24],pair[1]],cues:[]},gpx:'<gpx/>'});
  await assert.rejects(()=>router.compose([from,to],0,1,{...options,query:far}),/道路が大きく遠回り/);
  const bad=async pair=>({track:{points:[[34.380,133.20],pair[1]],cues:[]},gpx:'<gpx/>'});
- await assert.rejects(()=>router.compose([from,to],0,1,{...options,query:bad}),/ずれています/);
+ await assert.rejects(()=>router.compose([from,to],0,1,{...options,query:bad}),/離れています/);
 });
 test('only special on cross-island trips with 50cc and <=125cc; normal local routing unaffected',()=>{
  assert(router.needsSpecialJourney([from,to],0));assert(router.needsSpecialJourney([to,from],1));
