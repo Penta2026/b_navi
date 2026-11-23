@@ -37,7 +37,7 @@ for(const [v,kind] of ['50','125','big'].entries())for(const [mode,n] of ['begin
   assert.equal(client.profileName(v,mode),'bn_'+kind+'_'+n);
   const legalGates=immutable(base);
   for(const view of choices.view)for(const ride of choices.ride)for(const backroad of choices.backroad){
-   const output=t.tuneProfile(base,{preferences:{view,ride,backroad}},v);
+   const output=t.tuneProfile(base,{preferences:{view,ride,backroad}},v,mode);
    assert.equal(signal(output),850);
    assert.notEqual(output,base);
    assert.equal(immutable(output),legalGates);
@@ -50,9 +50,9 @@ for(const [v,kind] of ['50','125','big'].entries())for(const [mode,n] of ['begin
 }
 test('C-plan backroad bias is base-mode dependent: beginner restricts narrow lanes, explore tolerates',()=>{
  const b=['beginner','general','explore'].map(mode=>read('profiles/bn_125_'+mode+'.brf'));
- const normalized=b.map((src,i)=>lane(t.tuneProfile(src,{preferences:{backroad:true}},1))-lane(t.tuneProfile(src,{preferences:{backroad:false}},1)));
+ const normalized=b.map((src,i)=>lane(t.tuneProfile(src,{preferences:{backroad:true}},1,i))-lane(t.tuneProfile(src,{preferences:{backroad:false}},1,i)));
  assert.ok(normalized[0]>normalized[1]&&normalized[1]>normalized[2],normalized.join(','));
- const major=b.map(src=>trunk(t.tuneProfile(src,{preferences:{backroad:true}},1))-trunk(t.tuneProfile(src,{preferences:{backroad:false}},1)));
+ const major=b.map(src=>trunk(t.tuneProfile(src,{preferences:{backroad:true}},1,b.indexOf(src)))-trunk(t.tuneProfile(src,{preferences:{backroad:false}},1,b.indexOf(src))));
  assert.ok(major[0]<major[1]&&major[1]<major[2],major.join(','));
 });
 test('scenic and distance, cruise and efficiency select distinct profile costs',()=>{
