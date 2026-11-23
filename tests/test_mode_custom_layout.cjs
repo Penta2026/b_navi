@@ -13,10 +13,14 @@ test('displacement and normal modes share top row; independent custom section fo
 });
 test('standard mode selection is passed to BRouter and kept through navigation re-routing',()=>{
  const app=read('app.js');
- assert.match(app,/function routingMode\(\)\{return customEnabled\?1:Number\(\$\('mode'\)\.value\)\}/);
+ // Existing normal modes still pass through unchanged; both custom entry points use general BRF.
+ assert.match(app,/function routingMode\(\)\{return customEnabled\|\|styleModeSelected\(\)\?1:Number\(\$\('mode'\)\.value\)\}/);
+ assert.match(app,/const MODES=\[\['ビギナー','一般','探索'\]/);
+ assert.match(app,/customOption\.value='custom'/);
  assert.match(app,/state\.activeRoutingMode=routingMode\(\)/);
  assert.match(app,/BNaviPublicBrouter\.query\(points,\$\('vehicle'\)\.value,state\.activeRoutingMode/);
  assert.match(app,/state\.activeRoutingMode\?\?1,fetch,null,state\.activeRouteTuning/);
  assert.match(app,/\$\('mode'\)\.addEventListener\('change',\(\)=>\{chooseCustom\(false\);\}\)/);
+ assert.match(app,/styleModeSelected\(\)\?BNaviRouteTuning\.normalize\(\{style:customRouteStyle\}/);
  assert.match(app,/customEnabled\?tuningNow\(\):null/);
 });
