@@ -31,7 +31,7 @@ function tuneStyle(base,style){
  if(blockStart<0||blockEnd<=blockStart)throw Error('BRF道路係数を安全に変更できません');
  let block=out.slice(blockStart,blockEnd);
  for(const [key,expr] of Object.entries(roadNames)){
-   const pattern=new RegExp('(^[ \\t]*switch highway='+expr.replace(/\\|/g,'\\|')+'[ \\t]+)([0-9]+(?:\\.[0-9]+)?)([ \\t]*$)','m');
+   const pattern=new RegExp('(^[ \\t]*switch highway='+expr.split('|').join('\\|')+'[ \\t]+)([0-9]+(?:\\.[0-9]+)?)([ \\t]*$)','m');
    let hits=0;
    block=block.replace(pattern,(_,a,n,b)=>{
      hits++;const target=Math.max(1.01,Number(n)+cfg[key]-STYLE_REF125[key]);
