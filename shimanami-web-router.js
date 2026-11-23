@@ -61,7 +61,9 @@ function validateRoad(stage,track){
 async function compose(points,vehicle,mode,{geometry,refs,query,bridgePreview,onProgress=()=>{},concurrency=2}){
  const stages=plan(points,vehicle,geometry,refs),roadStages=stages.filter(s=>s.type==='road');
  if(typeof query!=='function'||typeof bridgePreview!=='function')throw Error('経路計算・橋形状確認がありません');
- const results=new Map(),count=Math.min(2,Math.max(1,concurrency|0));let next=0;
+ // The shared public service must never receive simultaneous island-road queries.
+ // An HTTP 403 stops the itinerary; no eager retries or unsafe bridge fallbacks.
+ const results=new Map(),count=1;let next=0;
  async function worker(){
    while(next<roadStages.length){
      const stage=roadStages[next++],index=next;
