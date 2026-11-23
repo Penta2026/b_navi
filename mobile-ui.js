@@ -294,6 +294,21 @@
         try{const matches=await searchStations(q);if(matches.length){showStationResults(matches,el);return;}}
         catch(err){/* Fall back to online geocoders when local data cannot load. */}
       }
+     // Offline registered spots are always searched FIRST; no network calls.
+     let localRows=[],localLoadError=null;
+     try{localRows=await searchRegistered(q)}catch(err){localLoadError=err}
+     if(localRows.length)showGroupedResults(localRows,[],el);
+     if(navigator.onLine===false){
+       if(!localRows.length){
+         el.replaceChildren();
+         const note=document.createElement('p');note.className='search-no-match';
+         note.textContent=localLoadError?'登録地点データが読み込めません。Wi-FiでPWAを更新してね。':
+           '登録地点に一致するスポットがありません。外部検索は通信が必要だよ。';
+         el.append(note);
+       }
+       return;
+     }
+     if(!localRows.length)el.textContent='外部の施設データも検索中…';
      // Do not stop when OpenPOI finds one branch: another provider may know HQ.
       const parsed=searchCore.parts(q),cat=searchCore.category(q);
       const tasks=[
@@ -330,24 +345,17 @@
         catch(err){/* Retain online results if station index fails. */}
       }
       const suggestions=results.length?[]:searchCore.related(candidates,q,results);
-      el.replaceChildren();
-      if(results.length){
-        const h=document.createElement('p');h.className='search-summary';
-        h.textContent='検索結果 '+results.length+'件';el.append(h);
-        results.forEach(x=>showSearchResult(x,el));
-      }else if(suggestions.length){
-        const h=document.createElement('p');h.className='search-summary';
-        h.textContent='関連候補 '+suggestions.length+'件（名称を確認してね）';el.append(h);
-        suggestions.forEach(x=>showSearchResult(x,el));
-      }else{
+      const showed=showGroupedResults(localRows,results.length?results:suggestions,el,{related:!results.length});
+      if(!showed){
         const p=document.createElement('p');p.className='search-no-match';
-        p.textContent=providerSuccesses===0?'施設検索サービスに接続できませんでした。通信状態を確認して再検索してね。':
-          '該当する施設を検索データから見つけられませんでした。住所が分かる場合は「住所で探す」も試してね。';
+        p.textContent=localLoadError&&providerSuccesses===0?
+          '登録地点データと外部検索の両方が利用できません。通信とPWA更新を確認してね。':
+          providerSuccesses===0?'外部検索サービスに接続できませんでした。登録地点も一致しませんでした。':
+          '一致する地点が見つかりませんでした。住所で探すか、地図から選択してね。';
         el.append(p);
-      }
-      if(results.length||suggestions.length){
+      }else if(results.length||suggestions.length){
         const note=document.createElement('p');note.className='smallprint';
-        note.textContent='別の事業所は、それぞれの所在地を確認して選んでね。';el.append(note);
+        note.textContent='外部の事業所は所在地を確認して選んでね。';el.append(note);
       }
     }catch(err){
      el.replaceChildren();const p=document.createElement('p');p.textContent='検索処理に失敗しました（'+err.message+'）。';el.append(p);
