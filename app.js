@@ -444,7 +444,7 @@ async function calculateShimanamiWeb(points){
   bridgePreview:androidBridgePreview,
   onProgress:step=>setMessage(`しまなみ：島内道路 ${step.index}/${step.total} 区間を計算中。橋 ${step.bridgeTotal} 本の接続も検証します。`)
  });
- routeView('shimanami',result.sections,null,`しまなみ：島内道路${result.roadSegments}区間・橋${result.bridges}本。経由地${points.length-2}件は指定順。橋は原付通路の参考線で走行GPXと音声案内には入れません。現地標識に従ってね。`);
+ routeView('shimanami',result.sections,null,`しまなみ：島内道路${result.roadSegments}区間・橋${result.bridges}本。経由地${points.length-2}件は指定順。橋は原付通路の参考線で走行GPXと音声案内には入れません。現地標識に従ってね。${result.warnings?.length?' 注意：'+result.warnings.join('／'):''}`);
  state.shimanamiWebBuilt=true;state.shimanamiPlanPoints=points.map(p=>p.slice());
  state.islandLegs=result.guidance;loadIslandGuidance(0);queueOfflineSave();
  $('shimanami-desk-tools').hidden=false;
