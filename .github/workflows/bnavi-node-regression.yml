@@ -21,5 +21,10 @@ jobs:
           node --check mobile-ui.js
           node --check poi-search-merge.js
           node --check place-search-core.js
+          node --check map-core.js
+          node --check offline-map-download.mjs
+          node --check offline-map-bridge.mjs
+          node --check offline-map-layer.mjs
+          node --check offline-region-mosaic.mjs
       - name: Run B_Navi Node tests
         run: node --test tests/test_*.cjs
