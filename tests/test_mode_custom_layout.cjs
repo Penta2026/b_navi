@@ -20,7 +20,7 @@ test('base modes and additive preferences are passed to BRouter and kept through
  assert.match(app,/state\.activeRoutingMode=routingMode\(\)/);
  assert.match(app,/BNaviPublicBrouter\.query\(points,\$\('vehicle'\)\.value,state\.activeRoutingMode/);
  assert.match(app,/state\.activeRoutingMode\?\?1,fetch,null,state\.activeRouteTuning/);
- assert.match(app,/\$\('mode'\)\.addEventListener\('change',\(\)=>\{chooseCustom\(false\);\}\)/);
+ assert.match(app,/\$\('mode'\)\.addEventListener\('change',\(\)=>\{chooseCustom\(false\);updateCustomRouteUI\(\);updatePolicy\(\);persist\(\);\}\)/);
  assert.match(app,/BNaviRouteTuning\.normalize\(\{preferences:p\}/);
  assert.match(app,/customEnabled\?tuningNow\(\):null/);
  assert.match(app,/routePreferences:currentPreferences\(\)/);
