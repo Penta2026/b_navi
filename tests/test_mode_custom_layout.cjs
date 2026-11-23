@@ -11,16 +11,17 @@ test('displacement and normal modes share top row; independent custom section fo
  assert.doesNotMatch(rowHtml,/<select id="mode" hidden/);
  assert.match(html,/<input id="tuning-enabled" type="checkbox">/);
 });
-test('standard mode selection is passed to BRouter and kept through navigation re-routing',()=>{
+test('base modes and additive preferences are passed to BRouter and kept through re-routing',()=>{
  const app=read('app.js');
  // Existing normal modes still pass through unchanged; both custom entry points use general BRF.
- assert.match(app,/function routingMode\(\)\{return customEnabled\|\|styleModeSelected\(\)\?1:Number\(\$\('mode'\)\.value\)\}/);
+ assert.match(app,/function routingMode\(\)\{return customEnabled\?1:selectedBaseMode\(\)\}/);
  assert.match(app,/const MODES=\[\['ビギナー','一般','探索'\]/);
- assert.match(app,/customOption\.value='custom'/);
+ assert.doesNotMatch(app,/customOption\.value='custom'/);
  assert.match(app,/state\.activeRoutingMode=routingMode\(\)/);
  assert.match(app,/BNaviPublicBrouter\.query\(points,\$\('vehicle'\)\.value,state\.activeRoutingMode/);
  assert.match(app,/state\.activeRoutingMode\?\?1,fetch,null,state\.activeRouteTuning/);
  assert.match(app,/\$\('mode'\)\.addEventListener\('change',\(\)=>\{chooseCustom\(false\);\}\)/);
- assert.match(app,/styleModeSelected\(\)\?BNaviRouteTuning\.normalize\(\{style:customRouteStyle\}/);
+ assert.match(app,/BNaviRouteTuning\.normalize\(\{preferences:p\}/);
  assert.match(app,/customEnabled\?tuningNow\(\):null/);
+ assert.match(app,/routePreferences:currentPreferences\(\)/);
 });
