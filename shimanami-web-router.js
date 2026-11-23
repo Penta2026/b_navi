@@ -30,7 +30,7 @@ function plan(points,vehicle,geometry,refs){
  const stages=[];
  for(let leg=0;leg<points.length-1;leg++){
    const start=island(points[leg]),end=island(points[leg+1]),step=Math.sign(end-start);
-   let from=points[leg];
+   let from=points[leg],fromKind='指定地点';
    if(step){
      for(let pos=start;pos!==end;pos+=step){
        const bridgeIndex=step>0?pos:pos-1;
@@ -38,12 +38,12 @@ function plan(points,vehicle,geometry,refs){
        const pieces=g.directions[forward?'forward':'reverse'];
        const entry=pieces[0].points[0],exit=pieces[1].points.at(-1);
        const pointsRef=forward?refs[bridgeIndex].points:refs[bridgeIndex].points.slice().reverse();
-       stages.push({type:'road',from,to:entry,island:pos,checkpoint:leg+1,checkpointEnd:false});
+       stages.push({type:'road',from,to:entry,island:pos,fromKind,toKind:'橋の入口',bridgeName:g.name,checkpoint:leg+1,checkpointEnd:false});
        stages.push({type:'bridge',bridgeIndex:bridgeIndex+1,forward,name:g.name,from:entry,to:exit,points:pointsRef,checkpoint:leg+1});
-       from=exit;
+       from=exit;fromKind='橋の出口';
      }
    }
-   stages.push({type:'road',from,to:points[leg+1],island:end,checkpoint:leg+1,checkpointEnd:true});
+   stages.push({type:'road',from,to:points[leg+1],island:end,fromKind,toKind:'指定地点',checkpoint:leg+1,checkpointEnd:true});
  }
  for(let i=0;i<stages.length-1;i++){
    if(meters(stages[i].to,stages[i+1].from)>0.1)throw Error('しまなみ計画に接続不良があります');
@@ -53,7 +53,16 @@ function plan(points,vehicle,geometry,refs){
 function validateRoad(stage,track){
  const pts=track?.points;if(!Array.isArray(pts)||pts.length<2||pts.length>100000||pts.some(p=>!inArea(p)))throw Error('島内道路の経路形状が不正です');
  const from=meters(pts[0],stage.from),to=meters(pts.at(-1),stage.to);
- if(from>MAX_ENDPOINT_METERS||to>MAX_ENDPOINT_METERS)throw Error(`${ISLAND_NAMES[stage.island]}：計算道路の入口・出口が${Math.round(Math.max(from,to))}mずれています（${MAX_ENDPOINT_METERS}m以内が必要）`);
+ if(from>MAX_ENDPOINT_METERS||to>MAX_ENDPOINT_METERS){
+  const isStart=from>=to,side=isStart?'出発側':'到着側',gap=Math.round(isStart?from:to);
+  const kind=isStart?(stage.fromKind||'接続地点'):(stage.toKind||'接続地点');
+  const target=isStart?stage.from:stage.to,actual=isStart?pts[0]:pts.at(-1);
+  const bridge=/^橋の/.test(kind);
+  const issue=bridge?'橋への進入・退出道路が、公開道路データ上でつながっていない可能性があります。':
+   '指定地点が道路中心線から離れている可能性があります。';
+  const coords=p=>p.map(n=>n.toFixed(6)).join(',');
+  throw Error(`${ISLAND_NAMES[stage.island]}：${side}（${kind}${bridge&&stage.bridgeName?'・'+stage.bridgeName:''}）が${gap}mずれています（道路端点検査${MAX_ENDPOINT_METERS}m以内）。${issue} 目標 ${coords(target)}／計算終点 ${coords(actual)}。未確認区間を直線接続せず停止しました。`);
+ }
  const length=pts.slice(1).reduce((acc,p,i)=>acc+meters(pts[i],p),0);
  if(length>Math.max(32000,meters(stage.from,stage.to)*8+6000))throw Error(ISLAND_NAMES[stage.island]+'：島内道路が大きく遠回りしています');
  return {length,fromGap:from,toGap:to};
