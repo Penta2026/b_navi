@@ -67,7 +67,7 @@ function preferenceSummary(){
 function updatePolicy(){
  const el=$('route-policy');if(!el)return;
  const mode=selectedBaseMode();
- el.textContent=customEnabled?ROUTE_POLICIES[1]+' 旧設定を復元中。'
+ el.textContent=customEnabled?ROUTE_POLICIES[1]+' 保存済みの詳細設定を適用中。'
   :ROUTE_POLICIES[mode]+(mode>2?' ファストトラベルは専用ルート設定を使用。'
   :' 信号回避は全モード共通で強化。＋ '+preferenceSummary()+'。快走できる地域道なら距離約20％増も検討する試験方針（上限・時間短縮の保証なし）。公開BRouter向け。');
 }
@@ -272,7 +272,7 @@ function needsDedicatedApi(points){
 }
 async function calculatePublicRoute(points){
  if(needsDedicatedApi(points))throw Error('しまなみ・関門の原付専用案内は公開BRouterでは再現できません。専用B_Navi Javaサーバー接続が必要です。');
- if(typeof BNaviPublicBrouter==='undefined')throw Error('旧PWAのBRouterクライアントを読み込めません');
+ if(typeof BNaviPublicBrouter==='undefined')throw Error('経路計算プログラムを読み込めません。アプリを再読み込みしてね。');
  setMessage('公開BRouter：経路計算の準備中…');
  const result=await BNaviPublicBrouter.query(points,$('vehicle').value,state.activeRoutingMode,fetch,progress=>{setMessage(progress.message);},state.activeRouteTuning);
  // Verify that the remote route actually passes every requested intermediate stop.
@@ -281,8 +281,8 @@ async function calculatePublicRoute(points){
   const missed=points.slice(1,-1).map((p,i)=>({n:i+1,d:BNaviRideLogic.distanceToPolyline(p,result.track.points)})).filter(v=>v.d>300);
   if(missed.length)throw Error('経由地'+missed.map(x=>x.n).join('、')+'を通る道路経路が取得できません（300m以上離れています）。場所とルートを確認してね。');
  }
- routeView('normal',[{type:'road',points:result.track.points,color:'#06799b',width:5,label:'公開BRouter・旧PWA方式（試験）',gpx:result.gpx}],result.gpx,
-   '公開BRouter試験計算：'+result.profile+'（通信・計算 '+(result.elapsedMs/1000).toFixed(1)+'秒）。GPXと案内指示を端末に保存。道路規制・適法性は未検証。'+(!result.track.cues.length?'今回は音声用右左折指示が返りませんでした。':''));
+ routeView('normal',[{type:'road',points:result.track.points,color:'#06799b',width:5,label:'BRouterで計算した道路ルート',gpx:result.gpx}],result.gpx,
+   'BRouter経路を計算しました：'+result.profile+'（通信・計算 '+(result.elapsedMs/1000).toFixed(1)+'秒）。GPXと案内指示を端末に保存。道路規制・適法性は未検証。'+(!result.track.cues.length?'今回は音声用右左折指示が返りませんでした。':''));
 }
 
 function apiRoot(){
@@ -308,7 +308,7 @@ async function calculate(){const btn=$('calculate');btn.disabled=true;clearResul
    ?BNaviRouteTuning.normalize({preferences:p},state.activeRoutingVehicle)
    :(customEnabled?tuningNow():null);
  persist();
- if(!usePublicBrouter()&&customEnabled&&!BNaviRouteTuning.isDefault(state.activeRouteTuning,state.activeRoutingVehicle))throw Error('旧カスタム調整は専用Java APIに未対応です。');setMessage('BRouter計算中。道路データを照合しています…');
+ if(!usePublicBrouter()&&customEnabled&&!BNaviRouteTuning.isDefault(state.activeRouteTuning,state.activeRoutingVehicle))throw Error('保存済みの詳細ルート調整は、現在の経路サーバーに対応していません。');setMessage('BRouter計算中。道路データを照合しています…');
  if(usePublicBrouter()){
    if(typeof BNaviShimanamiWebRouter!=='undefined'&&BNaviShimanamiWebRouter.needsSpecialJourney(points,$('vehicle').value))await calculateShimanamiWeb(points);
    else await calculatePublicRoute(points);

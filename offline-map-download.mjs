@@ -65,7 +65,7 @@ async function active(r){
  try{return await(await d.getFileHandle('map.pmtiles')).getFile()}catch(e){if(e.name==='NotFoundError')return null;throw e}
 }
 async function status(){
- $('offline-map-install-note').textContent='✅ '+runMode()+'：旧BikeNavigatorと同じ端末内地図保存領域を使用';
+ $('offline-map-install-note').textContent='✅ '+runMode()+'：地図はこの端末内のアプリ専用領域に保存されます';
  $('offline-map-download').disabled=!deliveryReady();
  try{
   await dir(selected()); // prepare before networking

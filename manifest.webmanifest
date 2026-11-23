@@ -1,7 +1,7 @@
 {
   "name": "B_Navi | スマホPWA",
   "short_name": "B_Navi",
-  "description": "B_Navi PC・Android版BRouter継承のツーリングナビ試験版",
+  "description": "B_Navi バイク向けルート検索・音声案内・地域別オフライン地図",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

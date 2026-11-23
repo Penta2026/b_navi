@@ -33,7 +33,7 @@
     if(!geometry||typeof geometry!=='object'||!Array.isArray(geometry.points)||geometry.points.length<2||geometry.points.length>2000) throw new Error(name+': 形状点数が不正');
     if(!geometry.points.every(pointOK)) throw new Error(name+': 範囲外または不正座標');
     const a=meters(geometry.points[0],start), b=meters(geometry.points.at(-1),end);
-    if(a>20||b>20) throw new Error(name+`: Android入口出口の距離条件不一致 (${a.toFixed(1)}m / ${b.toFixed(1)}m)`);
+    if(a>20||b>20) throw new Error(name+`: 橋の入口・出口の距離条件が一致しません (${a.toFixed(1)}m / ${b.toFixed(1)}m)`);
     if(!['moped_tagged_reference','cycling_reference'].includes(geometry.kind)) throw new Error(name+': 未知の形状種別');
     return {startGapMeters:a,endGapMeters:b};
   }
@@ -48,7 +48,7 @@
     return {type:'moped_deck_reference',bridgeIndex:1,name:'因島大橋',navigationEligible:false,points:forward?s.points:s.points.slice().reverse()};
   }
   function audit(data,bridgeSegments) {
-    if(!data||data.schema_version!==1||!Array.isArray(data.bridges)||data.bridges.length!==6)throw new Error('Android橋形状データのスキーマ不一致');
+    if(!data||data.schema_version!==1||!Array.isArray(data.bridges)||data.bridges.length!==6)throw new Error('橋の参考形状データの形式が一致しません');
     if(!Array.isArray(bridgeSegments))throw new Error('橋プレビュー区間がありません');
     const overlays=[],issues=[],perBridge=[];
     for(const segment of bridgeSegments){
@@ -58,7 +58,7 @@
       const direction=segment.forward?'forward':'reverse';
       const report={name:NAMES[i],direction,shapes:0,missing:0};
       if(!bridge||bridge.name!==NAMES[i]||!bridge.directions||!Array.isArray(bridge.directions[direction])||bridge.directions[direction].length!==2){
-        issues.push(`${NAMES[i]}: Android原本の方向別アプローチ形状がない`);report.missing+=2;perBridge.push(report);continue;
+        issues.push(`${NAMES[i]}: 指定方向の橋の進入・退出形状が見つかりません`);report.missing+=2;perBridge.push(report);continue;
       }
       const access=segment.forward?FORWARD[i]:FORWARD[i].slice().reverse();
       const deck=segment.forward?DECK[i]:DECK[i].slice().reverse();
@@ -67,7 +67,7 @@
       for(let j=0;j<2;j++){
         const [role,start,end]=specs[j], part=pieces[j];
         try{
-          if(part?.role!==role)throw new Error('Android role不一致');
+          if(part?.role!==role)throw new Error('橋の参考形状の区間種別が一致しません');
           const gaps=validateShape(part,`${NAMES[i]} ${role}`,start,end);
           overlays.push({type:part.kind==='moped_tagged_reference'?'moped_approach_reference':'cycling_approach_reference',bridgeIndex:i+1,name:NAMES[i],role,direction,navigationEligible:false,points:part.points, ...gaps});
           report.shapes++;
