@@ -162,21 +162,35 @@
  $('place-query').addEventListener('input',()=>{
    cancelSuggestions();
    const q=$('place-query').value.trim();
-   if(q.length<3||searchBusy||!placeDialog.open||currentPlaceTab!=='search'||
-       stationCore?.isExplicit(q)||addressCore.looksLikeAddress(q))return;
-   const serial=suggestionSerial;
+   if(q.length<2||searchBusy||!placeDialog.open||currentPlaceTab!=='search'||
+      stationCore?.isExplicit(q)||addressCore.looksLikeAddress(q))return;
+   const serial=suggestionSerial,group=$('registered-category').value;
+   // Local results appear as soon as the installed index is available.
+   searchRegistered(q).then(rows=>{
+     if(serial!==suggestionSerial||q!==$('place-query').value.trim()||
+       group!==$('registered-category').value||searchBusy||!placeDialog.open||currentPlaceTab!=='search')return;
+     previewLocal=rows;
+     if(rows.length||previewRemote.length)showGroupedResults(rows,previewRemote,$('place-search-results'),{preview:true});
+   }).catch(()=>{/* Existing remote search remains available. */});
+   if(q.length<3||navigator.onLine===false)return;
    suggestionTimer=setTimeout(async()=>{
      suggestionTimer=null;
      const controller=new AbortController();suggestionController=controller;
      try{
        const rows=await searchOpenPoi(q,'suggest',controller.signal);
        if(serial!==suggestionSerial||q!==$('place-query').value.trim()||
-           searchBusy||!placeDialog.open||currentPlaceTab!=='search')return;
-       if(rows.length){const filtered=mergeCore.combine(q,[{kind:'suggest',rows}]);if(filtered.length)renderOpenPoi(filtered,$('place-search-results'),true);}
-     }catch(err){
-       // Autocomplete is optional; manual search still tries every provider.
-     }finally{if(suggestionController===controller)suggestionController=null}
+          group!==$('registered-category').value||searchBusy||!placeDialog.open||currentPlaceTab!=='search')return;
+       previewRemote=mergeCore.combine(q,[{kind:'suggest',rows}]);
+       if(previewRemote.length||previewLocal.length)showGroupedResults(previewLocal,previewRemote,$('place-search-results'),{preview:true});
+     }catch(err){/* Autocomplete is optional, even in offline mode. */}
+     finally{if(suggestionController===controller)suggestionController=null}
    },550);
+ });
+ $('registered-category').addEventListener('change',()=>{
+   cancelSuggestions();
+   const q=$('place-query').value.trim();
+   if(!q||searchBusy||!placeDialog.open)return;
+   lastSearch=0;runSearch(q);
  });
  const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  async function searchNominatim(q){
