@@ -32,11 +32,11 @@ function gpxFromTrack(track,profile){
  return `<?xml version="1.0" encoding="utf-8"?><gpx version="1.1" creator="B_Navi public BRouter trial" xmlns="http://www.topografix.com/GPX/1/1"><metadata><desc>${xml('Published BRouter trial: '+profile)}</desc></metadata><trk><name>B_Navi route</name><trkseg>${points}</trkseg></trk><rte>${cues}</rte></gpx>`;
 }
 const tuner=root.BNaviRouteTuning||(typeof require!=='undefined'?require('./route-tuning.js'):null);
-async function upload(name,cacheKey,netFetch=fetch,custom=null,vehicle=1){
+async function upload(name,cacheKey,netFetch=fetch,custom=null,vehicle=1,mode=1){
  const url=new URL('./profiles/'+name+'.brf',location.href);
  const p=await netFetch(url,{cache:'no-store'});if(!p.ok)throw Error('走行プロファイルを取得できません HTTP '+p.status);
  const baseline=await p.text();if(!baseline.includes('---context:way')||!baseline.includes('---context:node'))throw Error('プロファイルが不正です');
- const brf=custom&&tuner?!tuner.isDefault(custom,vehicle)?tuner.tuneProfile(baseline,custom,vehicle):baseline:baseline;
+ const brf=custom&&tuner?!tuner.isDefault(custom,vehicle)?tuner.tuneProfile(baseline,custom,vehicle,mode):baseline:baseline;
  const resp=await netFetch(SERVER+'/profile',{method:'POST',headers:{'Content-Type':'text/plain'},body:brf,signal:AbortSignal.timeout(30000),credentials:'omit'});
  const body=await resp.text();if(!resp.ok)throw Error('公開BRouterのプロファイル登録に失敗 HTTP '+resp.status+' '+body.slice(0,120));
  let obj;try{obj=JSON.parse(body)}catch{obj=body}
@@ -44,10 +44,10 @@ async function upload(name,cacheKey,netFetch=fetch,custom=null,vehicle=1){
  const id=options.find(v=>typeof v==='string'&&/^(custom_|shared_)[A-Za-z0-9_-]+$/.test(v))||body.match(/(?:custom_|shared_)[A-Za-z0-9_-]+/)?.[0];
  if(!id)throw Error('BRouterのカスタムプロファイルIDを取得できません');IDS.set(cacheKey,id);return id;
 }
-async function ensureProfile(name,cacheKey,netFetch,custom,vehicle){
+async function ensureProfile(name,cacheKey,netFetch,custom,vehicle,mode){
  if(IDS.has(cacheKey))return IDS.get(cacheKey);
  if(!PENDING_UPLOADS.has(cacheKey)){
-  const task=upload(name,cacheKey,netFetch,custom,vehicle).finally(()=>PENDING_UPLOADS.delete(cacheKey));
+  const task=upload(name,cacheKey,netFetch,custom,vehicle,mode).finally(()=>PENDING_UPLOADS.delete(cacheKey));
   PENDING_UPLOADS.set(cacheKey,task);
  }
  return PENDING_UPLOADS.get(cacheKey);
@@ -60,11 +60,11 @@ async function query(points,vehicle,mode,netFetch=fetch,onProgress=null,custom=n
  if(custom&&!tuner)throw Error('ルート微調整モジュールがありません');
  const cacheKey=isCustomized?profile+':'+tuner.key(custom,vehicle):profile;
  progress('profile',IDS.has(cacheKey)?'公開BRouter：前回の走行プロファイルを使用中…':'公開BRouter：走行プロファイルを送信中…');
- let id=await ensureProfile(profile,cacheKey,netFetch,custom,vehicle);
+ let id=await ensureProfile(profile,cacheKey,netFetch,custom,vehicle,mode);
  const calc=async()=>{const url=new URL(SERVER);url.searchParams.set('lonlats',points.map(p=>p[1]+','+p[0]).join('|'));url.searchParams.set('profile',id);url.searchParams.set('alternativeidx','0');url.searchParams.set('format','geojson');url.searchParams.set('timode','3');
  return netFetch(url,{signal:AbortSignal.timeout(90000),cache:'no-store',credentials:'omit'});};
  progress('route','公開BRouter：道路ルートを計算中…');
- let r=await calc();if(!r.ok&&[400,404,500].includes(r.status)){IDS.delete(cacheKey);progress('retry','公開BRouter：プロファイル期限切れを確認・再送信中…');id=await ensureProfile(profile,cacheKey,netFetch,custom,vehicle);progress('route','公開BRouter：経路を再計算中…');r=await calc()}
+ let r=await calc();if(!r.ok&&[400,404,500].includes(r.status)){IDS.delete(cacheKey);progress('retry','公開BRouter：プロファイル期限切れを確認・再送信中…');id=await ensureProfile(profile,cacheKey,netFetch,custom,vehicle,mode);progress('route','公開BRouter：経路を再計算中…');r=await calc()}
  if(!r.ok)throw Error('公開BRouterの計算エラー HTTP '+r.status+' '+(await r.text()).slice(0,150));
  const track=trackFromGeoJSON(await r.json());
  const farMeters=(p,q)=>{const rad=Math.PI/180,dlat=(p[0]-q[0])*rad,dlon=(p[1]-q[1])*rad,a=Math.sin(dlat/2)**2+Math.cos(p[0]*rad)*Math.cos(q[0]*rad)*Math.sin(dlon/2)**2;return 12742000*Math.asin(Math.sqrt(Math.min(1,a)))};
