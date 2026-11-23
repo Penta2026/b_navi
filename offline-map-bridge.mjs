@@ -20,7 +20,7 @@ let previous='',isOffline=false;
 function sync(){
  const available=Boolean(window.__bikeLocalPmtilesActive&&window.__bnaviOfflineCoverage?.(core.lat,core.lon));
  core.offlineBaseLayerAvailable=available;
- if(isOffline!==available){isOffline=available;background.style.visibility=available?'visible':'hidden';}
+ if(isOffline!==available){isOffline=available;background.style.visibility=available?'visible':'hidden';core.schedule();}
  const key=[core.lat.toFixed(6),core.lon.toFixed(6),core.zoom,core.bearing.toFixed(2)].join(':');
  if(key!==previous){
   previous=key;
