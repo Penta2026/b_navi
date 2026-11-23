@@ -14,7 +14,7 @@ test('displacement and normal modes share top row; independent custom section fo
 test('base modes and additive preferences are passed to BRouter and kept through re-routing',()=>{
  const app=read('app.js');
  // Existing normal modes still pass through unchanged; both custom entry points use general BRF.
- assert.match(app,/function routingMode\(\)\{return customEnabled\?1:selectedBaseMode\(\)\}/);
+ assert.match(app,/function routingMode\(\)\{return customEnabled\?1:selectedBaseMode\(\);\}/);
  assert.match(app,/const MODES=\[\['ビギナー','一般','探索'\]/);
  assert.doesNotMatch(app,/customOption\.value='custom'/);
  assert.match(app,/state\.activeRoutingMode=routingMode\(\)/);
