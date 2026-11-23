@@ -350,7 +350,7 @@
         const p=document.createElement('p');p.className='search-no-match';
         p.textContent=localLoadError&&providerSuccesses===0?
           '登録地点データと外部検索の両方が利用できません。通信とPWA更新を確認してね。':
-          providerSuccesses===0?'外部検索サービスに接続できませんでした。登録地点も一致しませんでした。':
+          providerSuccesses===0?'施設検索サービスに接続できませんでした。登録地点も一致しませんでした。':
           '一致する地点が見つかりませんでした。住所で探すか、地図から選択してね。';
         el.append(p);
       }else if(results.length||suggestions.length){
