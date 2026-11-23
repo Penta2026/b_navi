@@ -10,6 +10,8 @@ const state={shimanamiPlanPoints:[],shimanamiWebBuilt:false,navActive:false,navP
 // A single tap is for map inspection only: it must never move S, G, or waypoints.
 // Coordinates are committed through the long-press action menu (or explicit search/favorite/edit).
 const map=new BNaviMapCore.MapCore($('map-container'),$('tile-layer'),$('map-overlay'),$('path-layer'),$('point-layer'),$('gps-layer'),null);
+// The regional PMTiles basemap is a presentation layer only; all navigation stays here.
+window.__bnaviMapCore=map;
 // Basemap is calm-only for both route planning and live guidance.
 // Ignore previously saved 'standard' preferences, without erasing any user data.
 document.body.dataset.mapStyle='simple';

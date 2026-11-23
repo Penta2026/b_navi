@@ -322,3 +322,17 @@ body.navigation-active #track-panel,body.free-ride-active #track-panel{display:n
 .custom-route-options small{display:block;line-height:1.45;color:#527583;font-size:10px;padding-top:2px}
 .custom-route-panel .smallprint{font-size:11px;line-height:1.55;margin:10px 0 0}
 @media(max-width:370px){.custom-route-options{grid-template-columns:1fr}}
+
+/* Existing B_Navi SVG and touch controls remain above the locally rendered PMTiles. */
+#offline-map-background{position:absolute;inset:0;z-index:0;pointer-events:none;visibility:hidden;overflow:hidden}
+#offline-map-background .maplibregl-map{width:100%;height:100%;pointer-events:none}
+#offline-map-background .maplibregl-canvas-container{width:100%;height:100%;pointer-events:none}
+#offline-map-background canvas{pointer-events:none}
+.offline-map-settings{display:grid;gap:9px;border-top:1px solid #d5e6e9;margin-top:17px;padding-top:12px}
+.offline-map-settings h3{margin:5px 0;font-size:16px}
+.offline-map-control{font-size:12px;font-weight:700;display:grid;gap:6px}
+.offline-map-control select{width:100%;min-height:42px;border:1px solid #c4dae1;border-radius:9px;background:#fff;padding:8px 10px;color:#214356;font-size:15px}
+.offline-map-actions{display:flex;flex-wrap:wrap;gap:8px}
+.offline-map-actions button{min-height:42px;border-radius:9px;padding:9px 12px;border:none;flex:1}
+#offline-map-progress{width:100%;height:18px;accent-color:#16839e}
+#offline-map-status,#offline-map-display-status{overflow-wrap:anywhere;margin:0}

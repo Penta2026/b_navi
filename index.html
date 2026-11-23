@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#102a3b"><meta name="description" content="B_Navi バイク向けルート検索・音声ナビ">
 <link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg">
 <link rel="stylesheet" href="./style.css"><title>B_Navi | スマホナビ</title>
-</head><body>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl.css"></head><body>
 <header class="topbar"><div class="brand"><span class="brand-icon">↗</span><div><strong>B_Navi</strong><small>オンライン探索・オフライン案内</small></div></div><div class="topright"><span id="server-status" class="serverpill">エンジン確認中…</span><button class="plain settings-trigger" id="settings-btn" type="button" aria-label="設定を開く">⚙ 設定</button><button class="plain" id="help-btn" type="button">使い方</button></div></header>
 <nav class="mobile-toolbar" aria-label="ナビ操作"><button type="button" id="mobile-route" class="tool-active">☷ ルート</button><button type="button" id="mobile-search">⌕ 検索</button><button type="button" id="mobile-faves">☆ お気に入り</button><button type="button" id="mobile-map">▧ 地図</button><button type="button" id="mobile-ride">🏍 走行</button></nav><div id="layout">
 <aside id="sidebar" class="sheet-open"><button type="button" id="sheet-handle" aria-label="ルートパネルを開閉">━ ルート</button><div class="side-inner">
@@ -100,6 +100,33 @@
  <label class="voice-setting-item" for="voice-select"><span>声の種類</span><select id="voice-select"><option value="auto">自動で選ぶ</option></select></label>
  <div class="voice-setting-actions"><button type="button" id="voice-preview" class="primary">🔈 試しに再生</button><button type="button" id="voice-reset" class="secondary">標準に戻す</button></div>
  <p class="smallprint" id="voice-setting-message" role="status">変更は自動保存されます。</p>
+
+ </section>
+ <section class="offline-map-settings" aria-label="オフライン地図">
+  <h3>🗾 オフライン地図</h3>
+  <p class="smallprint">Wi-Fi接続中に地方の地図を端末に保存しておくと、通信のない場所でも背景地図を表示できます。地図データは旧BikeNavigatorと同じ保存領域を使うよ。</p>
+  <label class="offline-map-control" for="offline-map-region">保存する地方
+   <select id="offline-map-region">
+    <option value="chugoku">中国地方</option>
+    <option value="shikoku">四国</option>
+    <option value="kyushu">九州</option>
+    <option value="kansai">関西</option>
+    <option value="chubu">中部</option>
+    <option value="kanto">関東</option>
+    <option value="tohoku">東北</option>
+    <option value="hokkaido">北海道</option>
+   </select>
+  </label>
+  <div class="offline-map-actions">
+   <button type="button" id="offline-map-download" class="primary" disabled>選んだ地方をダウンロード</button>
+   <button type="button" id="offline-map-cancel" class="secondary" disabled>中断</button>
+  </div>
+  <progress id="offline-map-progress" value="0" max="1" aria-label="地図のダウンロード進捗"></progress>
+  <p id="offline-map-status" class="smallprint" role="status" aria-live="polite">地図の保存領域を確認中…</p>
+  <p id="offline-map-display-status" class="smallprint" role="status">端末保存地図の表示準備中…</p>
+  <p id="offline-map-install-note" class="smallprint"></p>
+  <p class="smallprint">背景地図はBBBike Shortbread PMTilesをCloudflare経由で取得。地図データは端末内に保存します。ルートの新規計算は引き続きオンライン接続が必要です。</p>
+  <p class="smallprint">© OpenStreetMap contributors / Data: BBBike</p>
  </section>
 </dialog>
 
@@ -112,4 +139,4 @@
 <div id="radar-screen" hidden><div class="radar-top"><strong>📡 目的地レーダー</strong><button type="button" id="radar-exit">🔈 音声案内へ戻る</button></div><canvas id="radar-canvas" aria-label="目的地までの方向と距離" role="img"></canvas><div id="radar-readout" aria-live="polite">GPSを取得中…</div><small class="radar-note">レーダーは目的地への直線距離を表示。通常の音声案内に戻すと右左折案内が再開します。</small></div>
 <div id="ride-pill" hidden>🏍 フリー走行中 <button type="button" id="ride-stop">終了・GPX保存へ</button></div>
 <dialog id="next-destination-dialog" aria-labelledby="next-destination-title" class="next-destination-dialog"><h2 id="next-destination-title">経由地に到着しました</h2><p id="next-destination-message">次の目的地を案内しますか？</p><div class="next-destination-actions"><button type="button" id="next-destination-stop">案内を終了</button><button type="button" class="primary" id="next-destination-continue">次の目的地へ</button></div></dialog>
-<script src="./track-recorder.js" defer></script><script src="./ride-logic.js" defer></script><script src="./navigation-heading.js" defer></script><script src="./map-core.js" defer></script><script src="./android-approaches.js" defer></script><script src="./shimanami-geometry.js" defer></script><script src="./shimanami-bridge-references.js" defer></script><script src="./shimanami-web-router.js" defer></script><script src="./offline-route-store.js" defer></script><script src="./route-tuning.js" defer></script><script src="./route-presets.js" defer></script><script src="./my-route-library.js" defer></script><script src="./public-brouter-client.js" defer></script><script src="./voice-settings.js" defer></script><script src="./app.js" defer></script><script src="./place-search-core.js" defer></script><script src="./openpoi-search.js" defer></script><script src="./poi-search-merge.js" defer></script><script src="./station-search.js" defer></script><script src="./address-search.js" defer></script><script src="./mobile-ui.js" defer></script><script src="./ride-radar.js" defer></script><script src="./gpx-itinerary-core.js" defer></script><script src="./gpx-transfer.js" defer></script></body></html>
+<script src="./track-recorder.js" defer></script><script src="./ride-logic.js" defer></script><script src="./navigation-heading.js" defer></script><script src="./map-core.js" defer></script><script src="./android-approaches.js" defer></script><script src="./shimanami-geometry.js" defer></script><script src="./shimanami-bridge-references.js" defer></script><script src="./shimanami-web-router.js" defer></script><script src="./offline-route-store.js" defer></script><script src="./route-tuning.js" defer></script><script src="./route-presets.js" defer></script><script src="./my-route-library.js" defer></script><script src="./public-brouter-client.js" defer></script><script src="./voice-settings.js" defer></script><script src="./app.js" defer></script><script src="./place-search-core.js" defer></script><script src="./openpoi-search.js" defer></script><script src="./poi-search-merge.js" defer></script><script src="./station-search.js" defer></script><script src="./address-search.js" defer></script><script src="./mobile-ui.js" defer></script><script src="./ride-radar.js" defer></script><script src="./gpx-itinerary-core.js" defer></script><script src="./gpx-transfer.js" defer></script><script type="module" src="./offline-map-bridge.mjs"></script><script type="module" src="./offline-map-download.mjs"></script></body></html>

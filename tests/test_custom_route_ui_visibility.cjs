@@ -16,6 +16,6 @@ test('retired three-slider customization remains hidden while four styles are vi
  assert.match(html,/<fieldset id="custom-route-panel"/);
  assert.equal((html.match(/name="custom-route-style"/g)||[]).length,4);
  assert.match(app,/customEnabled=false;\s*if\(Object\.hasOwn\(CUSTOM_ROUTE_LABELS,x\.customRouteStyle\)\)/);
- assert.match(sw,/custom-four-styles-clean-ui-v2/);
+ assert.match(sw,/bnavi-pc-pwa-20261123-(?:custom-four-styles-clean-ui-v2|pmtiles-regional-offline-v1)/);
  assert.ok(!html.includes('従来の3軸スライダーは「カスタマイズ」からONにします。'));
 });
