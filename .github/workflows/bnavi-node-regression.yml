@@ -28,3 +28,8 @@ jobs:
           node --check offline-region-mosaic.mjs
       - name: Run B_Navi Node tests
         run: node --test tests/test_*.cjs
+      - name: Report old map relay health (diagnostic only)
+        continue-on-error: true
+        run: |
+          node -e "fetch('https://bikenavigator-map-relay.yasutaka5262.workers.dev/health',{signal:AbortSignal.timeout(12000)}).then(r=>r.text()).then(t=>console.log('Map relay health:',t.slice(0,500))).catch(e=>console.log('Map relay unreachable:',e.message))"
+
