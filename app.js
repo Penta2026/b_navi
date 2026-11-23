@@ -4,7 +4,7 @@
  */
 'use strict';
 const $=id=>document.getElementById(id);
-const ROUTE_POLICIES=['ビギナー：狭い道と曲がりを抑え、走りやすい道を優先。信号は多少許容。','一般：適度な道幅と連続性を重視し、登録済み信号を強めに回避。','探索：市街地は走りやすい裏道、郊外は緑や水辺の近さを推定評価。','ファストトラベル：高速・有料道路を優先（126cc以上のみ）。'];
+const ROUTE_POLICIES=['ビギナー：狭い道と曲がりを抑え、走りやすい道を優先。','一般：適度な道幅と連続性を重視し、登録済み信号を強めに回避。','探索：市街地は走りやすい裏道、郊外は緑や水辺の近さを推定評価。','ファストトラベル：高速・有料道路を優先（126cc以上のみ）。'];
 const MODES=[['ビギナー','一般','探索'],['ビギナー','一般','探索'],['ビギナー','一般','探索','ファストトラベル（高速・有料優先）']];
 const state={shimanamiPlanPoints:[],shimanamiWebBuilt:false,navActive:false,navPaused:false,finishing:false,rerouting:false,targetIndex:0,activeTargets:[],arrivalPolicy:null,offRoutePolicy:null,motionGate:null,lastRerouteError:-Infinity,followGps:true,heading:{heading:null,at:-Infinity},orientation:'north',pick:'start',via:[],routes:[],currentGpx:null,location:null,watchId:null,routeType:null,gpsPoints:[],lastInputHash:'',turnCues:[],demoTimer:null,demoIndex:0,saidCues:new Set(),cumKm:[],islandLegs:[],islandIndex:0,awaitingBridge:false,gpsAccuracy:Infinity};
 // A single tap is for map inspection only: it must never move S, G, or waypoints.
@@ -69,7 +69,7 @@ function updatePolicy(){
  const mode=selectedBaseMode();
  el.textContent=customEnabled?ROUTE_POLICIES[1]+' 旧設定を復元中。'
   :ROUTE_POLICIES[mode]+(mode>2?' ファストトラベルは専用ルート設定を使用。'
-  :' 信号回避は全モード共通で強化。＋ '+preferenceSummary()+'。一般は快走できる地域道への約20％迂回も検討目標（上限保証なし）。');
+  :' 信号回避は全モード共通で強化。＋ '+preferenceSummary()+'。快走できる地域道なら距離約20％増も検討する試験方針（上限・時間短縮の保証なし）。公開BRouter向け。');
 }
 function updateModes(){
  const i=Number($('vehicle').value),sel=$('mode'),prev=sel.value;
