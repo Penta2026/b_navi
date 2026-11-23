@@ -1,0 +1,21 @@
+'use strict';
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
+test('retired three-slider customization remains hidden while four styles are visible when selected',()=>{
+ const html=read('index.html');
+ const app=read('app.js');
+ const sw=read('sw.js');
+ const legacy=html.match(/<div id="legacy-tuning-compat"[^>]*>\s*<details id="route-tuning-panel"/);
+ assert.ok(legacy,'legacy control group must be present only for backward compatibility');
+ assert.match(legacy[0],/hidden/);
+ assert.match(legacy[0],/inert/);
+ assert.match(legacy[0],/display:none/);
+ assert.match(html,/<fieldset id="custom-route-panel"/);
+ assert.equal((html.match(/name="custom-route-style"/g)||[]).length,4);
+ assert.match(app,/customEnabled=false;\s*if\(Object\.hasOwn\(CUSTOM_ROUTE_LABELS,x\.customRouteStyle\)\)/);
+ assert.match(sw,/custom-four-styles-clean-ui-v2/);
+ assert.ok(!html.includes('従来の3軸スライダーは「カスタマイズ」からONにします。'));
+});

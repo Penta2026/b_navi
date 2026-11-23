@@ -201,10 +201,10 @@ function restore(){try{
  const x=JSON.parse(localStorage.getItem('bnavi.pc.v1')||'null');if(!x)return;
  $('start').value=x.start||'';$('goal').value=x.goal||'';state.via=Array.isArray(x.via)?x.via.slice(0,50).map(String):[];
  $('vehicle').value=['0','1','2'].includes(x.vehicle)?x.vehicle:'1';
- // Older versions always calculated with the current custom settings.
- // Migrate a nondefault old tuning into active custom mode instead of silently discarding it.
+ // The old three-slider UI is retired. Keep its saved data intact but do
+ // not silently enable a hidden legacy configuration when restoring this PWA.
  const v=Number($('vehicle').value);
- customEnabled=typeof x.customEnabled==='boolean'?x.customEnabled:!BNaviRouteTuning.isDefault(tuningByVehicle[v],v);
+ customEnabled=false;
  if(Object.hasOwn(CUSTOM_ROUTE_LABELS,x.customRouteStyle))customRouteStyle=x.customRouteStyle;
  updateModes();
  const savedMode=String(x.mode??'1');
