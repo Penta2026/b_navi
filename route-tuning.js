@@ -8,17 +8,85 @@
 const DEFAULT=Object.freeze({explore:0,width:0,scenic:0,allowMotorway:false,allowToll:false});
 const LIMIT=150, STEP=10; // three sliders, centred on each vehicle's general BRF
 const CLASSES=Object.freeze(['trunk|trunk_link','primary|primary_link','secondary|secondary_link','tertiary|tertiary_link','unclassified','residential','living_street','service']);
+
+// Four distinct routing styles. The figures are trial weights for the
+// 125cc general BRF, NOT measured thresholds or real-time traffic estimates.
+// Other vehicle classes preserve their own base restrictions and relative offsets.
+const STYLE_SPECS=Object.freeze({
+ scenic:Object.freeze({forest:-0.15,water:-0.15,turn:200,signal:850,trunk:8.5,primary:5.5,secondary:1.3,tertiary:1.15,unclassified:1.25,lanes1:1.5,lanes15:1}),
+ efficient:Object.freeze({forest:0,water:0,turn:150,signal:850,trunk:1.25,primary:1.15,secondary:1.15,tertiary:1.15,unclassified:1.6,lanes1:3.5,lanes15:2}),
+ backroad:Object.freeze({forest:0,water:0,turn:50,signal:850,trunk:12,primary:8,secondary:3,tertiary:1.15,unclassified:1.05,lanes1:1.5,lanes15:1}),
+ cruise:Object.freeze({forest:-0.08,water:-0.08,turn:400,signal:850,trunk:5,primary:3,secondary:1.5,tertiary:1.1,unclassified:2.6,lanes1:3.5,lanes15:2})
+});
+const STYLE_REF125=Object.freeze({trunk:3.85,primary:2.8,secondary:1.28,tertiary:1.03,unclassified:1.26,lanes1:1.25,lanes15:.55,turn:90,signal:350});
+function tuneStyle(base,style){
+ const cfg=STYLE_SPECS[style];if(!cfg)throw Error('不明なカスタムルートです');
+ let out='# B_Navi four-style routing (trial, no observed traffic): '+style+'\n'+base;
+ const unique=(regex,label,transform)=>{
+   let count=0;out=out.replace(regex,(...args)=>{count++;return transform(...args)});
+   if(count!==1)throw Error('BRF更新不可：'+label+' ('+count+')');
+ };
+ const roadNames={trunk:'trunk|trunk_link',primary:'primary|primary_link',secondary:'secondary|secondary_link',tertiary:'tertiary|tertiary_link',unclassified:'unclassified'};
+ const blockStart=out.indexOf('assign costfactor\n'),blockEnd=out.indexOf('assign turncost',blockStart);
+ if(blockStart<0||blockEnd<=blockStart)throw Error('BRF道路係数を安全に変更できません');
+ let block=out.slice(blockStart,blockEnd);
+ for(const [key,expr] of Object.entries(roadNames)){
+   const pattern=new RegExp('(^[ \\t]*switch highway='+expr.replace(/\\|/g,'\\|')+'[ \\t]+)([0-9]+(?:\\.[0-9]+)?)([ \\t]*$)','m');
+   let hits=0;
+   block=block.replace(pattern,(_,a,n,b)=>{
+     hits++;const target=Math.max(1.01,Number(n)+cfg[key]-STYLE_REF125[key]);
+     return a+target.toFixed(3)+b;
+   });
+   if(hits!==1)throw Error('BRF道路分類が見つかりません：'+key);
+ }
+ out=out.slice(0,blockStart)+block+out.slice(blockEnd);
+ // Change ONLY soft-cost expressions, not any road or node access restriction.
+ for(const [key,tag] of [['lanes1','1'],['lanes15','1\\.5']]){
+   const re=new RegExp('(^[ \\t]*switch lanes='+tag+'[ \\t]+)([0-9]+(?:\\.[0-9]+)?)([ \\t]*$)','m');
+   unique(re,key,(_,a,n,b)=>a+Math.max(0,Number(n)+cfg[key]-STYLE_REF125[key]).toFixed(3)+b);
+ }
+ unique(/^(\s*assign turncost\s+)([0-9]+(?:\.[0-9]+)?)(\s*)$/m,'turncost',(_,a,n,b)=>a+Math.max(0,Number(n)+cfg.turn-STYLE_REF125.turn).toFixed(3)+b);
+ const nodeStart=out.indexOf('---context:node');if(nodeStart<0)throw Error('BRFノード設定がありません');
+ let head=out.slice(0,nodeStart),node=out.slice(nodeStart),hits=0;
+ node=node.replace(/^(\s*switch highway=traffic_signals\s+)([0-9]+(?:\.[0-9]+)?)(\s*)$/m,(_,a,n,b)=>{hits++;return a+Math.max(0,Number(n)+cfg.signal-STYLE_REF125.signal).toFixed(3)+b});
+ if(hits!==1)throw Error('BRF信号コストを変更できません');
+ out=head+node;
+ // Natural-feature estimates are optional OSM pseudo tags: no claim of actual views.
+ // Urban sections are excluded; forest precedes water so the two do not stack.
+ if(cfg.forest<0||cfg.water<0){
+  const fmt=v=>Number(v).toFixed(3);
+  const scene='assign custom_route_scenic_bias\n'+
+    '    switch estimated_town_class=3|4|5|6 0\n'+
+    '        switch estimated_forest_class=6 '+fmt(cfg.forest)+'\n'+
+    '        switch estimated_forest_class=5 '+fmt(cfg.forest*.70)+'\n'+
+    '        switch estimated_forest_class=4 '+fmt(cfg.forest*.40)+'\n'+
+    '        switch estimated_forest_class=3 '+fmt(cfg.forest*.20)+'\n'+
+    '        switch estimated_river_class=6 '+fmt(cfg.water)+'\n'+
+    '        switch estimated_river_class=5 '+fmt(cfg.water*.70)+'\n'+
+    '        switch estimated_river_class=4 '+fmt(cfg.water*.40)+'\n'+
+    '        switch estimated_river_class=3 '+fmt(cfg.water*.20)+' 0\n\n';
+  if(!out.includes('assign contextual_ride_bias\n')||!out.includes('    add traffic_route_bias ride_width_surface_bias'))throw Error('BRF景観設定に互換性がありません');
+  out=out.replace('assign contextual_ride_bias\n',scene+'assign contextual_ride_bias\n');
+  out=out.replace('    add traffic_route_bias ride_width_surface_bias','    add traffic_route_bias\n        add ride_width_surface_bias custom_route_scenic_bias');
+ }
+ if(!out.includes('    max 1.01'))throw Error('BRF最小コストの保護がありません');
+ return out;
+}
+
 function normalize(raw,vehicle){
  const obj=raw&&typeof raw==='object'?raw:{};
  const level=k=>{const n=Number(obj[k]);return Number.isFinite(n)?Math.max(-LIMIT,Math.min(LIMIT,Math.round(n/STEP)*STEP)):0};
  const big=Number(vehicle)===2;
- return {explore:level('explore'),width:level('width'),scenic:level('scenic'),allowMotorway:big&&obj.allowMotorway===true,allowToll:big&&obj.allowToll===true};
+ const result={explore:level('explore'),width:level('width'),scenic:level('scenic'),allowMotorway:big&&obj.allowMotorway===true,allowToll:big&&obj.allowToll===true};
+ if(typeof obj.style==='string'&&Object.hasOwn(STYLE_SPECS,obj.style))result.style=obj.style;
+ return result;
 }
-function isDefault(raw,vehicle){const v=normalize(raw,vehicle);return !v.explore&&!v.width&&!v.scenic&&!v.allowMotorway&&!v.allowToll;}
-function key(raw,vehicle){const v=normalize(raw,vehicle);return `${v.explore},${v.width},${v.scenic},${v.allowMotorway?1:0},${v.allowToll?1:0}`;}
+function isDefault(raw,vehicle){const v=normalize(raw,vehicle);return !v.style&&!v.explore&&!v.width&&!v.scenic&&!v.allowMotorway&&!v.allowToll;}
+function key(raw,vehicle){const v=normalize(raw,vehicle);return `${v.explore},${v.width},${v.scenic},${v.allowMotorway?1:0},${v.allowToll?1:0}`+(v.style?':'+v.style:'');}
 function tuneProfile(base,raw,vehicle){
  if(typeof base!=='string'||!base.includes('---context:way')||!base.includes('---context:node'))throw Error('基本BRFファイルが不正です');
  const v=normalize(raw,vehicle);
+ if(v.style)return tuneStyle(base,v.style); // independent of the legacy three sliders
  if(isDefault(v,vehicle))return base; // exact, byte-identical general route at the centre.
  const header='# B_Navi route-tuning v1: '+key(v,vehicle)+' (approximate OSM preferences; legal gates unchanged except explicit 126cc options)\n';
  let out=header+base;
@@ -89,7 +157,7 @@ function tuneProfile(base,raw,vehicle){
  if(!/max 1\.01/.test(out))throw Error('基本BRFのコスト下限ガードが見つかりません');
  return out;
 }
-const api={DEFAULT,LIMIT,STEP,normalize,isDefault,key,tuneProfile};
+const api={DEFAULT,LIMIT,STEP,STYLE_SPECS,normalize,isDefault,key,tuneProfile};
 root.BNaviRouteTuning=api;
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof window==='undefined'?globalThis:window);
