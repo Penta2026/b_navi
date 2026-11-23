@@ -9,11 +9,23 @@
 'use strict';
 const ISLANDS=[[34.389,133.200],[34.320,133.170],[34.290,133.095],[34.239,133.033],[34.205,133.070],[34.157,133.060],[34.064,132.995]];
 const ISLAND_NAMES=['向島','因島','生口島','大三島','伯方島','大島','今治側'];
-const MAX_ENDPOINT_METERS=45;
+// A user's point may lie off the mapped road (station forecourt / car park).
+// Bridge entrances must remain on a verified connected road; do not increase
+// their tolerance just because a waypoint snapped 52m away.
+const MAX_USER_WAYPOINT_SNAP_METERS=80;
 const MAX_BRIDGE_SEAM_METERS=25;
 const meters=(a,b)=>{const r=Math.PI/180,dLat=(b[0]-a[0])*r,dLon=(b[1]-a[1])*r,x=Math.sin(dLat/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLon/2)**2;return 12742000*Math.asin(Math.sqrt(Math.min(1,x)));};
 function inArea(p){return Array.isArray(p)&&p.length===2&&p.every(Number.isFinite)&&p[0]>34.0&&p[0]<34.45&&p[1]>132.9&&p[1]<133.25;}
 function island(p){if(!inArea(p))throw Error('しまなみの指定範囲外です');let best=0,dist=Infinity;ISLANDS.forEach((center,i)=>{const d=meters(center,p);if(d<dist){best=i;dist=d;}});return best;}
+// Nearest-island classification by itself mistakes JR Onomichi Station on
+// HONSHU for Mukoshima (they are ~1.9 km apart, separated by water).
+// This is intentionally a small, verified station-vicinity guard, NOT an
+// invented boundary polygon for the whole mainland.
+const ONOMICHI_STATION=[34.404838,133.193008]; // B_Navi JR station index
+const ONOMICHI_STATION_MAINLAND_RADIUS=1100;
+function onomichiMainlandPoint(points){
+ return Array.isArray(points)?points.find(p=>Array.isArray(p)&&meters(p,ONOMICHI_STATION)<ONOMICHI_STATION_MAINLAND_RADIUS):null;
+}
 function needsSpecialJourney(points,vehicle){return Number(vehicle)<=1&&Array.isArray(points)&&points.length>=2&&points.every(inArea)&&points.some((p,i)=>i>0&&island(p)!==island(points[i-1]));}
 function referenceData(geometry,refs){
  if(!geometry||geometry.schema_version!==1||geometry.bridges?.length!==6||refs?.length!==6)throw Error('しまなみ海道の6橋データが揃っていません');
@@ -26,11 +38,13 @@ function referenceData(geometry,refs){
 function plan(points,vehicle,geometry,refs){
  if(!Array.isArray(points)||points.length<2||points.length>52||!points.every(inArea))throw Error('しまなみ7島内の2〜52地点を指定してください');
  if(Number(vehicle)>1)throw Error('しまなみ専用計算は原付・125cc以下のみに使用します');
+ const mainland=onomichiMainlandPoint(points);
+ if(mainland)throw Error('尾道駅周辺は本州側です。向島までの渡船・尾道大橋の移動区間は、現在のしまなみ島内ルート計算には含まれません。向島側の乗船後の出発地点を指定してね。海上や自動車専用道を架空の走行経路でつなぐことはできません。');
  referenceData(geometry,refs);
  const stages=[];
  for(let leg=0;leg<points.length-1;leg++){
    const start=island(points[leg]),end=island(points[leg+1]),step=Math.sign(end-start);
-   let from=points[leg];
+   let from=points[leg],fromRole='user';
    if(step){
      for(let pos=start;pos!==end;pos+=step){
        const bridgeIndex=step>0?pos:pos-1;
@@ -38,12 +52,12 @@ function plan(points,vehicle,geometry,refs){
        const pieces=g.directions[forward?'forward':'reverse'];
        const entry=pieces[0].points[0],exit=pieces[1].points.at(-1);
        const pointsRef=forward?refs[bridgeIndex].points:refs[bridgeIndex].points.slice().reverse();
-       stages.push({type:'road',from,to:entry,island:pos,checkpoint:leg+1,checkpointEnd:false});
+       stages.push({type:'road',from,to:entry,fromRole,toRole:'bridge',island:pos,checkpoint:leg+1,checkpointEnd:false});
        stages.push({type:'bridge',bridgeIndex:bridgeIndex+1,forward,name:g.name,from:entry,to:exit,points:pointsRef,checkpoint:leg+1});
-       from=exit;
+       from=exit;fromRole='bridge';
      }
    }
-   stages.push({type:'road',from,to:points[leg+1],island:end,checkpoint:leg+1,checkpointEnd:true});
+   stages.push({type:'road',from,to:points[leg+1],fromRole,toRole:'user',island:end,checkpoint:leg+1,checkpointEnd:true});
  }
  for(let i=0;i<stages.length-1;i++){
    if(meters(stages[i].to,stages[i+1].from)>0.1)throw Error('しまなみ計画に接続不良があります');
@@ -51,19 +65,37 @@ function plan(points,vehicle,geometry,refs){
  return stages;
 }
 function validateRoad(stage,track){
- const pts=track?.points;if(!Array.isArray(pts)||pts.length<2||pts.length>100000||pts.some(p=>!inArea(p)))throw Error('島内道路の経路形状が不正です');
+ const pts=track?.points;
+ if(!Array.isArray(pts)||pts.length<2||pts.length>100000||pts.some(p=>!inArea(p)))
+  throw Error('島内道路の経路形状が不正です');
  const from=meters(pts[0],stage.from),to=meters(pts.at(-1),stage.to);
- if(from>MAX_ENDPOINT_METERS||to>MAX_ENDPOINT_METERS)throw Error(`${ISLAND_NAMES[stage.island]}：計算道路の入口・出口が${Math.round(Math.max(from,to))}mずれています（${MAX_ENDPOINT_METERS}m以内が必要）`);
+ const validateEndpoint=(gap,role,side)=>{
+  if(role==='bridge'){
+   if(gap>MAX_BRIDGE_SEAM_METERS)
+    throw Error(`${ISLAND_NAMES[stage.island]}：${side==='start'?'橋出口側':'橋入口側'}の島内道路が${Math.round(gap)}m離れています（橋との接続は${MAX_BRIDGE_SEAM_METERS}m以内が必要）。原付通路の道路網を確認できないため、参考線を走行経路として接続しません。`);
+  }else if(gap>MAX_USER_WAYPOINT_SNAP_METERS){
+   throw Error(`${ISLAND_NAMES[stage.island]}：${side==='start'?'出発地・経由地':'目的地・経由地'}から計算道路まで${Math.round(gap)}m離れています（${MAX_USER_WAYPOINT_SNAP_METERS}m以内が必要）。道路上の地点を指定してね。`);
+  }
+ };
+ validateEndpoint(from,stage.fromRole||'user','start');
+ validateEndpoint(to,stage.toRole||'user','end');
  const length=pts.slice(1).reduce((acc,p,i)=>acc+meters(pts[i],p),0);
- if(length>Math.max(32000,meters(stage.from,stage.to)*8+6000))throw Error(ISLAND_NAMES[stage.island]+'：島内道路が大きく遠回りしています');
- return {length,fromGap:from,toGap:to};
+ if(length>Math.max(32000,meters(stage.from,stage.to)*8+6000))
+  throw Error(ISLAND_NAMES[stage.island]+'：島内道路が大きく遠回りしています');
+ // Never insert a made-up connecting line from an off-road user pin.
+ const warnings=[];
+ if(stage.fromRole==='user'&&from>MAX_BRIDGE_SEAM_METERS)
+  warnings.push(`${ISLAND_NAMES[stage.island]}：指定地点から約${Math.round(from)}m先の道路上が案内開始点です（その間の移動は案内対象外）`);
+ if(stage.toRole==='user'&&to>MAX_BRIDGE_SEAM_METERS)
+  warnings.push(`${ISLAND_NAMES[stage.island]}：道路上の案内終了点から指定地点まで約${Math.round(to)}mあります（その間の移動は案内対象外）`);
+ return {length,fromGap:from,toGap:to,warnings};
 }
 async function compose(points,vehicle,mode,{geometry,refs,query,bridgePreview,onProgress=()=>{},concurrency=2}){
  const stages=plan(points,vehicle,geometry,refs),roadStages=stages.filter(s=>s.type==='road');
  if(typeof query!=='function'||typeof bridgePreview!=='function')throw Error('経路計算・橋形状確認がありません');
  // The shared public service must never receive simultaneous island-road queries.
  // An HTTP 403 stops the itinerary; no eager retries or unsafe bridge fallbacks.
- const results=new Map(),count=1;let next=0;
+ const results=new Map(),snapWarnings=[],count=1;let next=0;
  async function worker(){
    while(next<roadStages.length){
      const stage=roadStages[next++],index=next;
@@ -73,7 +105,8 @@ async function compose(points,vehicle,mode,{geometry,refs,query,bridgePreview,on
        // A waypoint precisely at the bridge anchor needs no invented road.
        route={profile:null,track:{points:[stage.from,stage.to],cues:[]},gpx:null,anchorOnly:true};
      }else route=await query([stage.from,stage.to],vehicle,mode);
-     validateRoad(stage,route.track);
+     const checked=validateRoad(stage,route.track);
+     snapWarnings.push(...checked.warnings);
      results.set(stage,route);
    }
  }
@@ -99,7 +132,7 @@ async function compose(points,vehicle,mode,{geometry,refs,query,bridgePreview,on
      bridges++;
    }
  }
- const result={sections,guidance,bridges,checkpoints:points.length,roadSegments:roadStages.length};
+ const result={sections,guidance,bridges,checkpoints:points.length,roadSegments:roadStages.length,warnings:snapWarnings};
  const report=verifyPlan(result,points);
  if(!report.ok)throw Error('しまなみ旅程の検証失敗：'+report.errors.join('／'));
  return result;
@@ -122,8 +155,8 @@ function verifyPlan(result,points){
   if(leg.checkpointAfter){if(leg.checkpointAfter<lastCheckpoint)errors.push('経由地の順序が逆転しています');lastCheckpoint=leg.checkpointAfter;}
  }
  if(lastCheckpoint!==points.length-1)errors.push('最終目的地まで計算されていません');
- if(secs.length&&meters(secs[0].points[0],points[0])>MAX_BRIDGE_SEAM_METERS)errors.push('出発地が一致しません');
- if(secs.length&&meters(secs.at(-1).points.at(-1),points.at(-1))>MAX_BRIDGE_SEAM_METERS)errors.push('目的地が一致しません');
+ if(secs.length&&meters(secs[0].points[0],points[0])>MAX_USER_WAYPOINT_SNAP_METERS)errors.push('出発地が道路の許容位置と一致しません');
+ if(secs.length&&meters(secs.at(-1).points.at(-1),points.at(-1))>MAX_USER_WAYPOINT_SNAP_METERS)errors.push('目的地が道路の許容位置と一致しません');
  return {ok:errors.length===0,errors,bridges:bridges.length,islandRoads:roadmap.length,checkpoints:points.length};
 }
 // Offline desk validation: feeds conceptual bridge entrance/exit states without
@@ -139,5 +172,5 @@ function deskCheck(result,points){
  steps.push('最終目的地：到着案内');
  return {...plan,steps};
 }
-return Object.freeze({ISLANDS,ISLAND_NAMES,meters,inArea,island,needsSpecialJourney,plan,validateRoad,compose,verifyPlan,deskCheck});
+return Object.freeze({ISLANDS,ISLAND_NAMES,MAX_USER_WAYPOINT_SNAP_METERS,MAX_BRIDGE_SEAM_METERS,ONOMICHI_STATION,onomichiMainlandPoint,meters,inArea,island,needsSpecialJourney,plan,validateRoad,compose,verifyPlan,deskCheck});
 });
