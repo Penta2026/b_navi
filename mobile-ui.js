@@ -66,7 +66,15 @@
  $('tab-search').onclick=()=>switchTab('search');$('tab-favorites').onclick=()=>switchTab('favorites');
  function favorites(){try{const x=JSON.parse(localStorage.getItem('bnavi.favorites.v1')||'[]');return Array.isArray(x)?x.filter(f=>f&&typeof f.name==='string'&&typeof f.coord==='string').slice(0,300):[]}catch{return []}}
  function saveFavorites(data){try{localStorage.setItem('bnavi.favorites.v1',JSON.stringify(data));return true}catch{alert('端末への保存に失敗したよ。空き容量やブラウザの設定を確認してね。');return false}}
- function selectPlace(name,coord,meta={}){picked={name,coord,source:meta.source||'',licenses:Array.isArray(meta.licenses)?meta.licenses:[],attributions:Array.isArray(meta.attributions)?meta.attributions:[]};$('selected-place-name').textContent=name;$('selected-place-coord').textContent=coord;if($('place-dialog').open)$('place-dialog').close();safeShowModal($('place-action-dialog'))}
+ function selectPlace(name,coord,meta={}){
+  picked={name,coord,source:meta.source||'',licenses:Array.isArray(meta.licenses)?meta.licenses:[],
+   attributions:Array.isArray(meta.attributions)?meta.attributions:[],arrivalPointType:meta.arrivalPointType||'',caution:meta.caution||''};
+  $('selected-place-name').textContent=name;
+  const sourceNote=meta.source==='道の途中。'?' ・「道の途中。」登録地点（施設代表位置の場合あり）':'';
+  const caution=meta.caution?' ・ '+meta.caution:(meta.arrivalPointType?' ・ '+meta.arrivalPointType:'');
+  $('selected-place-coord').textContent=coord+sourceNote+caution;
+  if($('place-dialog').open)$('place-dialog').close();safeShowModal($('place-action-dialog'));
+ }
  // Share a single point-action menu between place search, favorites and map long-press.
  window.BNaviSelectMapPoint=(point)=>{
    if(!point||!Number.isFinite(point.lat)||!Number.isFinite(point.lon))return;
@@ -75,13 +83,46 @@
  };
  function renderFavorites(){const el=$('favorite-list');el.replaceChildren();const list=favorites();if(!list.length){el.textContent='まだお気に入りはないよ。検索結果や地点を選んで登録してね。';return}list.forEach((f,i)=>{const row=document.createElement('div');row.className='place-result';const b=document.createElement('button');b.className='place-main';b.textContent='☆ '+f.name;const small=document.createElement('small');small.textContent=f.coord;b.append(small);b.onclick=()=>selectPlace(f.name,f.coord,f);const del=document.createElement('button');del.className='remove-favorite';del.textContent='削除';del.setAttribute('aria-label',f.name+'を削除');del.onclick=()=>{if(confirm('「'+f.name+'」をお気に入りから削除する？')){const a=favorites();a.splice(i,1);if(saveFavorites(a))renderFavorites()}};row.append(b,del);el.append(row)})}
  document.querySelectorAll('[data-apply]').forEach(btn=>btn.onclick=()=>applySelected(btn.dataset.apply));
- $('favorite-save').onclick=()=>{if(!picked)return;const name=prompt('お気に入りの名前',picked.name);if(name===null)return;const clean=name.trim().slice(0,90);if(!clean){alert('名前を入力してね');return}const a=favorites();if(a.length>=300){alert('お気に入りは300件までだよ');return}a.push({name:clean,coord:picked.coord,source:picked.source,licenses:picked.licenses,attributions:picked.attributions});if(saveFavorites(a)){$('place-action-dialog').close();setMessage('☆ '+clean+' をお気に入りに保存したよ')}};
+ $('favorite-save').onclick=()=>{if(!picked)return;const name=prompt('お気に入りの名前',picked.name);if(name===null)return;const clean=name.trim().slice(0,90);if(!clean){alert('名前を入力してね');return}const a=favorites();if(a.length>=300){alert('お気に入りは300件までだよ');return}a.push({name:clean,coord:picked.coord,source:picked.source,licenses:picked.licenses,attributions:picked.attributions,arrivalPointType:picked.arrivalPointType,caution:picked.caution});if(saveFavorites(a)){$('place-action-dialog').close();setMessage('☆ '+clean+' をお気に入りに保存したよ')}};
  // One deliberate search action; do not show facilities from unrelated cities.
  const addressCore=window.BNaviAddressSearch;
  const searchCore=window.BNaviPlaceSearchCore;
  const mergeCore=window.BNaviPoiSearchMerge;
  const openPoiCore=window.BNaviOpenPoiSearch;
+ const registeredCore=window.BNaviMichinoSpotSearch;
+ let registeredIndexPromise=null;
+ function registeredIndex(){
+   if(!registeredIndexPromise){
+     registeredIndexPromise=fetch('./data/michinotochu_spots.json',{cache:'force-cache'})
+       .then(async r=>{if(!r.ok)throw Error('登録地点データ HTTP '+r.status);
+         const data=await r.json();
+         if(!Array.isArray(data.spots)||data.spots.length<1000||data.meta?.dbVersion!=='2.8.23')throw Error('登録地点データの形式が不正です');
+         return data;})
+       .catch(err=>{registeredIndexPromise=null;throw err});
+   }
+   return registeredIndexPromise;
+ }
+ async function searchRegistered(q){
+   if(!registeredCore||!q.trim())return [];
+   const data=await registeredIndex();
+   return registeredCore.rank(data,q,{group:$('registered-category').value,limit:24});
+ }
+ function showGroupedResults(localRows,onlineRows,el,{preview=false,related=false}={}){
+   const listed=Array.isArray(localRows)?localRows:[];
+   const outsiders=registeredCore?.distinctExternal(listed,onlineRows)||onlineRows||[];
+   el.replaceChildren();
+   const section=(title,rows,kind)=>{
+     if(!rows.length)return;
+     const header=document.createElement('p');header.className='search-summary';
+     header.textContent=title+rows.length+'件';el.append(header);
+     for(const row of rows)showSearchResult(row,el,kind);
+   };
+   section(preview?'「道の途中。」入力候補 ':'「道の途中。」登録スポット ',listed,'michino');
+   section(related?'外部の関連候補 ':preview?'外部の入力候補 ':'外部検索 ',outsiders,'place');
+   return listed.length+outsiders.length;
+ }
  let suggestionTimer=null,suggestionController=null,suggestionSerial=0;
+ let previewLocal=[],previewRemote=[];
   const stationCore=window.BNaviStationSearch;
   let stationIndexPromise=null;
   async function searchStations(q){
@@ -114,7 +155,7 @@
    rows.forEach(row=>showSearchResult(row,el));
  }
  function cancelSuggestions(){
-   suggestionSerial++;
+   suggestionSerial++;previewLocal=[];previewRemote=[];
    if(suggestionTimer!==null){clearTimeout(suggestionTimer);suggestionTimer=null}
    if(suggestionController){suggestionController.abort();suggestionController=null}
  }
@@ -167,8 +208,12 @@
    const card=document.createElement('div');card.className='place-result';
    const button=document.createElement('button');button.type='button';button.className='place-main';
    button.textContent=row.name;
+   if(kind==='michino')button.classList.add('registered-place-main');
    if(kind!=='station'){
-    const small=document.createElement('small');small.textContent=kind==='address'?'住所の候補・位置は概略（番地までの確定位置ではありません） · '+row.source:(row.address||'所在地の詳細なし');
+    const small=document.createElement('small');small.textContent=kind==='address'?'住所の候補・位置は概略（番地までの確定位置ではありません） · '+row.source:
+     kind==='michino'?'📍 道の途中。 / '+row.group+' / '+(row.address||'所在地の詳細なし')+
+        (row.caution?' ⚠ '+row.caution:row.arrivalPointType?' · '+row.arrivalPointType:' · 施設代表位置・入口は現地確認'):
+       (row.address||'所在地の詳細なし');
     button.append(small);
    }
    button.onclick=()=>selectPlace(row.name,row.lat.toFixed(6)+','+row.lon.toFixed(6),row);
