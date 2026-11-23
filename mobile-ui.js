@@ -340,7 +340,7 @@
           providerSuccesses++;
         }catch(err){/* Do not invent unindexed places. */}
       }
-      if(!results.length&&!localStationQuery){
+      if(!results.length&&!localStationQuery&&!localRows.length){
         try{const matches=await searchStations(q);if(matches.length){showStationResults(matches,el);return;}}
         catch(err){/* Retain online results if station index fails. */}
       }
