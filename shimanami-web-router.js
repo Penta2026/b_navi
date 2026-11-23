@@ -24,7 +24,7 @@ function island(p){if(!inArea(p))throw Error('しまなみの指定範囲外で�
 const ONOMICHI_STATION=[34.404838,133.193008]; // B_Navi JR station index
 const ONOMICHI_STATION_MAINLAND_RADIUS=1100;
 function onomichiMainlandPoint(points){
- return Array.isArray(points)?points.find(p=>Array.isArray(p)&&meters(p,ONOMICHI_STATION)<ONOMICHI_STATION_MAINLAND_RADIUS):null;
+ return Array.isArray(points)?(points.find(p=>Array.isArray(p)&&meters(p,ONOMICHI_STATION)<ONOMICHI_STATION_MAINLAND_RADIUS)||null):null;
 }
 function needsSpecialJourney(points,vehicle){return Number(vehicle)<=1&&Array.isArray(points)&&points.length>=2&&points.every(inArea)&&points.some((p,i)=>i>0&&island(p)!==island(points[i-1]));}
 function referenceData(geometry,refs){
