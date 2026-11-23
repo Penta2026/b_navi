@@ -71,5 +71,5 @@ test('main PWA delegates special Shimanami 50/125cc roads without falling back t
  assert.match(s,/BNaviShimanamiWebRouter\.needsSpecialJourney\(points,\$\('vehicle'\)\.value\)/);
  assert.match(s,/BNaviPublicBrouter\.query\(pair,v,m,fetch,null,state\.activeRouteTuning\)/);
  assert.match(s,/routeView\('shimanami',result\.sections,null/);
- assert.match(fs.readFileSync('shimanami-web-router.js','utf8'),/const results=new Map\(\),count=1/);
+ assert.match(fs.readFileSync('shimanami-web-router.js','utf8'),/const results=new Map\(\),snapWarnings=\[\],count=1/);
 });
