@@ -96,7 +96,7 @@
      registeredIndexPromise=fetch('./data/michinotochu_spots.json',{cache:'force-cache'})
        .then(async r=>{if(!r.ok)throw Error('登録地点データ HTTP '+r.status);
          const data=await r.json();
-         if(!Array.isArray(data.spots)||data.spots.length<1000||data.meta?.dbVersion!=='2.8.23')throw Error('登録地点データの形式が不正です');
+         if(!Array.isArray(data.spots)||data.spots.length<1000||data.meta?.source!=='道の途中。'||!/^\d+\.\d+\.\d+$/.test(data.meta.dbVersion||''))throw Error('登録地点データの形式が不正です');
          return data;})
        .catch(err=>{registeredIndexPromise=null;throw err});
    }
