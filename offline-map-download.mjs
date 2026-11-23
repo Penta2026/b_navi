@@ -9,6 +9,45 @@ const selected=()=>$('offline-map-region').value;
 const runMode=()=>matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true?'アプリ':'ブラウザ';
 const set=s=>{$('offline-map-status').textContent=s;};
 const deliveryReady=()=>/^https:\/\/[^/]+/.test(MAP_DELIVERY_BASE);
+const MAP_MODULES=[
+ 'https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl.mjs',
+ 'https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl.css',
+ 'https://esm.sh/pmtiles@4.5.0',
+ 'https://esm.sh/fflate@0.8.2'
+];
+// Cross-origin JS dependencies must be available when the downloaded maps are
+// rendered offline. Populate the exact same cache as our service worker.
+// No map data is stored here: PMTiles remain solely in OPFS.
+async function prepareOfflineRuntime(){
+ if(!('caches' in window))return false;
+ const cache=await caches.open('bnavimap-libs-v1');
+ const seen=new Set();let failures=0;
+ async function grab(url,depth=0){
+  if(seen.has(url)||seen.size>30||depth>5)return;
+  seen.add(url);
+  try{
+   const request=new Request(url,{mode:'cors'});
+   let response=await cache.match(request);
+   if(!response){
+    response=await fetch(request);
+    if(!response.ok)throw Error('HTTP '+response.status);
+    await cache.put(request,response.clone());
+   }
+   if(!url.includes('.css')){
+    const source=await response.clone().text();
+    const imports=Array.from(source.matchAll(/\b(?:from|import)\s*(?:\(\s*)?['"]([^'"]+)['"]/g),m=>m[1]);
+    for(const spec of imports){
+     const next=new URL(spec,url).href;
+     const u=new URL(next);
+     if((u.hostname==='esm.sh'||u.hostname==='unpkg.com')&&/^https:$/.test(u.protocol))await grab(next,depth+1);
+    }
+   }
+  }catch{failures++}
+ }
+ for(const url of MAP_MODULES)await grab(url);
+ return failures===0;
+}
+
 async function dir(r){
  if(!navigator.storage?.getDirectory)throw Error('この端末でアプリ専用保存領域を利用できません');
  const root=await navigator.storage.getDirectory();
@@ -32,7 +71,14 @@ async function status(){
   await dir(selected()); // prepare before networking
   const file=await active(selected());
   const detail=file?'端末保存済み '+(file.size/1048576).toFixed(1)+' MiB':'未保存。保存領域は準備済み';
-  set(deliveryReady()?detail:detail+'。現在、地図配信サーバーの公開・接続設定待ちです。');
+  set(deliveryReady()?detail:detail+'。地図配信サーバーの接続設定待ちです。');
+  if(deliveryReady()&&navigator.onLine!==false){
+    try{
+      const check=await fetch(MAP_DELIVERY_BASE+'/health',{cache:'no-store'});
+      const info=check.ok?await check.json():null;
+      if(info?.ready===false){$('offline-map-download').disabled=true;set(detail+'。地図配信サーバーは現在停止中です。既存の保存地図は使えるよ。');}
+    }catch{set(detail+'。配信サーバーの状態は未確認です。');}
+  }
  }catch(e){set('保存領域エラー：'+e.message);$('offline-map-download').disabled=true}
 }
 async function transfer(response,region){
@@ -117,7 +163,9 @@ $('offline-map-download').onclick=async()=>{
   if(!response.ok)throw Error('地図配信サーバー HTTP '+response.status);
   const bytes=await transfer(response,r);
   $('offline-map-progress').value=1;
-  set(names[r]+'地方：'+(bytes/1048576).toFixed(1)+' MiBを端末内のBikeNavigator専用領域に保存しました。ナビへ戻って利用できます。');
+  const runtimeReady=await prepareOfflineRuntime();
+  set(names[r]+'地方：'+(bytes/1048576).toFixed(1)+' MiBを端末内に保存しました。'+(runtimeReady?'オフライン描画用プログラムも保存しました。':'地図本体は保存済み。ただし描画用プログラムのオフライン保存が不完全な可能性があります。Wi-Fi中に一度PWAを再起動して確認してね。'));
+  window.__bnaviMapCore?.schedule?.();
  }catch(e){set((e.name==='AbortError'?'ダウンロードを中断しました':'取得・保存未完了：'+e.message)+'。保存済みの地図は変更しません。')}
  finally{$('offline-map-region').disabled=false;btn.disabled=!deliveryReady();downloadAbort=null;$('offline-map-cancel').disabled=true;}
 };
