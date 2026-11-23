@@ -47,14 +47,15 @@ function preferenceKey(value){
  const p=normalizePreferences(value);
  return 'base-options-v1:'+p.view+':'+p.ride+':'+(p.backroad?'1':'0');
 }
-function tunePreferences(base,prefs,vehicle){
- const p=normalizePreferences(prefs),kind=Number(vehicle);
+function tunePreferences(base,prefs,vehicle,mode=1){
+ const p=normalizePreferences(prefs),kind=Number(vehicle),baseMode=Number(mode);
  if(![0,1,2].includes(kind))throw Error('車種の指定が不正です');
+ if(![0,1,2].includes(baseMode))throw Error('基本モードの指定が不正です');
  let out='# B_Navi base-mode additive preferences: '+preferenceKey(p)+
    ' / signal trial='+SIGNAL_TRIAL_COST+' / enjoyable detour target about +20%, not guaranteed\n'+base;
  const delta={trunk:0,primary:0,secondary:0,tertiary:0,unclassified:0,residential:0,lanes1:0,lanes15:0,turn:0};
  const apply=x=>{for(const [k,v] of Object.entries(x))delta[k]+=v;};
- if(p.backroad)apply(BACKROAD_BIAS[kind]);
+ if(p.backroad)apply(BACKROAD_BIAS[baseMode]);
  if(p.ride==='cruise')apply({trunk:-.08,primary:-.08,unclassified:.38,residential:.55,lanes1:1.65,lanes15:.90,turn:125});
  if(p.ride==='efficient')apply({trunk:-.12,primary:-.12,unclassified:.34,residential:.65,lanes1:.55,lanes15:.35,turn:70});
  if(p.backroad&&p.ride==='cruise')apply({lanes1:.55,lanes15:.25,turn:25}); // comfy backroads
@@ -184,10 +185,10 @@ function normalize(raw,vehicle){
 }
 function isDefault(raw,vehicle){const v=normalize(raw,vehicle);return !v.preferences&&!v.style&&!v.explore&&!v.width&&!v.scenic&&!v.allowMotorway&&!v.allowToll;}
 function key(raw,vehicle){const v=normalize(raw,vehicle);return `${v.explore},${v.width},${v.scenic},${v.allowMotorway?1:0},${v.allowToll?1:0}`+(v.style?':'+v.style:'')+(v.preferences?':'+preferenceKey(v.preferences):'');}
-function tuneProfile(base,raw,vehicle){
+function tuneProfile(base,raw,vehicle,mode=1){
  if(typeof base!=='string'||!base.includes('---context:way')||!base.includes('---context:node'))throw Error('基本BRFファイルが不正です');
  const v=normalize(raw,vehicle);
- if(v.preferences)return tunePreferences(base,v.preferences,vehicle);
+ if(v.preferences)return tunePreferences(base,v.preferences,vehicle,mode);
  if(v.style)return tuneStyle(base,v.style); // independent of the legacy three sliders
  if(isDefault(v,vehicle))return base; // exact, byte-identical general route at the centre.
  const header='# B_Navi route-tuning v1: '+key(v,vehicle)+' (approximate OSM preferences; legal gates unchanged except explicit 126cc options)\n';
