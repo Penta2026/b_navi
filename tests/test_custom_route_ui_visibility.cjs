@@ -19,6 +19,6 @@ test('retired slider customization stays hidden while base-mode overlays are vis
  assert.ok(html.includes('id="route-backroad"'));
  assert.equal((html.match(/name="custom-route-style"/g)||[]).length,0);
  assert.match(app,/customEnabled=false;\s*\/\/ Upgrade old single-style/);
- assert.match(sw,/bnavi-pc-pwa-20261123-(?:pmtiles-regional-offline-v1|composable-options-v1)/);
+ assert.match(sw,/bnavi-pc-pwa-(?:20261123-(?:pmtiles-regional-offline-v1|composable-options-v1)|20261124-michino-local-search-v1)/);
  assert.ok(!html.includes('従来の3軸スライダーは「カスタマイズ」からONにします。'));
 });

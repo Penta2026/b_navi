@@ -66,7 +66,15 @@
  $('tab-search').onclick=()=>switchTab('search');$('tab-favorites').onclick=()=>switchTab('favorites');
  function favorites(){try{const x=JSON.parse(localStorage.getItem('bnavi.favorites.v1')||'[]');return Array.isArray(x)?x.filter(f=>f&&typeof f.name==='string'&&typeof f.coord==='string').slice(0,300):[]}catch{return []}}
  function saveFavorites(data){try{localStorage.setItem('bnavi.favorites.v1',JSON.stringify(data));return true}catch{alert('端末への保存に失敗したよ。空き容量やブラウザの設定を確認してね。');return false}}
- function selectPlace(name,coord,meta={}){picked={name,coord,source:meta.source||'',licenses:Array.isArray(meta.licenses)?meta.licenses:[],attributions:Array.isArray(meta.attributions)?meta.attributions:[]};$('selected-place-name').textContent=name;$('selected-place-coord').textContent=coord;if($('place-dialog').open)$('place-dialog').close();safeShowModal($('place-action-dialog'))}
+ function selectPlace(name,coord,meta={}){
+  picked={name,coord,source:meta.source||'',licenses:Array.isArray(meta.licenses)?meta.licenses:[],
+   attributions:Array.isArray(meta.attributions)?meta.attributions:[],arrivalPointType:meta.arrivalPointType||'',caution:meta.caution||''};
+  $('selected-place-name').textContent=name;
+  const sourceNote=meta.source==='道の途中。'?' ・「道の途中。」登録地点（施設代表位置の場合あり）':'';
+  const caution=meta.caution?' ・ '+meta.caution:(meta.arrivalPointType?' ・ '+meta.arrivalPointType:'');
+  $('selected-place-coord').textContent=coord+sourceNote+caution;
+  if($('place-dialog').open)$('place-dialog').close();safeShowModal($('place-action-dialog'));
+ }
  // Share a single point-action menu between place search, favorites and map long-press.
  window.BNaviSelectMapPoint=(point)=>{
    if(!point||!Number.isFinite(point.lat)||!Number.isFinite(point.lon))return;
@@ -75,13 +83,46 @@
  };
  function renderFavorites(){const el=$('favorite-list');el.replaceChildren();const list=favorites();if(!list.length){el.textContent='まだお気に入りはないよ。検索結果や地点を選んで登録してね。';return}list.forEach((f,i)=>{const row=document.createElement('div');row.className='place-result';const b=document.createElement('button');b.className='place-main';b.textContent='☆ '+f.name;const small=document.createElement('small');small.textContent=f.coord;b.append(small);b.onclick=()=>selectPlace(f.name,f.coord,f);const del=document.createElement('button');del.className='remove-favorite';del.textContent='削除';del.setAttribute('aria-label',f.name+'を削除');del.onclick=()=>{if(confirm('「'+f.name+'」をお気に入りから削除する？')){const a=favorites();a.splice(i,1);if(saveFavorites(a))renderFavorites()}};row.append(b,del);el.append(row)})}
  document.querySelectorAll('[data-apply]').forEach(btn=>btn.onclick=()=>applySelected(btn.dataset.apply));
- $('favorite-save').onclick=()=>{if(!picked)return;const name=prompt('お気に入りの名前',picked.name);if(name===null)return;const clean=name.trim().slice(0,90);if(!clean){alert('名前を入力してね');return}const a=favorites();if(a.length>=300){alert('お気に入りは300件までだよ');return}a.push({name:clean,coord:picked.coord,source:picked.source,licenses:picked.licenses,attributions:picked.attributions});if(saveFavorites(a)){$('place-action-dialog').close();setMessage('☆ '+clean+' をお気に入りに保存したよ')}};
+ $('favorite-save').onclick=()=>{if(!picked)return;const name=prompt('お気に入りの名前',picked.name);if(name===null)return;const clean=name.trim().slice(0,90);if(!clean){alert('名前を入力してね');return}const a=favorites();if(a.length>=300){alert('お気に入りは300件までだよ');return}a.push({name:clean,coord:picked.coord,source:picked.source,licenses:picked.licenses,attributions:picked.attributions,arrivalPointType:picked.arrivalPointType,caution:picked.caution});if(saveFavorites(a)){$('place-action-dialog').close();setMessage('☆ '+clean+' をお気に入りに保存したよ')}};
  // One deliberate search action; do not show facilities from unrelated cities.
  const addressCore=window.BNaviAddressSearch;
  const searchCore=window.BNaviPlaceSearchCore;
  const mergeCore=window.BNaviPoiSearchMerge;
  const openPoiCore=window.BNaviOpenPoiSearch;
+ const registeredCore=window.BNaviMichinoSpotSearch;
+ let registeredIndexPromise=null;
+ function registeredIndex(){
+   if(!registeredIndexPromise){
+     registeredIndexPromise=fetch('./data/michinotochu_spots.json',{cache:'force-cache'})
+       .then(async r=>{if(!r.ok)throw Error('登録地点データ HTTP '+r.status);
+         const data=await r.json();
+         if(!Array.isArray(data.spots)||data.spots.length<1000||data.meta?.source!=='道の途中。'||!/^\d+\.\d+\.\d+$/.test(data.meta.dbVersion||''))throw Error('登録地点データの形式が不正です');
+         return data;})
+       .catch(err=>{registeredIndexPromise=null;throw err});
+   }
+   return registeredIndexPromise;
+ }
+ async function searchRegistered(q){
+   if(!registeredCore||!q.trim())return [];
+   const data=await registeredIndex();
+   return registeredCore.rank(data,q,{group:$('registered-category').value,limit:24});
+ }
+ function showGroupedResults(localRows,onlineRows,el,{preview=false,related=false}={}){
+   const listed=Array.isArray(localRows)?localRows:[];
+   const outsiders=registeredCore?.distinctExternal(listed,onlineRows)||onlineRows||[];
+   el.replaceChildren();
+   const section=(title,rows,kind)=>{
+     if(!rows.length)return;
+     const header=document.createElement('p');header.className='search-summary';
+     header.textContent=title+rows.length+'件';el.append(header);
+     for(const row of rows)showSearchResult(row,el,kind);
+   };
+   section(preview?'「道の途中。」入力候補 ':'「道の途中。」登録スポット ',listed,'michino');
+   section(related?'外部の関連候補 ':preview?'外部の入力候補 ':'外部検索 ',outsiders,'place');
+   return listed.length+outsiders.length;
+ }
  let suggestionTimer=null,suggestionController=null,suggestionSerial=0;
+ let previewLocal=[],previewRemote=[];
   const stationCore=window.BNaviStationSearch;
   let stationIndexPromise=null;
   async function searchStations(q){
@@ -114,28 +155,42 @@
    rows.forEach(row=>showSearchResult(row,el));
  }
  function cancelSuggestions(){
-   suggestionSerial++;
+   suggestionSerial++;previewLocal=[];previewRemote=[];
    if(suggestionTimer!==null){clearTimeout(suggestionTimer);suggestionTimer=null}
    if(suggestionController){suggestionController.abort();suggestionController=null}
  }
  $('place-query').addEventListener('input',()=>{
    cancelSuggestions();
    const q=$('place-query').value.trim();
-   if(q.length<3||searchBusy||!placeDialog.open||currentPlaceTab!=='search'||
-       stationCore?.isExplicit(q)||addressCore.looksLikeAddress(q))return;
-   const serial=suggestionSerial;
+   if(q.length<2||searchBusy||!placeDialog.open||currentPlaceTab!=='search'||
+      stationCore?.isExplicit(q)||addressCore.looksLikeAddress(q))return;
+   const serial=suggestionSerial,group=$('registered-category').value;
+   // Local results appear as soon as the installed index is available.
+   searchRegistered(q).then(rows=>{
+     if(serial!==suggestionSerial||q!==$('place-query').value.trim()||
+       group!==$('registered-category').value||searchBusy||!placeDialog.open||currentPlaceTab!=='search')return;
+     previewLocal=rows;
+     if(rows.length||previewRemote.length)showGroupedResults(rows,previewRemote,$('place-search-results'),{preview:true});
+   }).catch(()=>{/* Existing remote search remains available. */});
+   if(q.length<3||navigator.onLine===false)return;
    suggestionTimer=setTimeout(async()=>{
      suggestionTimer=null;
      const controller=new AbortController();suggestionController=controller;
      try{
        const rows=await searchOpenPoi(q,'suggest',controller.signal);
        if(serial!==suggestionSerial||q!==$('place-query').value.trim()||
-           searchBusy||!placeDialog.open||currentPlaceTab!=='search')return;
-       if(rows.length){const filtered=mergeCore.combine(q,[{kind:'suggest',rows}]);if(filtered.length)renderOpenPoi(filtered,$('place-search-results'),true);}
-     }catch(err){
-       // Autocomplete is optional; manual search still tries every provider.
-     }finally{if(suggestionController===controller)suggestionController=null}
+          group!==$('registered-category').value||searchBusy||!placeDialog.open||currentPlaceTab!=='search')return;
+       previewRemote=mergeCore.combine(q,[{kind:'suggest',rows}]);
+       if(previewRemote.length||previewLocal.length)showGroupedResults(previewLocal,previewRemote,$('place-search-results'),{preview:true});
+     }catch(err){/* Autocomplete is optional, even in offline mode. */}
+     finally{if(suggestionController===controller)suggestionController=null}
    },550);
+ });
+ $('registered-category').addEventListener('change',()=>{
+   cancelSuggestions();
+   const q=$('place-query').value.trim();
+   if(!q||searchBusy||!placeDialog.open)return;
+   lastSearch=0;runSearch(q);
  });
  const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  async function searchNominatim(q){
@@ -167,8 +222,12 @@
    const card=document.createElement('div');card.className='place-result';
    const button=document.createElement('button');button.type='button';button.className='place-main';
    button.textContent=row.name;
+   if(kind==='michino')button.classList.add('registered-place-main');
    if(kind!=='station'){
-    const small=document.createElement('small');small.textContent=kind==='address'?'住所の候補・位置は概略（番地までの確定位置ではありません） · '+row.source:(row.address||'所在地の詳細なし');
+    const small=document.createElement('small');small.textContent=kind==='address'?'住所の候補・位置は概略（番地までの確定位置ではありません） · '+row.source:
+     kind==='michino'?'📍 道の途中。 / '+row.group+' / '+(row.address||'所在地の詳細なし')+
+        (row.caution?' ⚠ '+row.caution:row.arrivalPointType?' · '+row.arrivalPointType:' · 施設代表位置・入口は現地確認'):
+       (row.address||'所在地の詳細なし');
     button.append(small);
    }
    button.onclick=()=>selectPlace(row.name,row.lat.toFixed(6)+','+row.lon.toFixed(6),row);
@@ -235,6 +294,21 @@
         try{const matches=await searchStations(q);if(matches.length){showStationResults(matches,el);return;}}
         catch(err){/* Fall back to online geocoders when local data cannot load. */}
       }
+     // Offline registered spots are always searched FIRST; no network calls.
+     let localRows=[],localLoadError=null;
+     try{localRows=await searchRegistered(q)}catch(err){localLoadError=err}
+     if(localRows.length)showGroupedResults(localRows,[],el);
+     if(navigator.onLine===false){
+       if(!localRows.length){
+         el.replaceChildren();
+         const note=document.createElement('p');note.className='search-no-match';
+         note.textContent=localLoadError?'登録地点データが読み込めません。Wi-FiでPWAを更新してね。':
+           '登録地点に一致するスポットがありません。外部検索は通信が必要だよ。';
+         el.append(note);
+       }
+       return;
+     }
+     if(!localRows.length)el.textContent='外部の施設データも検索中…';
      // Do not stop when OpenPOI finds one branch: another provider may know HQ.
       const parsed=searchCore.parts(q),cat=searchCore.category(q);
       const tasks=[
@@ -266,29 +340,22 @@
           providerSuccesses++;
         }catch(err){/* Do not invent unindexed places. */}
       }
-      if(!results.length&&!localStationQuery){
+      if(!results.length&&!localStationQuery&&!localRows.length){
         try{const matches=await searchStations(q);if(matches.length){showStationResults(matches,el);return;}}
         catch(err){/* Retain online results if station index fails. */}
       }
       const suggestions=results.length?[]:searchCore.related(candidates,q,results);
-      el.replaceChildren();
-      if(results.length){
-        const h=document.createElement('p');h.className='search-summary';
-        h.textContent='検索結果 '+results.length+'件';el.append(h);
-        results.forEach(x=>showSearchResult(x,el));
-      }else if(suggestions.length){
-        const h=document.createElement('p');h.className='search-summary';
-        h.textContent='関連候補 '+suggestions.length+'件（名称を確認してね）';el.append(h);
-        suggestions.forEach(x=>showSearchResult(x,el));
-      }else{
+      const showed=showGroupedResults(localRows,results.length?results:suggestions,el,{related:!results.length});
+      if(!showed){
         const p=document.createElement('p');p.className='search-no-match';
-        p.textContent=providerSuccesses===0?'施設検索サービスに接続できませんでした。通信状態を確認して再検索してね。':
-          '該当する施設を検索データから見つけられませんでした。住所が分かる場合は「住所で探す」も試してね。';
+        p.textContent=localLoadError&&providerSuccesses===0?
+          '登録地点データと外部検索の両方が利用できません。通信とPWA更新を確認してね。':
+          providerSuccesses===0?'施設検索サービスに接続できませんでした。登録地点も一致しませんでした。':
+          '一致する地点が見つかりませんでした。住所で探すか、地図から選択してね。';
         el.append(p);
-      }
-      if(results.length||suggestions.length){
+      }else if(results.length||suggestions.length){
         const note=document.createElement('p');note.className='smallprint';
-        note.textContent='別の事業所は、それぞれの所在地を確認して選んでね。';el.append(note);
+        note.textContent='外部の事業所は所在地を確認して選んでね。';el.append(note);
       }
     }catch(err){
      el.replaceChildren();const p=document.createElement('p');p.textContent='検索処理に失敗しました（'+err.message+'）。';el.append(p);

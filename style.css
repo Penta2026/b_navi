@@ -355,3 +355,10 @@ body.navigation-active #track-panel,body.free-ride-active #track-panel{display:n
 .route-backroad-toggle small{display:block;color:#607e88;font-size:10px;line-height:1.5;margin-top:2px}
 .route-preferences .smallprint{font-size:10.5px;line-height:1.6;margin:0}
 @media(max-width:390px){.route-preference-choices label{font-size:10px;gap:2px}.route-preferences{padding:9px}}
+
+/* 道の途中。 offline destination index integrated into the existing search. */
+.registered-search-options{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:9px 0 6px;padding:9px;border:1px solid #d0e2e5;background:#f6fafb;border-radius:9px}
+.registered-search-options label{font-size:12px;font-weight:700;color:#2b5261;flex:1;min-width:160px}
+.registered-search-options select{border:1px solid #b4ced6;border-radius:8px;background:white;color:#213c4a;padding:8px;min-height:40px;min-width:120px;font-size:13px}
+.registered-place-main{border-left:3px solid #25839a!important;padding-left:10px!important}
+.registered-place-main small{line-height:1.55;overflow-wrap:anywhere}
