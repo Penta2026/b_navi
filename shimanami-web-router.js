@@ -16,7 +16,7 @@ function inArea(p){return Array.isArray(p)&&p.length===2&&p.every(Number.isFinit
 function island(p){if(!inArea(p))throw Error('しまなみの指定範囲外です');let best=0,dist=Infinity;ISLANDS.forEach((center,i)=>{const d=meters(center,p);if(d<dist){best=i;dist=d;}});return best;}
 function needsSpecialJourney(points,vehicle){return Number(vehicle)<=1&&Array.isArray(points)&&points.length>=2&&points.every(inArea)&&points.some((p,i)=>i>0&&island(p)!==island(points[i-1]));}
 function referenceData(geometry,refs){
- if(!geometry||geometry.schema_version!==1||geometry.bridges?.length!==6||refs?.length!==6)throw Error('Androidの6橋データが揃っていません');
+ if(!geometry||geometry.schema_version!==1||geometry.bridges?.length!==6||refs?.length!==6)throw Error('しまなみ海道の6橋データが揃っていません');
  for(let i=0;i<6;i++){
    const g=geometry.bridges[i],r=refs[i];
    if(!g||!r||g.name!==r.name||r.index!==i+1||r.points.length<3||!g.directions?.forward||!g.directions?.reverse)throw Error(`第${i+1}橋の元データを確認できません`);
@@ -92,7 +92,7 @@ async function compose(points,vehicle,mode,{geometry,refs,query,bridgePreview,on
      if(!nextPts)throw Error(stage.name+'：橋の出口側道路がありません');
      if(meters(prev.points.at(-1),stage.from)>MAX_BRIDGE_SEAM_METERS||meters(nextPts[0],stage.to)>MAX_BRIDGE_SEAM_METERS)throw Error(stage.name+'：道路と橋の接続が25m以上ずれました。架空の直線では接続しません');
      const visible=bridgePreview({bridgeIndex:stage.bridgeIndex,forward:stage.forward,points:stage.points},prev.points,nextPts);
-     if(!visible?.points?.length||meters(visible.points[0],prev.points.at(-1))>MAX_BRIDGE_SEAM_METERS||meters(visible.points.at(-1),nextPts[0])>MAX_BRIDGE_SEAM_METERS)throw Error(stage.name+'：Android確認済みの橋形状に接続できません');
+     if(!visible?.points?.length||meters(visible.points[0],prev.points.at(-1))>MAX_BRIDGE_SEAM_METERS||meters(visible.points.at(-1),nextPts[0])>MAX_BRIDGE_SEAM_METERS)throw Error(stage.name+'：橋の参考線を道路経路に接続できません');
      sections.push({type:'bridge',points:visible.points,color:'#b57a20',dash:'7 4',width:5,label:stage.name+'（原付通路参考線・走行GPX対象外）',bridgeIndex:stage.bridgeIndex,referenceOnly:true});
      bridges++;
    }
