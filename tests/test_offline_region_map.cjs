@@ -18,7 +18,7 @@ test('download follows old BikeNavigator regional PMTiles Cloudflare and OPFS de
  assert.ok(source.includes("getDirectoryHandle('BikeNavigator'"));
  assert.ok(source.includes("getDirectoryHandle('maps'"));
  assert.match(source,/new Unzip\(/);
- assert.match(source,/new UnzipInflate/);
+ assert.match(source,/unzip\.register\(UnzipInflate\)/);
  assert.match(source,/new FileSource\(/);
  assert.ok(source.includes("getFileHandle('active.json'"));
  assert.ok(source.includes("createWritable()"));
