@@ -35,10 +35,11 @@ test('style keys are distinct and invalid style cannot silently weaken ordinary 
  assert.equal(new Set(styles.map(style=>tuner.key({style},1))).size,4);
  assert.equal(tuner.key({},1),'0,0,0,0,0');
 });
-test('mode UI preserves old 3-axis panel and adds independent custom route',()=>{
+test('mode UI keeps hidden retired sliders but exposes three composable option groups',()=>{
  const html=read('index.html'),app=read('app.js');
- for(const id of ['custom-route-panel','tuning-enabled','tune-explore','tune-width','tune-scenic'])assert.ok(html.includes('id="'+id+'"'));
- assert.match(html,/name="custom-route-style"/);
- assert.ok(app.includes("customOption.value='custom'"));
- assert.ok(app.includes("state.customRouting=customEnabled||styleModeSelected()"));
+ for(const id of ['custom-route-panel','tuning-enabled','tune-explore','tune-width','tune-scenic','route-backroad'])assert.ok(html.includes('id="'+id+'"'));
+ assert.equal((html.match(/name="route-view"/g)||[]).length,3);
+ assert.equal((html.match(/name="route-ride"/g)||[]).length,3);
+ assert.ok(!app.includes("customOption.value='custom'"));
+ assert.ok(app.includes("BNaviRouteTuning.normalize({preferences:p}"));
 });

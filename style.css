@@ -336,3 +336,22 @@ body.navigation-active #track-panel,body.free-ride-active #track-panel{display:n
 .offline-map-actions button{min-height:42px;border-radius:9px;padding:9px 12px;border:none;flex:1}
 #offline-map-progress{width:100%;height:18px;accent-color:#16839e}
 #offline-map-status,#offline-map-display-status{overflow-wrap:anywhere;margin:0}
+
+/* Base mode + independently composable preferences (not a fourth route mode). */
+.route-preferences{display:grid;gap:11px;margin:10px 0 12px;padding:11px;border:1px solid #b7d3da;border-radius:12px;background:#f5fafb;color:#214c60;min-width:0}
+.route-preferences[hidden]{display:none!important}
+.route-preferences legend{padding:0 5px;font-size:13px;font-weight:800}
+.route-preferences legend small{font-size:10px;font-weight:400;color:#67818c}
+.route-preference-group{display:grid;gap:6px;min-width:0}
+.route-preference-group>strong{font-size:12px}
+.route-preference-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.route-preference-choices label{display:flex;align-items:center;justify-content:center;gap:3px;min-height:39px;padding:6px 3px;font-size:11px;border:1px solid #d0e3e8;background:#fff;border-radius:8px;cursor:pointer;text-align:center}
+.route-preference-choices label:has(input:checked){background:#e0f2f6;border-color:#2386a4;font-weight:800}
+.route-preference-choices input[type=radio]{height:15px;width:15px;flex:0 0 15px;margin:0;accent-color:#08718c}
+.route-preferences .route-backroad-toggle{display:flex;align-items:center;gap:10px;min-height:44px;padding:8px;border:1px solid #d0e3e8;border-radius:9px;background:white;cursor:pointer}
+.route-preferences .route-backroad-toggle:has(input:checked){background:#e0f2f6;border-color:#2386a4}
+.route-backroad-toggle input{height:20px;width:20px;flex:0 0 20px;accent-color:#08718c}
+.route-backroad-toggle strong{font-size:12px}
+.route-backroad-toggle small{display:block;color:#607e88;font-size:10px;line-height:1.5;margin-top:2px}
+.route-preferences .smallprint{font-size:10.5px;line-height:1.6;margin:0}
+@media(max-width:390px){.route-preference-choices label{font-size:10px;gap:2px}.route-preferences{padding:9px}}

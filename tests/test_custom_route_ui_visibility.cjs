@@ -4,7 +4,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
-test('retired three-slider customization remains hidden while four styles are visible when selected',()=>{
+test('retired slider customization stays hidden while base-mode overlays are visible',()=>{
  const html=read('index.html');
  const app=read('app.js');
  const sw=read('sw.js');
@@ -14,8 +14,11 @@ test('retired three-slider customization remains hidden while four styles are vi
  assert.match(legacy[0],/inert/);
  assert.match(legacy[0],/display:none/);
  assert.match(html,/<fieldset id="custom-route-panel"/);
- assert.equal((html.match(/name="custom-route-style"/g)||[]).length,4);
- assert.match(app,/customEnabled=false;\s*if\(Object\.hasOwn\(CUSTOM_ROUTE_LABELS,x\.customRouteStyle\)\)/);
- assert.match(sw,/bnavi-pc-pwa-20261123-(?:custom-four-styles-clean-ui-v2|pmtiles-regional-offline-v1)/);
+ assert.equal((html.match(/name="route-view"/g)||[]).length,3);
+ assert.equal((html.match(/name="route-ride"/g)||[]).length,3);
+ assert.ok(html.includes('id="route-backroad"'));
+ assert.equal((html.match(/name="custom-route-style"/g)||[]).length,0);
+ assert.match(app,/customEnabled=false;\s*\/\/ Upgrade old single-style/);
+ assert.match(sw,/bnavi-pc-pwa-20261123-(?:pmtiles-regional-offline-v1|composable-options-v1)/);
  assert.ok(!html.includes('従来の3軸スライダーは「カスタマイズ」からONにします。'));
 });

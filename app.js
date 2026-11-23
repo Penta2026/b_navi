@@ -4,7 +4,7 @@
  */
 'use strict';
 const $=id=>document.getElementById(id);
-const ROUTE_POLICIES=['ビギナー：狭い道と曲がりを抑え、走りやすい道を優先。信号は多少許容。','一般：適度な道幅と連続性を重視し、登録済み信号を強めに回避。','探索：市街地は走りやすい裏道、郊外は緑や水辺の近さを推定評価。','ファストトラベル：高速・有料道路を優先（126cc以上のみ）。'];
+const ROUTE_POLICIES=['ビギナー：狭い道と曲がりを抑え、走りやすい道を優先。','一般：適度な道幅と連続性を重視し、登録済み信号を強めに回避。','探索：市街地は走りやすい裏道、郊外は緑や水辺の近さを推定評価。','ファストトラベル：高速・有料道路を優先（126cc以上のみ）。'];
 const MODES=[['ビギナー','一般','探索'],['ビギナー','一般','探索'],['ビギナー','一般','探索','ファストトラベル（高速・有料優先）']];
 const state={shimanamiPlanPoints:[],shimanamiWebBuilt:false,navActive:false,navPaused:false,finishing:false,rerouting:false,targetIndex:0,activeTargets:[],arrivalPolicy:null,offRoutePolicy:null,motionGate:null,lastRerouteError:-Infinity,followGps:true,heading:{heading:null,at:-Infinity},orientation:'north',pick:'start',via:[],routes:[],currentGpx:null,location:null,watchId:null,routeType:null,gpsPoints:[],lastInputHash:'',turnCues:[],demoTimer:null,demoIndex:0,saidCues:new Set(),cumKm:[],islandLegs:[],islandIndex:0,awaitingBridge:false,gpsAccuracy:Infinity};
 // A single tap is for map inspection only: it must never move S, G, or waypoints.
@@ -39,41 +39,66 @@ try{Object.assign(placeLabels,JSON.parse(localStorage.getItem('bnavi.placeLabels
 function fmt(p){return `${Number(p[0]).toFixed(6)},${Number(p[1]).toFixed(6)}`;}
 function parsePoint(s){const arr=s.trim().split(',').map(x=>Number(x.trim()));if(arr.length!==2||!arr.every(Number.isFinite)||arr[0]<20||arr[0]>46||arr[1]<122||arr[1]>154)throw new Error('地点は「緯度,経度」で入力してね（日本国内の座標）。');return arr;}
 function inputPoint(id){return $(id).value.trim()?parsePoint($(id).value):null;}
-let customEnabled=false;
-// Distinct from the existing slider-based custom tuning (which stays intact).
-let customRouteStyle='cruise';
-const CUSTOM_ROUTE_LABELS=Object.freeze({scenic:'🌿 景観優先',efficient:'🎯 効率優先',backroad:'🛵 裏道優先',cruise:'🏍️ 快走優先'});
-function styleModeSelected(){return !customEnabled&&$('mode').value==='custom'}
-function routingMode(){return customEnabled||styleModeSelected()?1:Number($('mode').value)}
+let customEnabled=false; // legacy 3 sliders: never shown as a new-route option
+let routePreferences=BNaviRouteTuning.normalizePreferences(null);
+const OLD_STYLE_MIGRATION=Object.freeze({
+ scenic:{view:'scenic'},efficient:{ride:'efficient'},backroad:{backroad:true},cruise:{ride:'cruise'}
+});
+const VIEW_NAMES=Object.freeze({normal:'そのまま',scenic:'景観優先',distance:'距離優先'});
+const RIDE_NAMES=Object.freeze({normal:'そのまま',cruise:'快走優先',efficient:'効率優先'});
+function selectedBaseMode(){const value=Number($('mode').value);return Number.isInteger(value)?value:1;}
+function routingMode(){return customEnabled?1:selectedBaseMode();}
+function currentPreferences(){return BNaviRouteTuning.normalizePreferences(routePreferences);}
+function preferencesActive(){return !customEnabled&&selectedBaseMode()<=2;}
 function updateCustomRouteUI(){
- const active=styleModeSelected(),panel=$('custom-route-panel');
- if(panel)panel.hidden=!active;
- for(const input of document.querySelectorAll('input[name="custom-route-style"]'))input.checked=input.value===customRouteStyle;
+ const panel=$('custom-route-panel'),p=currentPreferences();
+ if(panel)panel.hidden=!preferencesActive();
+ for(const input of document.querySelectorAll('input[name="route-view"]'))input.checked=input.value===p.view;
+ for(const input of document.querySelectorAll('input[name="route-ride"]'))input.checked=input.value===p.ride;
+ $('route-backroad').checked=p.backroad;
+}
+function preferenceSummary(){
+ const p=currentPreferences(),parts=[];
+ if(p.view!=='normal')parts.push(VIEW_NAMES[p.view]);
+ if(p.ride!=='normal')parts.push(RIDE_NAMES[p.ride]);
+ if(p.backroad)parts.push('裏道優先');
+ return parts.length?parts.join(' ＋ '):'追加オプションなし';
 }
 function updatePolicy(){
  const el=$('route-policy');if(!el)return;
- el.textContent=customEnabled?ROUTE_POLICIES[1]+' カスタマイズON：保存中の3軸調整値で一般BRFを変更します。'
-  :styleModeSelected()?CUSTOM_ROUTE_LABELS[customRouteStyle]+'：信号の少なさを重視しつつ走り方に合わせて道路を選ぶ試験設定。実際の渋滞・景色・走行安全性は判定できません。'
-  :ROUTE_POLICIES[Number($('mode').value)]+' カスタマイズはOFFです。';
+ const mode=selectedBaseMode();
+ el.textContent=customEnabled?ROUTE_POLICIES[1]+' 旧設定を復元中。'
+  :ROUTE_POLICIES[mode]+(mode>2?' ファストトラベルは専用ルート設定を使用。'
+  :' 信号回避は全モード共通で強化。＋ '+preferenceSummary()+'。快走できる地域道なら距離約20％増も検討する試験方針（上限・時間短縮の保証なし）。公開BRouter向け。');
 }
 function updateModes(){
  const i=Number($('vehicle').value),sel=$('mode'),prev=sel.value;
- sel.replaceChildren();MODES[i].forEach((m,n)=>{const o=document.createElement('option');o.value=String(n);o.textContent=m;sel.append(o);});
- const customOption=document.createElement('option');customOption.value='custom';customOption.textContent='カスタムルート（4スタイル）';sel.append(customOption);
- sel.value=prev==='custom'||(prev!==''&&MODES[i][Number(prev)]!==undefined)?prev:'1';
+ sel.replaceChildren();
+ MODES[i].forEach((m,n)=>{const o=document.createElement('option');o.value=String(n);o.textContent=m;sel.append(o);});
+ sel.value=prev!==''&&MODES[i][Number(prev)]!==undefined&&prev!=='custom'?prev:'1';
  if(customEnabled)sel.value='1';
  updateCustomRouteUI();updatePolicy();
 }
 function chooseCustom(enabled,openPanel=false){
+ // Older named tuning presets remain importable for existing saved routes.
  customEnabled=Boolean(enabled);
  if(customEnabled)$('mode').value='1';
  if(openPanel)$('route-tuning-panel').open=true;
  updateTuningUI();updateCustomRouteUI();updatePolicy();persist();
 }
 function bindCustomRouteUI(){
- for(const input of document.querySelectorAll('input[name="custom-route-style"]')){
-  input.addEventListener('change',()=>{if(!input.checked||!Object.hasOwn(CUSTOM_ROUTE_LABELS,input.value))return;customRouteStyle=input.value;updateCustomRouteUI();updatePolicy();persist();});
+ for(const input of document.querySelectorAll('input[name="route-view"],input[name="route-ride"]')){
+  input.addEventListener('change',()=>{
+   if(!input.checked)return;
+   const kind=input.name==='route-view'?'view':'ride';
+   routePreferences=BNaviRouteTuning.normalizePreferences({...routePreferences,[kind]:input.value});
+   updateCustomRouteUI();updatePolicy();persist();
+  });
  }
+ $('route-backroad').addEventListener('change',e=>{
+  routePreferences=BNaviRouteTuning.normalizePreferences({...routePreferences,backroad:$('route-backroad').checked});
+  updateCustomRouteUI();updatePolicy();persist();
+ });
  updateCustomRouteUI();
 }
 
@@ -198,7 +223,7 @@ function refreshMap(){
  const paths=document.body.classList.contains('free-ride-active')?[]:state.routes;
  map.setData(paths,getMarkers(),state.location);
 }
-function persist(){try{localStorage.setItem('bnavi.pc.v1',JSON.stringify({start:$('start').value,goal:$('goal').value,via:state.via,vehicle:$('vehicle').value,mode:$('mode').value,customEnabled,customRouteStyle}));}catch{}}
+function persist(){try{localStorage.setItem('bnavi.pc.v1',JSON.stringify({start:$('start').value,goal:$('goal').value,via:state.via,vehicle:$('vehicle').value,mode:$('mode').value,customEnabled,routePreferences:currentPreferences()}));}catch{}}
 function restore(){try{
  const x=JSON.parse(localStorage.getItem('bnavi.pc.v1')||'null');if(!x)return;
  $('start').value=x.start||'';$('goal').value=x.goal||'';state.via=Array.isArray(x.via)?x.via.slice(0,50).map(String):[];
@@ -207,11 +232,13 @@ function restore(){try{
  // not silently enable a hidden legacy configuration when restoring this PWA.
  const v=Number($('vehicle').value);
  customEnabled=false;
- if(Object.hasOwn(CUSTOM_ROUTE_LABELS,x.customRouteStyle))customRouteStyle=x.customRouteStyle;
+ // Upgrade old single-style "custom" selection into independent preferences.
+ routePreferences=BNaviRouteTuning.normalizePreferences(x.routePreferences ??
+   (x.mode==='custom'&&OLD_STYLE_MIGRATION[x.customRouteStyle]) ?? null);
  updateModes();
  const savedMode=String(x.mode??'1');
- if(!customEnabled&&(savedMode==='custom'||MODES[v][Number(savedMode)]!==undefined))$('mode').value=savedMode;
- if(customEnabled){$('mode').value='1';$('route-tuning-panel').open=true;}
+ if(savedMode!=='custom'&&MODES[v][Number(savedMode)]!==undefined)$('mode').value=savedMode;
+ else $('mode').value='1';
  updateCustomRouteUI();updatePolicy();
 }catch{}}
 function getRequestPoints(){if(!$('start').value.trim()||!$('goal').value.trim())throw new Error('出発地と目的地は、地図の長押しメニューや検索から登録してね。');const a=[parsePoint($('start').value)];for(const text of state.via)a.push(parsePoint(text));a.push(parsePoint($('goal').value));if(a.length>52)throw new Error('地点が多すぎます。');return a;}
@@ -270,7 +297,18 @@ $('route-api-save').addEventListener('click',()=>{try{const raw=$('route-api-bas
 $('route-api-clear').addEventListener('click',()=>{localStorage.removeItem(API_CONFIG_KEY);updateApiSettings();refreshServer()});
 updateApiSettings();
 async function postApi(path,points){const form=new URLSearchParams({vehicle:$('vehicle').value,mode:String(state.activeRoutingMode??routingMode()),points:points.map(fmt).join('|')});const response=await fetch(apiUrl(path),{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:form});const text=await response.text();if(!response.ok)throw new Error(text.slice(0,300));return {response,text};}
-async function calculate(){const btn=$('calculate');btn.disabled=true;clearResult();try{const points=getRequestPoints();state.activeRoutingVehicle=Number($('vehicle').value);state.activeRoutingMode=routingMode();state.customRouting=customEnabled||styleModeSelected();state.activeRouteTuning=styleModeSelected()?BNaviRouteTuning.normalize({style:customRouteStyle},state.activeRoutingVehicle):(customEnabled?tuningNow():null);persist();if(!usePublicBrouter()&&state.customRouting&&!BNaviRouteTuning.isDefault(state.activeRouteTuning,state.activeRoutingVehicle))throw Error('カスタムルートは公開BRouter用です。専用Java APIは詳細パラメータに未対応のため、調整したふりで計算しません。GitHub Pagesから専用API設定を解除して利用してください。');setMessage('BRouter計算中。道路データを照合しています…');
+async function calculate(){const btn=$('calculate');btn.disabled=true;clearResult();try{const points=getRequestPoints();state.activeRoutingVehicle=Number($('vehicle').value);state.activeRoutingMode=routingMode();
+ const wantsOptions=preferencesActive();
+ const p=currentPreferences();
+ const isFast=state.activeRoutingMode===3;
+ const nonDefaultOptions=p.view!=='normal'||p.ride!=='normal'||p.backroad;
+ if(!usePublicBrouter()&&!isFast&&nonDefaultOptions)throw Error('追加オプションは公開BRouterでのみ利用できます。専用Java API接続を解除してね。');
+ state.customRouting=customEnabled||(wantsOptions&&usePublicBrouter());
+ state.activeRouteTuning=wantsOptions&&usePublicBrouter()
+   ?BNaviRouteTuning.normalize({preferences:p},state.activeRoutingVehicle)
+   :(customEnabled?tuningNow():null);
+ persist();
+ if(!usePublicBrouter()&&customEnabled&&!BNaviRouteTuning.isDefault(state.activeRouteTuning,state.activeRoutingVehicle))throw Error('旧カスタム調整は専用Java APIに未対応です。');setMessage('BRouter計算中。道路データを照合しています…');
  if(usePublicBrouter()){
    if(typeof BNaviShimanamiWebRouter!=='undefined'&&BNaviShimanamiWebRouter.needsSpecialJourney(points,$('vehicle').value))await calculateShimanamiWeb(points);
    else await calculatePublicRoute(points);
@@ -735,7 +773,7 @@ function updateGpsProgress(demo=false){if(!state.location||state.navPaused||stat
  if(until<=20&&until>=0&&nearest<.035&&state.gpsAccuracy<=25&&!state.saidCues.has('now-'+next.offset)){state.saidCues.add('now-'+next.offset);state.saidCues.add(next.offset);speak(cueText(next.desc));}
  else if(until<=130&&!state.saidCues.has(next.offset)){state.saidCues.add(next.offset);speak(`およそ${Math.max(10,Math.round(until/10)*10)}メートル先、${cueText(next.desc)}`);}
  }}$('nav-status').textContent=`${demo?'案内デモ':'GPS'}：経路まで約${Math.round(nearest*1000)}m／残り約${remaining.toFixed(1)}km${instruction}${nearest>.08?'（経路から離れています）':''}。GPX指示に基づく概算案内。`;}
-$('vehicle').addEventListener('change',()=>{updateModes();updateTuningUI();updatePresetUI('');$('preset-name').value='';persist();});$('mode').addEventListener('change',()=>{chooseCustom(false);});
+$('vehicle').addEventListener('change',()=>{updateModes();updateTuningUI();updatePresetUI('');$('preset-name').value='';persist();});$('mode').addEventListener('change',()=>{chooseCustom(false);updateCustomRouteUI();updatePolicy();persist();});
 for(const b of document.querySelectorAll('.pick'))b.addEventListener('click',()=>setPick(b.dataset.pick));$('start-pick').addEventListener('click',()=>setPick('start'));$('goal-pick').addEventListener('click',()=>setPick('goal'));
 $('start').addEventListener('input',()=>{updatePointSummaries();refreshMap();persist();});$('goal').addEventListener('input',()=>{updatePointSummaries();refreshMap();persist();});
 $('add-via').addEventListener('click',()=>{if(state.via.length>=50){setMessage('経由地は50件まで。',true);return;}setPick('via');setMessage('地図を長押しし、表示されたメニューから「経由地に追加」を選んでね。');});$('clear-vias').addEventListener('click',()=>{state.via=[];renderVia();refreshMap();persist();});
@@ -793,14 +831,14 @@ function bindMyRouteUI(){
    if(state.routeType&&state.routes.length&&!window.confirm('現在表示中の経路を「'+stored.name+'」に切り替える？'))return;
    const vehicle=stored.vehicle;
    $('vehicle').value=String(vehicle);
-   const storedStyle=BNaviRouteTuning.normalize(stored.route?.activeRouteTuning??stored.tuning,vehicle).style;
-   customEnabled=!storedStyle&&Boolean(stored.route?.customRouting??!BNaviRouteTuning.isDefault(stored.tuning,vehicle));
-   if(storedStyle)customRouteStyle=storedStyle;
+   const previouslySaved=BNaviRouteTuning.normalize(stored.route?.activeRouteTuning??stored.tuning,vehicle);
+   routePreferences=BNaviRouteTuning.normalizePreferences(previouslySaved.preferences??OLD_STYLE_MIGRATION[previouslySaved.style]);
+   customEnabled=false;
    updateModes();
-   if(storedStyle)$('mode').value='custom';
-   else if(!customEnabled&&MODES[vehicle][Number(stored.route?.activeRoutingMode)]!==undefined)$('mode').value=String(stored.route.activeRoutingMode);
-   if(customEnabled){$('mode').value='1';$('route-tuning-panel').open=true;}
-   tuningByVehicle[vehicle]=BNaviRouteTuning.normalize(storedStyle?null:stored.tuning,vehicle);storeTuning();updateTuningUI();updateCustomRouteUI();updatePolicy();updatePresetUI('');
+   if(MODES[vehicle][Number(stored.route?.activeRoutingMode)]!==undefined)$('mode').value=String(stored.route.activeRoutingMode);
+   else $('mode').value='1';
+   tuningByVehicle[vehicle]=BNaviRouteTuning.normalize(stored.tuning,vehicle);
+   storeTuning();updateTuningUI();updateCustomRouteUI();updatePolicy();updatePresetUI('');
    $('start').value=stored.start||'';$('goal').value=stored.goal||'';state.via=[...(stored.via||[])];
    renderVia();updatePointSummaries();persist();
    restoringOffline=true;

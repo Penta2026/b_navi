@@ -18,6 +18,107 @@ const STYLE_SPECS=Object.freeze({
  backroad:Object.freeze({forest:0,water:0,turn:50,signal:850,trunk:12,primary:8,secondary:3,tertiary:1.15,unclassified:1.05,lanes1:1.5,lanes15:1}),
  cruise:Object.freeze({forest:-0.08,water:-0.08,turn:400,signal:850,trunk:5,primary:3,secondary:1.5,tertiary:1.1,unclassified:2.6,lanes1:3.5,lanes15:2})
 });
+// New independent preferences always start from the SELECTED beginner/general/
+// explore BRF, not general. They never touch hard routing/access prohibitions.
+// The 20% enjoyable detour is a calibration TARGET, not a route-distance cap;
+// a BRF cost profile alone cannot impose a relative-to-shortest-distance bound.
+const PREFERENCE_CHOICES=Object.freeze({
+  view:Object.freeze(['normal','scenic','distance']),
+  ride:Object.freeze(['normal','cruise','efficient'])
+});
+const SIGNAL_TRIAL_COST=850; // all three base modes, all vehicle classes (excluding fast travel)
+const BACKROAD_BIAS=Object.freeze({
+  // Beginner: broad, clearly understandable backroads; avoid narrow lanes and extra turns.
+  0:Object.freeze({trunk:1.00,primary:.60,secondary:.12,tertiary:-.03,unclassified:.12,residential:.70,lanes1:1.20,lanes15:.60,turn:30}),
+  // General: Tomita-style country through-roads; modest detours for fewer signals.
+  1:Object.freeze({trunk:1.80,primary:1.15,secondary:.24,tertiary:-.06,unclassified:-.10,residential:.45,lanes1:.45,lanes15:.10,turn:-15}),
+  // Explore: more adventurous connectors, but never alleys, driveways or forbidden roads.
+  2:Object.freeze({trunk:2.15,primary:1.45,secondary:.28,tertiary:-.10,unclassified:-.16,residential:0,lanes1:-.25,lanes15:-.10,turn:-30})
+});
+function normalizePreferences(value){
+ const raw=value&&typeof value==='object'?value:{};
+ return {
+  view:PREFERENCE_CHOICES.view.includes(raw.view)?raw.view:'normal',
+  ride:PREFERENCE_CHOICES.ride.includes(raw.ride)?raw.ride:'normal',
+  backroad:raw.backroad===true
+ };
+}
+function preferenceKey(value){
+ const p=normalizePreferences(value);
+ return 'base-options-v1:'+p.view+':'+p.ride+':'+(p.backroad?'1':'0');
+}
+function tunePreferences(base,prefs,vehicle,mode=1){
+ const p=normalizePreferences(prefs),kind=Number(vehicle),baseMode=Number(mode);
+ if(![0,1,2].includes(kind))throw Error('車種の指定が不正です');
+ if(![0,1,2].includes(baseMode))throw Error('基本モードの指定が不正です');
+ let out='# B_Navi base-mode additive preferences: '+preferenceKey(p)+
+   ' / signal trial='+SIGNAL_TRIAL_COST+' / enjoyable detour target about +20%, not guaranteed\n'+base;
+ const delta={trunk:0,primary:0,secondary:0,tertiary:0,unclassified:0,residential:0,lanes1:0,lanes15:0,turn:0};
+ const apply=x=>{for(const [k,v] of Object.entries(x))delta[k]+=v;};
+ if(p.backroad)apply(BACKROAD_BIAS[baseMode]);
+ if(p.ride==='cruise')apply({trunk:-.08,primary:-.08,unclassified:.38,residential:.55,lanes1:1.65,lanes15:.90,turn:125});
+ if(p.ride==='efficient')apply({trunk:-.12,primary:-.12,unclassified:.34,residential:.65,lanes1:.55,lanes15:.35,turn:70});
+ if(p.backroad&&p.ride==='cruise')apply({lanes1:.55,lanes15:.25,turn:25}); // comfy backroads
+ if(p.backroad&&p.ride==='efficient')apply({trunk:.15,primary:.12}); // do not undo backroad preference
+ if(p.view==='distance')apply({turn:-35}); // fewer imposed detours, without compromising signal priority
+ if(p.view==='scenic')apply({turn:15}); // gentle continuous scenic routes
+ const replaceUnique=(txt,regex,label,convert)=>{
+  let hits=0;
+  const changed=txt.replace(regex,(_,prefix,value,suffix)=>{
+   hits++;const original=Number(value);return prefix+Number(convert(original)).toFixed(3)+suffix;
+  });
+  if(hits!==1)throw Error('BRF '+label+' が変更できません ('+hits+')');
+  return changed;
+ };
+ const begin=out.indexOf('assign costfactor\n'),finish=out.indexOf('assign turncost',begin);
+ if(begin<0||finish<begin)throw Error('BRF道路係数の範囲が不正です');
+ let part=out.slice(begin,finish);
+ const highwayNames={trunk:'trunk|trunk_link',primary:'primary|primary_link',secondary:'secondary|secondary_link',tertiary:'tertiary|tertiary_link',unclassified:'unclassified',residential:'residential'};
+ for(const [key,name] of Object.entries(highwayNames)){
+  const re=new RegExp('(^[ \\t]*switch highway='+name.split('|').join('\\|')+'[ \\t]+)([0-9]+(?:\\.[0-9]+)?)([ \\t]*$)','m');
+  part=replaceUnique(part,re,key,n=>{
+   // "Distance" flattens only SOFT road preferences, not access restrictions.
+   const normalized=p.view==='distance'?1.01+(n-1.01)*.65:n;
+   return Math.max(1.01,Math.min(9999,normalized+delta[key]));
+  });
+ }
+ out=out.slice(0,begin)+part+out.slice(finish);
+ for(const [key,name] of [['lanes1','1'],['lanes15','1\\.5']]){
+  const re=new RegExp('(^[ \\t]*switch lanes='+name+'[ \\t]+)([0-9]+(?:\\.[0-9]+)?)([ \\t]*$)','m');
+  out=replaceUnique(out,re,key,n=>Math.max(0,n+delta[key]));
+ }
+ out=replaceUnique(out,/^(\s*assign turncost\s+)([0-9]+(?:\.[0-9]+)?)(\s*)$/m,'turncost',
+  n=>Math.max(0,n+delta.turn));
+ const nstart=out.indexOf('---context:node');
+ if(nstart<0)throw Error('BRF信号評価が見つかりません');
+ const head=out.slice(0,nstart);
+ let nodes=out.slice(nstart);
+ nodes=replaceUnique(nodes,/^(\s*switch highway=traffic_signals\s+)([0-9]+(?:\.[0-9]+)?)(\s*)$/m,
+  'traffic_signals',n=>Math.max(n,SIGNAL_TRIAL_COST));
+ out=head+nodes;
+ if(p.view==='scenic'){
+  const scenic=`assign additive_scenic_bias
+    switch estimated_town_class=3|4|5|6 0
+        switch estimated_forest_class=6 -0.240
+        switch estimated_forest_class=5 -0.180
+        switch estimated_forest_class=4 -0.120
+        switch estimated_forest_class=3 -0.060
+        switch estimated_river_class=6 -0.240
+        switch estimated_river_class=5 -0.180
+        switch estimated_river_class=4 -0.120
+        switch estimated_river_class=3 -0.060 0
+
+`;
+  // Template literal avoids any implicit changes to the original town/forest/river tags.
+  if(!out.includes('assign contextual_ride_bias\n')||!out.includes('    add traffic_route_bias ride_width_surface_bias'))throw Error('BRF景観評価を変更できません');
+  out=out.replace('assign contextual_ride_bias\n',scenic+'assign contextual_ride_bias\n');
+  out=out.replace('    add traffic_route_bias ride_width_surface_bias',
+   '    add traffic_route_bias\n        add ride_width_surface_bias additive_scenic_bias');
+ }
+ if(!out.includes('    max 1.01'))throw Error('BRFコスト下限を維持できません');
+ return out;
+}
+
 const STYLE_REF125=Object.freeze({trunk:3.85,primary:2.8,secondary:1.28,tertiary:1.03,unclassified:1.26,lanes1:1.25,lanes15:.55,turn:90,signal:350});
 function tuneStyle(base,style){
  const cfg=STYLE_SPECS[style];if(!cfg)throw Error('不明なカスタムルートです');
@@ -79,13 +180,15 @@ function normalize(raw,vehicle){
  const big=Number(vehicle)===2;
  const result={explore:level('explore'),width:level('width'),scenic:level('scenic'),allowMotorway:big&&obj.allowMotorway===true,allowToll:big&&obj.allowToll===true};
  if(typeof obj.style==='string'&&Object.hasOwn(STYLE_SPECS,obj.style))result.style=obj.style;
+ if(obj.preferences&&typeof obj.preferences==='object')result.preferences=normalizePreferences(obj.preferences);
  return result;
 }
-function isDefault(raw,vehicle){const v=normalize(raw,vehicle);return !v.style&&!v.explore&&!v.width&&!v.scenic&&!v.allowMotorway&&!v.allowToll;}
-function key(raw,vehicle){const v=normalize(raw,vehicle);return `${v.explore},${v.width},${v.scenic},${v.allowMotorway?1:0},${v.allowToll?1:0}`+(v.style?':'+v.style:'');}
-function tuneProfile(base,raw,vehicle){
+function isDefault(raw,vehicle){const v=normalize(raw,vehicle);return !v.preferences&&!v.style&&!v.explore&&!v.width&&!v.scenic&&!v.allowMotorway&&!v.allowToll;}
+function key(raw,vehicle){const v=normalize(raw,vehicle);return `${v.explore},${v.width},${v.scenic},${v.allowMotorway?1:0},${v.allowToll?1:0}`+(v.style?':'+v.style:'')+(v.preferences?':'+preferenceKey(v.preferences):'');}
+function tuneProfile(base,raw,vehicle,mode=1){
  if(typeof base!=='string'||!base.includes('---context:way')||!base.includes('---context:node'))throw Error('基本BRFファイルが不正です');
  const v=normalize(raw,vehicle);
+ if(v.preferences)return tunePreferences(base,v.preferences,vehicle,mode);
  if(v.style)return tuneStyle(base,v.style); // independent of the legacy three sliders
  if(isDefault(v,vehicle))return base; // exact, byte-identical general route at the centre.
  const header='# B_Navi route-tuning v1: '+key(v,vehicle)+' (approximate OSM preferences; legal gates unchanged except explicit 126cc options)\n';
@@ -157,7 +260,7 @@ function tuneProfile(base,raw,vehicle){
  if(!/max 1\.01/.test(out))throw Error('基本BRFのコスト下限ガードが見つかりません');
  return out;
 }
-const api={DEFAULT,LIMIT,STEP,STYLE_SPECS,normalize,isDefault,key,tuneProfile};
+const api={DEFAULT,LIMIT,STEP,STYLE_SPECS,PREFERENCE_CHOICES,SIGNAL_TRIAL_COST,BACKROAD_BIAS,normalizePreferences,normalize,isDefault,key,tuneProfile};
 root.BNaviRouteTuning=api;
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof window==='undefined'?globalThis:window);
