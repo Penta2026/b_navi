@@ -61,7 +61,7 @@ test('the UI exposes two separately toggleable checkboxes and explicitly does no
  assert.match(app,/backroad:x\?\.backroad===true,coast:x\?\.coast===true/);
  assert.match(app,/const nonDefaultOptions=[^\n]*\|\|p\.coast/);
  assert.match(css,/\.route-special-options\{display:grid/);
- assert.match(sw,/bnavi-pc-pwa-20261124-coast-backroad-v1/);
+ assert.match(sw,/bnavi-pc-pwa-20261124-mainland-options-toggle-v1/);
 });
 test('BRouter receives two different complete profiles for coastline proxy ON/OFF and does not accidentally share one',async()=>{
  global.location={href:'https://penta2026.github.io/b_navi/'};
