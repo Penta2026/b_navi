@@ -37,7 +37,7 @@ function applyItinerary(itinerary,fileName){
  }
  renderVia();updatePointSummaries();refreshMap();fitMarkers();persist();
  itineraryImport=true;itineraryBox.hidden=false;routePointList(itinerary);
- el('gpx-import-status').textContent=`${fileName}：S・経由地${itinerary.via.length}件・Gを読み込んだよ。道路ルートを計算します。`;
+ el('gpx-import-status').textContent=`${fileName}：S・経由地${itinerary.via.length}件・Gを読み込んだよ。排気量・走り方を確認してから「ルート検索」を押してね。自動では計算しないよ。`;
 }
 async function ingestFile(file,orderedOnly=false){
  if(!file) return;
@@ -54,7 +54,7 @@ async function ingestFile(file,orderedOnly=false){
   if(!designated||!itinerary)throw Error('道の途中。で「B_Naviに送る」を押してから読み込んでね。');
   if(state.navActive||state.navPaused||state.finishing)throw Error('案内を終了してからルートを読み込んでね。');
  }
- if(itinerary){applyItinerary(itinerary,file.name||'GPX');await calculateImportedItinerary();return;}
+ if(itinerary){applyItinerary(itinerary,file.name||'GPX');return;}
  itineraryImport=false;itineraryBox.hidden=true;
  let track=[];
  const trks=[...doc.getElementsByTagNameNS('*','trkseg')];
