@@ -36,7 +36,7 @@ test('routing labels, failures, and bridge diagnostics avoid old-generation term
 });
 test('PWA shell changes version without removing existing application modules',()=>{
  const sw=read('sw.js');
- assert.match(sw,/const CACHE='bnavi-pc-pwa-20261124-full-route-clear-v1'/);
+ assert.match(sw,/const CACHE='bnavi-pc-pwa-20261124-route-clear-dialog-v2'/);
  for(const file of ['offline-map-download.mjs','offline-map-layer.mjs','michinotochu-spot-search.js','public-brouter-client.js'])
   assert.ok(sw.includes("'./"+file+"'"),file);
 });
