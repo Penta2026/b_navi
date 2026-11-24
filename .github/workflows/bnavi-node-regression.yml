@@ -18,6 +18,8 @@ jobs:
           node-version: '22'
       - name: Validate JavaScript syntax
         run: |
+          node --check app.js
+          node --check sw.js
           node --check mobile-ui.js
           node --check michinotochu-spot-search.js
           node --check poi-search-merge.js

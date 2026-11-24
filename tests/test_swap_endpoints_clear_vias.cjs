@@ -120,4 +120,13 @@ test('service worker bypasses browser HTTP cache for app shell but retains offli
  assert.match(sw,/const fresh=appShell\?new Request\(e\.request,\{cache:'no-store'\}\):e\.request/);
  assert.match(sw,/fetch\(fresh\)/);
  assert.match(sw,/caches\.match\(e\.request\)/);
+ const vm=require('node:vm'),expr=sw.match(/const appShell=(.*);/)[1];
+ for(const name of ['/b_navi/app.js','/b_navi/mobile-ui.js','/b_navi/index.html','/b_navi/style.css','/b_navi/offline-map-download.mjs','/b_navi/']){
+  const scope={u:{pathname:name}};vm.runInNewContext('this.shouldRefresh='+expr,scope);
+  assert.equal(scope.shouldRefresh,true,'fresh app shell: '+name);
+ }
+ for(const name of ['/b_navi/images/map.png','/b_navi/data/offline.rd5']){
+  const scope={u:{pathname:name}};vm.runInNewContext('this.shouldRefresh='+expr,scope);
+  assert.equal(scope.shouldRefresh,false,'non-app asset not forced: '+name);
+ }
 });

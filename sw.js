@@ -37,6 +37,6 @@ self.addEventListener('fetch',e=>{
  if(e.request.method!=='GET'||u.origin!==self.location.origin||u.pathname.includes('/api/')||u.pathname.endsWith('.rd5'))return;
  // App shell scripts and HTML must not be served from an outdated browser HTTP cache.
  // Keep CacheStorage offline fallback, but force a fresh network validation when online.
- const appShell=/\\.(?:html|css|js|mjs)$/i.test(u.pathname)||u.pathname.endsWith('/b_navi/');
+ const appShell=/\.(?:html|css|js|mjs)$/i.test(u.pathname)||u.pathname.endsWith('/b_navi/');
  const fresh=appShell?new Request(e.request,{cache:'no-store'}):e.request;
  e.respondWith(fetch(fresh).then(r=>{if(r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));}return r;}).catch(()=>caches.match(e.request)));});
