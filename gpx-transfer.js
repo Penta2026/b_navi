@@ -101,7 +101,7 @@ function showMichinoPaste(message){
  gpxPasteStatus.textContent=message+' 入力欄を長押しして「ペースト」し、「貼り付けたGPXを読み込む」を押してね。';
  panel.scrollIntoView?.({block:'nearest'});
 }
-michinoButton.addEventListener('click',async()=>{
+michinoButton?.addEventListener('click',async()=>{
  if(state.navActive||state.navPaused||state.finishing){el('gpx-import-status').textContent='案内を終了してからルートを読み込んでね。';return;}
  michinoButton.disabled=true;
  try{
