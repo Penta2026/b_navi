@@ -32,7 +32,7 @@ with sync_playwright() as p:
   page.locator('#mode').select_option('3')
   panel=page.locator('#custom-route-panel')
   assert panel.is_visible(),('fasttravel option panel hidden',width)
-  assert '高速・有料優先' in page.locator('#route-policy').inner_text()
+  assert '高速・有料道路を優先' in page.locator('#route-policy').inner_text()
   page.locator('#route-coast').check()
   page.locator('#route-backroad').check()
   page.locator('input[name="route-view"][value="scenic"]').check()

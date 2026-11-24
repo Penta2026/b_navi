@@ -5,7 +5,7 @@ const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 const fast=read('profiles/bn_big_fasttravel_priority.brf'),general=read('profiles/bn_big_general.brf');
 const prefs=(opt)=>({preferences:{view:'normal',ride:'normal',backroad:false,coast:false,...opt}});
 const numberFor=(src,name)=>{
- const needle='   switch highway='+name+' ';
+ const needle='  switch highway='+name+' ';
  const row=src.split('\n').find(x=>x.startsWith(needle));
  assert.ok(row,'missing penalty '+name);
  return Number(row.slice(needle.length).trim());
@@ -19,7 +19,7 @@ test('coast plus backroad plus cruise are really combined in the FAST kinematic 
  const compiled=tuning.tuneProfile(fast,prefs({coast:true,backroad:true,ride:'cruise'}),2,3);
  assert.match(compiled,/assign fasttravel_water_hint_bias =/);
  assert.match(compiled,/switch estimated_river_class=6 0/);
- assert.match(compiled,/add fasttravel_water_hint_bias\n   add town_penalty/);
+ assert.match(compiled,/add fasttravel_water_hint_bias\n  add town_penalty/);
  assert.ok(numberFor(compiled,'trunk|trunk_link')>numberFor(fast,'trunk|trunk_link'));
  assert.ok(numberFor(compiled,'unclassified')<numberFor(fast,'unclassified')+.12);
  assert.equal(compiled.includes('assign fasttravel_green_hint_bias'),false);

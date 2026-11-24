@@ -248,9 +248,9 @@ function tuneFastTravelPreferences(base,prefs,vehicle){
   residential:['residential|living_street','1.1']
  };
  for(const [key,[names,number]] of Object.entries(anchors)){
-  const original='   switch highway='+names+' '+number;
+  const original='  switch highway='+names+' '+number;
   if(out.split(original).length!==2)throw Error('高速優先の道路係数が一致しません：'+key);
-  out=out.replace(original,'   switch highway='+names+' '+
+  out=out.replace(original,'  switch highway='+names+' '+
    Math.max(0,Number(number)+delta[key]).toFixed(3));
  }
  const bias=[];
@@ -269,14 +269,14 @@ function tuneFastTravelPreferences(base,prefs,vehicle){
   '  switch estimated_forest_class=3 0.120\n'+
   '  0.180\n\n'});
  if(bias.length){
-  const anchor='assign fasttravel_road_penalty =',cost='   add fasttravel_road_penalty\n   add town_penalty';
+  const anchor='assign fasttravel_road_penalty =',cost='  add fasttravel_road_penalty\n  add town_penalty';
   if(out.split(anchor).length!==2||out.split(cost).length!==2)
    throw Error('高速優先の水辺・景観評価を安全に追加できません');
   out=out.replace(anchor,bias.map(b=>b.src).join('')+anchor);
-  out=out.replace(cost,'   add fasttravel_road_penalty\n'+
-   bias.map(b=>'   add '+b.name+'\n').join('')+'   add town_penalty');
+  out=out.replace(cost,'  add fasttravel_road_penalty\n'+
+   bias.map(b=>'  add '+b.name+'\n').join('')+'  add town_penalty');
  }
- if(!out.includes('   switch highway=motorway|motorway_link 0')||
+ if(!out.includes('  switch highway=motorway|motorway_link 0')||
     !out.includes('assign avoid_toll          = false')||
     !out.includes('assign avoid_motorways     = false'))
   throw Error('高速・有料道路の既存条件が変わっているため停止しました');
