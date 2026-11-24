@@ -434,3 +434,11 @@ body.navigation-active #track-panel,body.free-ride-active #track-panel{display:n
 #navigation-hud .navigation-hud-actions #nav-detour:focus-visible{outline:3px solid #09869e;outline-offset:2px}
 #navigation-hud .navigation-hud-actions #nav-detour-note{font-size:11px;line-height:1.3;flex:1;min-width:85px;color:#5c737d}
 @media(max-width:380px){#navigation-hud .navigation-hud-actions #nav-detour{padding:8px 10px}}
+
+/* Public-address office candidates: separate verified address from geocoded point. */
+.verified-office-entry{display:flex;flex-direction:column;align-items:stretch;gap:7px;padding:12px;border:1px solid #cadfe6;border-radius:10px;margin:8px 0;background:#f7fbfc}
+.verified-office-entry strong{font-size:14px;color:#234a5a}
+.verified-office-entry small{display:block;line-height:1.6;color:#526e79}
+.verified-office-entry button{width:100%;min-height:42px;background:#e5f3f7;color:#086a83;border:1px solid #b5d3de;border-radius:8px;font-weight:700}
+.verified-office-entry a,.verified-office-fallback{font-size:12px;color:#14738d}
+.verified-office-geocodes{padding:7px 12px;border-left:3px solid #79abc0;margin-bottom:12px}
