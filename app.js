@@ -86,6 +86,22 @@ function chooseCustom(enabled,openPanel=false){
  if(openPanel)$('route-tuning-panel').open=true;
  updateTuningUI();updateCustomRouteUI();updatePolicy();persist();
 }
+function bindRoutePreferenceHelp(){
+ const dialog=$('route-preference-help-dialog');
+ const open=$('route-preference-help-open');
+ const close=$('route-preference-help-close');
+ open.addEventListener('click',()=>{
+  if(!dialog.open)dialog.showModal();
+ });
+ close.addEventListener('click',()=>dialog.close());
+ // On mobile, tapping the backdrop closes the help without changing any option.
+ dialog.addEventListener('click',e=>{
+  if(e.target!==dialog)return;
+  const box=dialog.getBoundingClientRect();
+  if(e.clientX<box.left||e.clientX>box.right||e.clientY<box.top||e.clientY>box.bottom)dialog.close();
+ });
+ // Escape is handled by the native modal dialog. Focus returns to the ⓘ button.
+}
 function bindCustomRouteUI(){
  for(const input of document.querySelectorAll('input[name="route-view"],input[name="route-ride"]')){
   input.addEventListener('change',()=>{
@@ -877,4 +893,4 @@ async function displayStoredRoute(data,message){
 $('shimanami-desk-verify').addEventListener('click',verifyShimanamiDesk);
 $('offline-save').addEventListener('click',saveOfflineRoute);
 $('offline-load').addEventListener('click',restoreOfflineRoute);
-updateModes();loadTuning();restore();bindTuning();bindCustomRouteUI();bindPresetUI();bindMyRouteUI();renderVia();updatePointSummaries();syncNavigationButtons();refreshMap();fitMarkers();refreshServer();setPick('start');if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});restoreOfflineRoute();
+updateModes();loadTuning();restore();bindTuning();bindCustomRouteUI();bindRoutePreferenceHelp();bindPresetUI();bindMyRouteUI();renderVia();updatePointSummaries();syncNavigationButtons();refreshMap();fitMarkers();refreshServer();setPick('start');if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});restoreOfflineRoute();

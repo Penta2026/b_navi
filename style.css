@@ -362,3 +362,22 @@ body.navigation-active #track-panel,body.free-ride-active #track-panel{display:n
 .registered-search-options select{border:1px solid #b4ced6;border-radius:8px;background:white;color:#213c4a;padding:8px;min-height:40px;min-width:120px;font-size:13px}
 .registered-place-main{border-left:3px solid #25839a!important;padding-left:10px!important}
 .registered-place-main small{line-height:1.55;overflow-wrap:anywhere}
+
+/* Compact, accessible explanation of the currently available route preferences. */
+.route-preference-help-icon{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;min-width:30px;min-height:30px;margin:0 3px;padding:0;border:1px solid #8fb8c6;border-radius:50%;background:#fff;color:#08637e;font-size:20px;font-weight:800;line-height:1;vertical-align:middle;cursor:pointer}
+.route-preference-help-icon:hover{background:#e0f2f6;border-color:#2386a4}
+.route-preference-help-icon:focus-visible,#route-preference-help-close:focus-visible{outline:3px solid #1f8ca8;outline-offset:3px}
+.route-preference-help-dialog{box-sizing:border-box;width:min(480px,calc(100vw - 22px));max-height:min(85dvh,780px);overflow-y:auto;padding:17px 17px 20px;border:1px solid #bfd5dc;border-radius:15px;background:#fff;color:#1b3949;box-shadow:0 12px 45px #0d2f4055}
+.route-preference-help-dialog .dialog-head{position:sticky;top:-17px;z-index:1;margin:-17px -17px 12px;padding:15px 17px 10px;background:#fff;border-bottom:1px solid #dfebef}
+.route-preference-help-dialog h2{margin:0;font-size:17px;line-height:1.4}
+.route-preference-help-dialog .close-button{flex:0 0 42px}
+.route-preference-help-intro{font-size:13px;line-height:1.7;margin:10px 0 16px}
+.route-preference-help-section{margin-top:14px;padding:12px;background:#f5fafb;border:1px solid #e0edef;border-radius:11px}
+.route-preference-help-section h3{font-size:14px;margin:0 0 9px;color:#124c63}
+.route-preference-help-section dl{display:grid;gap:9px;margin:0}
+.route-preference-help-section dl>div{display:grid;grid-template-columns:84px 1fr;gap:9px;padding-top:8px;border-top:1px solid #dbe9ec}
+.route-preference-help-section dt{font-size:12px;font-weight:800;color:#195a70}
+.route-preference-help-section dd{margin:0;font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+.route-preference-help-section p,.route-preference-help-note{font-size:12px;line-height:1.7;margin:7px 0}
+.route-preference-help-note{margin:14px 4px 0;color:#516a77}
+@media(max-width:390px){.route-preference-help-dialog{padding:12px}.route-preference-help-dialog .dialog-head{top:-12px;margin:-12px -12px 10px;padding:12px}.route-preference-help-section dl>div{grid-template-columns:73px 1fr;gap:7px}}
