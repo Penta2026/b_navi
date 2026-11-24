@@ -8,7 +8,7 @@ const ROUTE_POLICIES=['ビギナー：狭い道と曲がりを抑え、走りや
 const MODES=[['ビギナー','一般','探索'],['ビギナー','一般','探索'],['ビギナー','一般','探索','ファストトラベル（高速・有料優先）']];
 // Incrementing this generation invalidates any route calculation still in flight.
 let routePlanVersion=0;
-const state={shimanamiPlanPoints:[],shimanamiWebBuilt:false,navActive:false,navPaused:false,finishing:false,rerouting:false,targetIndex:0,activeTargets:[],arrivalPolicy:null,offRoutePolicy:null,motionGate:null,lastRerouteError:-Infinity,followGps:true,heading:{heading:null,at:-Infinity},orientation:'north',pick:'start',via:[],routes:[],currentGpx:null,location:null,watchId:null,routeType:null,gpsPoints:[],lastInputHash:'',turnCues:[],demoTimer:null,demoIndex:0,saidCues:new Set(),cumKm:[],islandLegs:[],islandIndex:0,awaitingBridge:false,gpsAccuracy:Infinity,shimanamiBigMode:false,manualDetour:null,manualDetourLegIndex:null};
+const state={shimanamiPlanPoints:[],shimanamiWebBuilt:false,navActive:false,navPaused:false,finishing:false,rerouting:false,targetIndex:0,activeTargets:[],arrivalPolicy:null,offRoutePolicy:null,motionGate:null,lastRerouteError:-Infinity,followGps:true,heading:{heading:null,at:-Infinity},orientation:'north',pick:'start',via:[],routes:[],currentGpx:null,location:null,watchId:null,routeType:null,gpsPoints:[],lastInputHash:'',turnCues:[],demoTimer:null,demoIndex:0,saidCues:new Set(),cumKm:[],islandLegs:[],islandIndex:0,awaitingBridge:false,gpsAccuracy:Infinity,shimanamiBigMode:false,manualDetour:null,manualDetourLegIndex:null,biwakoBridgeActive:false};
 // A single tap is for map inspection only: it must never move S, G, or waypoints.
 // Coordinates are committed through the long-press action menu (or explicit search/favorite/edit).
 const map=new BNaviMapCore.MapCore($('map-container'),$('tile-layer'),$('map-overlay'),$('path-layer'),$('point-layer'),$('gps-layer'),null);
@@ -43,6 +43,7 @@ function parsePoint(s){const arr=s.trim().split(',').map(x=>Number(x.trim()));if
 function inputPoint(id){return $(id).value.trim()?parsePoint($(id).value):null;}
 let customEnabled=false; // legacy 3 sliders: never shown as a new-route option
 let routePreferences=BNaviRouteTuning.normalizePreferences(null);
+let biwakoBridgeSelected=false;
 const OLD_STYLE_MIGRATION=Object.freeze({
  scenic:{view:'scenic'},efficient:{ride:'efficient'},backroad:{backroad:true},cruise:{ride:'cruise'}
 });
@@ -59,6 +60,7 @@ function updateCustomRouteUI(){
  for(const input of document.querySelectorAll('input[name="route-ride"]'))input.checked=input.value===p.ride;
  $('route-backroad').checked=p.backroad;
  $('route-coast').checked=p.coast;
+ $('route-biwako-bridge').checked=biwakoBridgeSelected;
  if(document.getElementById('route-preference-toggle'))updateRoutePreferenceCollapseUI();
 }
 function preferenceSummary(){
@@ -67,6 +69,7 @@ function preferenceSummary(){
  if(p.ride!=='normal')parts.push(RIDE_NAMES[p.ride]);
  if(p.backroad)parts.push('裏道優先');
  if(p.coast)parts.push('海沿い優先（試験・水辺近似）');
+ if(biwakoBridgeSelected)parts.push('琵琶湖大橋を経由');
  return parts.length?parts.join(' ＋ '):'追加オプションなし';
 }
 function updatePolicy(){
@@ -142,6 +145,10 @@ function bindCustomRouteUI(){
  $('route-coast').addEventListener('change',()=>{
   routePreferences=BNaviRouteTuning.normalizePreferences({...routePreferences,coast:$('route-coast').checked});
   invalidateDisplayedRoute('海沿い優先');updateCustomRouteUI();updatePolicy();persist();
+ });
+ $('route-biwako-bridge').addEventListener('change',()=>{
+  biwakoBridgeSelected=$('route-biwako-bridge').checked;
+  invalidateDisplayedRoute('琵琶湖大橋経由');updateCustomRouteUI();updatePolicy();persist();
  });
  updateCustomRouteUI();
 }
@@ -267,7 +274,7 @@ function refreshMap(){
  const paths=document.body.classList.contains('free-ride-active')?[]:state.routes;
  map.setData(paths,getMarkers(),state.location);
 }
-function persist(){try{localStorage.setItem('bnavi.pc.v1',JSON.stringify({start:$('start').value,goal:$('goal').value,via:state.via,vehicle:$('vehicle').value,mode:$('mode').value,customEnabled,routePreferences:currentPreferences()}));}catch{}}
+function persist(){try{localStorage.setItem('bnavi.pc.v1',JSON.stringify({start:$('start').value,goal:$('goal').value,via:state.via,vehicle:$('vehicle').value,mode:$('mode').value,customEnabled,routePreferences:currentPreferences(),biwakoBridgeSelected}));}catch{}}
 function restore(){try{
  const x=JSON.parse(localStorage.getItem('bnavi.pc.v1')||'null');if(!x)return;
  $('start').value=x.start||'';$('goal').value=x.goal||'';state.via=Array.isArray(x.via)?x.via.slice(0,50).map(String):[];
@@ -279,6 +286,7 @@ function restore(){try{
  // Upgrade old single-style "custom" selection into independent preferences.
  routePreferences=BNaviRouteTuning.normalizePreferences(x.routePreferences ??
    (x.mode==='custom'&&OLD_STYLE_MIGRATION[x.customRouteStyle]) ?? null);
+ biwakoBridgeSelected=x.biwakoBridgeSelected===true;
  updateModes();
  const savedMode=String(x.mode??'1');
  if(savedMode!=='custom'&&MODES[v][Number(savedMode)]!==undefined)$('mode').value=savedMode;
@@ -291,7 +299,7 @@ function gpxPoints(xml){const doc=new DOMParser().parseFromString(xml,'applicati
 function km(a,b){const rad=Math.PI/180,dLat=(b[0]-a[0])*rad,dLon=(b[1]-a[1])*rad;const t=Math.sin(dLat/2)**2+Math.cos(a[0]*rad)*Math.cos(b[0]*rad)*Math.sin(dLon/2)**2;return 12742*Math.asin(Math.min(1,Math.sqrt(t)));}
 function distance(pts){let sum=0;for(let i=1;i<pts.length;i++)sum+=km(pts[i-1],pts[i]);return sum;}
 function sampled(pts,max=6500){if(pts.length<=max)return pts;const step=Math.ceil(pts.length/max);const a=pts.filter((_,i)=>i%step===0);if(a.at(-1)!==pts.at(-1))a.push(pts.at(-1));return a;}
-function routeView(type,sections,mainGpx,msg,options={}){state.manualDetour=null;state.islandLegs=[];state.islandIndex=0;state.awaitingBridge=false;state.routeType=type;state.currentGpx=mainGpx||null;state.routes=sections.filter(x=>x.points?.length>=2).map(x=>({...x,points:sampled(x.points)}));state.gpsPoints=['normal','imported'].includes(type)?sections[0]?.points||[]:[];state.turnCues=['normal','imported'].includes(type)&&mainGpx?gpxTurnCues(mainGpx):[];state.saidCues=new Set();state.cumKm=[];for(let i=0;i<state.gpsPoints.length;i++)state.cumKm[i]=(state.cumKm[i-1]||0)+(i?km(state.gpsPoints[i-1],state.gpsPoints[i]):0);$('demo-on').disabled=!['normal','imported'].includes(type);$('demo-off').disabled=true;$('save-gpx').disabled=!mainGpx;
+function routeView(type,sections,mainGpx,msg,options={}){state.biwakoBridgeActive=false;state.manualDetour=null;state.islandLegs=[];state.islandIndex=0;state.awaitingBridge=false;state.routeType=type;state.currentGpx=mainGpx||null;state.routes=sections.filter(x=>x.points?.length>=2).map(x=>({...x,points:sampled(x.points)}));state.gpsPoints=['normal','imported'].includes(type)?sections[0]?.points||[]:[];state.turnCues=['normal','imported'].includes(type)&&mainGpx?gpxTurnCues(mainGpx):[];state.saidCues=new Set();state.cumKm=[];for(let i=0;i<state.gpsPoints.length;i++)state.cumKm[i]=(state.cumKm[i-1]||0)+(i?km(state.gpsPoints[i-1],state.gpsPoints[i]):0);$('demo-on').disabled=!['normal','imported'].includes(type);$('demo-off').disabled=true;$('save-gpx').disabled=!mainGpx;
  const road=sections.filter(x=>x.type!=='bridge'&&x.type!=='walk'),len=road.reduce((a,b)=>a+distance(b.points),0);const bad=sections.filter(x=>x.type==='bridge'||x.type==='walk').length;
  $('route-label').textContent=type==='normal'?'通常道路':type==='shimanami'?'しまなみ島内':type==='kanmon50'?'関門・人道':'ルート';
  $('metrics').innerHTML='';const metric=document.createElement('div');const bold=document.createElement('strong');bold.textContent=`${len.toFixed(1)} km`;metric.append(bold);const sub=document.createElement('div');sub.textContent=`道路区間 ${road.length} 本　/　参考区間 ${bad} 本`;metric.append(sub);$('metrics').append(metric);
@@ -302,7 +310,7 @@ function sanitizeName(text){return text.replace(/[^\p{L}\p{N}_-]+/gu,'_').slice(
 function downloadGpx(xml,name){const blob=new Blob([xml],{type:'application/gpx+xml;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);}
 function fitResult(){const points=state.routes.flatMap(x=>x.points);if(points.length)map.fit(sampled(points,4000));else fitMarkers();}
 function fitMarkers(){const x=getMarkers().map(m=>m.point);if(x.length)map.fit(x);}
-function clearResult(){state.manualDetour=null;state.manualDetourLegIndex=null;state.shimanamiBigMode=false;$('shimanami-desk-tools').hidden=true;state.shimanamiPlanPoints=[];state.shimanamiWebBuilt=false;stopVoiceGuidance(false);stopDemo();state.islandLegs=[];state.islandIndex=0;state.awaitingBridge=false;state.turnCues=[];state.cumKm=[];$('demo-on').disabled=true;$('demo-off').disabled=true;state.routeType=null;state.currentGpx=null;state.routes=[];state.gpsPoints=[];$('save-gpx').disabled=true;$('route-label').textContent='未計算';$('metrics').textContent='計算すると距離や経路が表示されるよ。';$('route-segments').replaceChildren();refreshMap();syncNavigationButtons();}
+function clearResult(){state.biwakoBridgeActive=false;state.manualDetour=null;state.manualDetourLegIndex=null;state.shimanamiBigMode=false;$('shimanami-desk-tools').hidden=true;state.shimanamiPlanPoints=[];state.shimanamiWebBuilt=false;stopVoiceGuidance(false);stopDemo();state.islandLegs=[];state.islandIndex=0;state.awaitingBridge=false;state.turnCues=[];state.cumKm=[];$('demo-on').disabled=true;$('demo-off').disabled=true;state.routeType=null;state.currentGpx=null;state.routes=[];state.gpsPoints=[];$('save-gpx').disabled=true;$('route-label').textContent='未計算';$('metrics').textContent='計算すると距離や経路が表示されるよ。';$('route-segments').replaceChildren();refreshMap();syncNavigationButtons();}
 function invalidateDisplayedRoute(label){
  // Displayed geometry is a snapshot of its calculated vehicle and profile.
  // Never silently reuse a 125cc moped bridge for a 126cc+ bike.
