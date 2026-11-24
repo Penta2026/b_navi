@@ -72,7 +72,7 @@ test('Fasttravel preference panel and guidance are available only on 126cc and n
  assert.match(app,/const useExtraPreferences=wantsOptions&&usePublicBrouter\(\)&&\(!isFast\|\|nonDefaultOptions\)/);
  assert.match(app,/state\.activeRouteTuning=useExtraPreferences/);
  assert.match(html,/ファストトラベルは独立したモードのまま、追加オプションを併用できる/);
- assert.match(sw,/bnavi-pc-pwa-20261124-fasttravel-preferences-v1/);
+ assert.match(sw,/bnavi-pc-pwa-20261124-biwako-bridge-v1/);
  const moped=tuning.tuneProfile(read('profiles/bn_125_general.brf'),prefs({coast:true,backroad:true}),1,1);
  assert.match(moped,/switch toll=yes 10000/);
  assert.match(moped,/switch highway=motorway 10000/);

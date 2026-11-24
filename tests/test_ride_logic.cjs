@@ -32,7 +32,8 @@ test('waypoint and destination arrival require two precise samples within 20m',(
 test('app integrates live route recovery and end-of-trip without changing original S/G',()=>{
  const app=src('app.js');
  assert.match(app,/function rerouteFromGps\(/);
- assert.match(app,/const points=\[state\.location\.slice\(\),\.\.\.dest\]/);
+ assert.match(app,/const basePoints=\[state\.location\.slice\(\),\.\.\.dest\]/);
+ assert.match(app,/const points=bridgePending\?BNaviBiwakoBridge\.plan\(basePoints\)\.points:basePoints/);
  assert.match(app,/state\.offRoutePolicy\?\.observe/);
  assert.match(app,/function observeDestination\(/);
  assert.match(app,/announceArrival\('目的地に到着しました/);

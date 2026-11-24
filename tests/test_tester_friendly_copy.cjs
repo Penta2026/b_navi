@@ -26,7 +26,7 @@ test('routing labels, failures, and bridge diagnostics avoid old-generation term
  const app=read('app.js');
  const shimanami=read('shimanami-web-router.js');
  const approaches=read('android-approaches.js');
- assert.match(app,/label:'BRouterで計算した道路ルート'/);
+ assert.match(app,/label:biwakoBridgeSelected\?'琵琶湖大橋を通る道路ルート':'BRouterで計算した道路ルート'/);
  assert.match(app,/経路計算プログラムを読み込めません/);
  assert.match(app,/保存済みの詳細ルート調整は、現在の経路サーバーに対応していません/);
  assert.doesNotMatch(app,/旧PWAのBRouter|公開BRouter・旧PWA方式|旧カスタム調整|旧設定を復元中/);
@@ -36,7 +36,7 @@ test('routing labels, failures, and bridge diagnostics avoid old-generation term
 });
 test('PWA shell changes version without removing existing application modules',()=>{
  const sw=read('sw.js');
- assert.match(sw,/const CACHE='bnavi-pc-pwa-20261124-fasttravel-preferences-v1'/);
+ assert.match(sw,/const CACHE='bnavi-pc-pwa-20261124-biwako-bridge-v1'/);
  for(const file of ['offline-map-download.mjs','offline-map-layer.mjs','michinotochu-spot-search.js','public-brouter-client.js'])
   assert.ok(sw.includes("'./"+file+"'"),file);
 });
