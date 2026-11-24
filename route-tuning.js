@@ -40,12 +40,13 @@ function normalizePreferences(value){
  return {
   view:PREFERENCE_CHOICES.view.includes(raw.view)?raw.view:'normal',
   ride:PREFERENCE_CHOICES.ride.includes(raw.ride)?raw.ride:'normal',
-  backroad:raw.backroad===true
+  backroad:raw.backroad===true,
+  coast:raw.coast===true
  };
 }
 function preferenceKey(value){
  const p=normalizePreferences(value);
- return 'base-options-v1:'+p.view+':'+p.ride+':'+(p.backroad?'1':'0');
+ return 'base-options-v2:'+p.view+':'+p.ride+':'+(p.backroad?'1':'0')+':'+(p.coast?'1':'0');
 }
 function tunePreferences(base,prefs,vehicle,mode=1){
  const p=normalizePreferences(prefs),kind=Number(vehicle),baseMode=Number(mode);
@@ -114,6 +115,28 @@ function tunePreferences(base,prefs,vehicle,mode=1){
   out=out.replace('assign contextual_ride_bias\n',scenic+'assign contextual_ride_bias\n');
   out=out.replace('    add traffic_route_bias ride_width_surface_bias',
    '    add traffic_route_bias\n        add ride_width_surface_bias additive_scenic_bias');
+ }
+ // Experimental waterfront PROXY: estimated_river_class does not identify
+ // an actual coastline or guarantee sea views. Separate from road suitability.
+ if(p.coast){
+  const water=`assign additive_coastal_water_bias
+    switch estimated_river_class=6 -0.600
+        switch estimated_river_class=5 -0.450
+        switch estimated_river_class=4 -0.270
+        switch estimated_river_class=3 -0.120 0
+
+`;
+  if(!out.includes('assign contextual_ride_bias\n'))throw Error('BRF水辺評価の組み込み先がありません');
+  out=out.replace('assign contextual_ride_bias\n',water+'assign contextual_ride_bias\n');
+  if(p.view==='scenic'){
+   if(!out.includes('        add ride_width_surface_bias additive_scenic_bias'))throw Error('景観と水辺の評価を組み合わせられません');
+   out=out.replace('        add ride_width_surface_bias additive_scenic_bias',
+    '        add ride_width_surface_bias\n            add additive_scenic_bias additive_coastal_water_bias');
+  }else{
+   if(!out.includes('    add traffic_route_bias ride_width_surface_bias'))throw Error('水辺の評価を組み合わせられません');
+   out=out.replace('    add traffic_route_bias ride_width_surface_bias',
+    '    add traffic_route_bias\n        add ride_width_surface_bias additive_coastal_water_bias');
+  }
  }
  if(!out.includes('    max 1.01'))throw Error('BRFコスト下限を維持できません');
  return out;
