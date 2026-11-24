@@ -915,6 +915,16 @@ async function requestShimanamiRoadLegDetour(origin,targets,version){
  $('nav-status').textContent='前方の一般道だけ迂回して、約1.5km先の元ルートに合流する道を探索中…';
  speak('前方の一般道を避ける道を検索します。');
  try{
+  if(!isIslandLeg){
+   // The originally composed 126cc+ crossing profile can include E76 even on
+   // a long mainland approach. Before patching, prove this local stretch is
+   // also reachable by the ordinary motorcycle BRF with motorways forbidden.
+   $('nav-status').textContent='今の道が一般道路として接続できるか確認中…';
+   const probe=await BNaviPublicBrouter.query([origin,prepared.rejoin],vehicle,mode,fetch,null,tuning);
+   if(version!==routePlanVersion||!state.navActive||state.navPaused)return;
+   BNaviRoadLegDetour.validateGeneralRoad(prepared,probe.track);
+  }
+  $('nav-status').textContent='一般道の迂回ルートを探索中…';
   const response=await BNaviPublicBrouter.query([origin,prepared.rejoin],vehicle,mode,fetch,null,tuning,
    {nogos:[prepared.avoid]});
   if(version!==routePlanVersion||!state.navActive||state.navPaused||
