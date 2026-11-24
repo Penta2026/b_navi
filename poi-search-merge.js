@@ -13,9 +13,14 @@
  const valid=x=>Number.isFinite(Number(x?.lat))&&Number.isFinite(Number(x?.lon))&&Number(x.lat)>=20&&Number(x.lat)<=46&&Number(x.lon)>=122&&Number(x.lon)<=154;
  const location=x=>[x.address,...Object.values(x.addressParts||{})].filter(v=>typeof v==='string').join(' ');
  function parts(query){
+   // Share the same Japanese facility/region parser as search dispatch, including
+   // city-prefixed queries without whitespace. A mismatch used to discard valid hits.
+   const shared=typeof globalThis!=='undefined'?globalThis.BNaviPlaceSearchCore?.parts:null;
+   if(typeof shared==='function'){
+     const p=shared(query);return {name:p.name,region:p.region};
+   }
    const words=String(query||'').normalize('NFKC').trim().split(/[\s\u3000,、，]+/).filter(Boolean);
-   if(words.length<2)return {name:words[0]||'',region:[]};
-   return {name:words[words.length-1],region:words.slice(0,-1)};
+   return {name:words.at(-1)||'',region:words.slice(0,-1)};
  }
  function scoreName(candidate,requested){
    const name=clean(candidate),target=clean(requested);
