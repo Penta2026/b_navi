@@ -274,7 +274,7 @@ function refreshMap(){
  const paths=document.body.classList.contains('free-ride-active')?[]:state.routes;
  map.setData(paths,getMarkers(),state.location);
 }
-function persist(){try{localStorage.setItem('bnavi.pc.v1',JSON.stringify({start:$('start').value,goal:$('goal').value,via:state.via,vehicle:$('vehicle').value,mode:$('mode').value,customEnabled,routePreferences:currentPreferences(),biwakoBridgeSelected}));}catch{}}
+function persist(){try{localStorage.setItem('bnavi.pc.v1',JSON.stringify({start:$('start').value,goal:$('goal').value,via:state.via,vehicle:$('vehicle').value,mode:$('mode').value,customEnabled,routePreferences:currentPreferences()}));}catch{}}
 function restore(){try{
  const x=JSON.parse(localStorage.getItem('bnavi.pc.v1')||'null');if(!x)return;
  $('start').value=x.start||'';$('goal').value=x.goal||'';state.via=Array.isArray(x.via)?x.via.slice(0,50).map(String):[];
@@ -286,7 +286,7 @@ function restore(){try{
  // Upgrade old single-style "custom" selection into independent preferences.
  routePreferences=BNaviRouteTuning.normalizePreferences(x.routePreferences ??
    (x.mode==='custom'&&OLD_STYLE_MIGRATION[x.customRouteStyle]) ?? null);
- biwakoBridgeSelected=x.biwakoBridgeSelected===true;
+ biwakoBridgeSelected=false; // Do not restore a hidden, previously selected bridge option.
  updateModes();
  const savedMode=String(x.mode??'1');
  if(savedMode!=='custom'&&MODES[v][Number(savedMode)]!==undefined)$('mode').value=savedMode;
@@ -510,7 +510,7 @@ $('route-api-save').addEventListener('click',()=>{try{const raw=$('route-api-bas
 $('route-api-clear').addEventListener('click',()=>{localStorage.removeItem(API_CONFIG_KEY);updateApiSettings();refreshServer()});
 updateApiSettings();
 async function postApi(path,points){const form=new URLSearchParams({vehicle:$('vehicle').value,mode:String(state.activeRoutingMode??routingMode()),points:points.map(fmt).join('|')});const response=await fetch(apiUrl(path),{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:form});const text=await response.text();if(!response.ok)throw new Error(text.slice(0,300));return {response,text};}
-async function calculate(){const version=++routePlanVersion;const btn=$('calculate');btn.disabled=true;clearResult();try{
+async function calculate(){const version=++routePlanVersion;const btn=$('calculate');btn.disabled=true;clearResult();biwakoBridgeSelected=false;updateCustomRouteUI();updatePolicy();try{
  const userPoints=getRequestPoints();
  state.activeRoutingVehicle=Number($('vehicle').value);state.activeRoutingMode=routingMode();
   // Search-time geographic screening; actual bridge crossing is verified after routing.
