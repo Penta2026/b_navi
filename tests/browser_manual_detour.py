@@ -28,6 +28,7 @@ with sync_playwright() as p:
   }''')
   for filename in scripts:page.add_script_tag(content=(ROOT/filename.split('?')[0]).read_text())
   page.evaluate('''() => {
+   window.hostedOnPages=()=>true; // Simulate GitHub Pages in this offline about:blank fixture.
    const pts=[[34.400,132.45],[34.410,132.45],[34.420,132.45]];
    document.querySelector('#vehicle').value='1';
    document.querySelector('#start').value='34.400000,132.450000';
@@ -46,7 +47,7 @@ with sync_playwright() as p:
   page.locator('#nav-start-quick').click()
   page.evaluate('''() => {state.location=[34.401,132.45];state.gpsAccuracy=5;syncNavigationHud();}''')
   btn=page.locator('#nav-detour')
-  assert btn.is_visible() and btn.is_enabled(),('button unusable',width)
+  assert btn.is_visible() and btn.is_enabled(),('button unusable',width,btn.get_attribute('title'),page.evaluate('({active:state.navActive,type:state.routeType,location:state.location,accuracy:state.gpsAccuracy,public:usePublicBrouter()})'))
   assert btn.evaluate('(e)=>getComputedStyle(e).pointerEvents')=='auto'
   assert btn.evaluate('(e)=>e.getBoundingClientRect().height')>=44
   btn.click();page.wait_for_timeout(150)
