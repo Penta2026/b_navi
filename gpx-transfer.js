@@ -39,7 +39,7 @@ function applyItinerary(itinerary,fileName){
  itineraryImport=true;itineraryBox.hidden=false;routePointList(itinerary);
  el('gpx-import-status').textContent=`${fileName}：S・経由地${itinerary.via.length}件・Gを読み込んだよ。道路ルートを計算します。`;
 }
-async function ingestFile(file){
+async function ingestFile(file,orderedOnly=false){
  if(!file) return;
  if(file.size>MAX_BYTES)throw Error('GPXは12MB以下のファイルを選んでね。');
  const xml=await file.text();
@@ -48,6 +48,12 @@ async function ingestFile(file){
  if(doc.getElementsByTagName('parsererror').length)throw Error('GPXのXML形式が正しくありません。');
  // An ordered itinerary is NOT a road track: preserve every intermediate stop.
  const itinerary=BNaviGpxItinerary.parse(doc);
+ if(orderedOnly){
+  const root=doc.documentElement;
+  const designated=root?.localName==='gpx'&&root.getAttribute('creator')==='MichiNoTochu'&&Array.from(doc.getElementsByTagNameNS('*','rte')).some(route=>Array.from(route.children||[]).some(child=>child.localName==='name'&&/\bBNAV-ITINERARY-1\b/.test(child.textContent||'')));
+  if(!designated||!itinerary)throw Error('道の途中。で「B_Naviに送る」を押してから読み込んでね。');
+  if(state.navActive||state.navPaused||state.finishing)throw Error('案内を終了してからルートを読み込んでね。');
+ }
  if(itinerary){applyItinerary(itinerary,file.name||'GPX');await calculateImportedItinerary();return;}
  itineraryImport=false;itineraryBox.hidden=true;
  let track=[];
@@ -72,26 +78,53 @@ async function receiveShare(){if(!new URLSearchParams(location.search).has('gpx_
  finally{history.replaceState(null,'',location.pathname);}}
 // iPhone/Safari: manual text Paste works even if navigator.clipboard is blocked by HTTP or permission.
 const gpxPasteField=el('gpx-paste-text'),gpxPasteStatus=el('gpx-paste-status');
-async function ingestClipboardText(text){
+let michinoPaste=false;
+async function ingestClipboardText(text,orderedOnly=false){
  const xml=String(text||'').trim();
  if(!xml)throw Error('GPXの文字データを貼り付けてね。');
  const file=new File([xml],'Clipboard_route.gpx',{type:'application/gpx+xml;charset=utf-8'});
  if(file.size>MAX_BYTES)throw Error('GPXが12MBを超えているよ。ファイル読み込みを使ってね。');
- await ingestFile(file);
+ await ingestFile(file,orderedOnly);
  gpxPasteStatus.textContent='GPXを受け取ったよ。中継地点または走行軌跡を確認してね。';
  gpxPasteField.value='';
 }
 el('gpx-paste-import').addEventListener('click',async()=>{
  gpxPasteStatus.textContent='GPXを読み込み中…';
- try{await ingestClipboardText(gpxPasteField.value)}
+ try{await ingestClipboardText(gpxPasteField.value,michinoPaste);michinoPaste=false}
  catch(e){gpxPasteStatus.textContent='貼り付けの読み込み失敗：'+e.message}
+});
+const michinoButton=el('import-michinotochu');
+function showMichinoPaste(message){
+ const panel=el('gpx-paste-panel');
+ panel.open=true;michinoPaste=true;
+ gpxPasteField.value='';
+ gpxPasteStatus.textContent=message+' 入力欄を長押しして「ペースト」し、「貼り付けたGPXを読み込む」を押してね。';
+ panel.scrollIntoView?.({block:'nearest'});
+}
+michinoButton.addEventListener('click',async()=>{
+ if(state.navActive||state.navPaused||state.finishing){el('gpx-import-status').textContent='案内を終了してからルートを読み込んでね。';return;}
+ michinoButton.disabled=true;
+ try{
+  let xml;
+  try{
+   if(!navigator.clipboard?.readText)throw Error('Clipboard unavailable');
+   xml=await navigator.clipboard.readText();
+  }catch(error){showMichinoPaste('自動読み取りができませんでした。');return;}
+  try{
+   await ingestClipboardText(xml,true);
+   michinoPaste=false;el('gpx-paste-panel').open=false;
+  }catch(error){
+   el('gpx-import-status').textContent='読み込み失敗：'+String(error?.message||error);
+   showMichinoPaste('道の途中。からのGPXを確認できませんでした。');
+  }
+ }finally{michinoButton.disabled=false;}
 });
 el('gpx-paste-auto').addEventListener('click',async()=>{
  if(!navigator.clipboard?.readText){gpxPasteStatus.textContent='自動読み取りは使えないよ。下の入力欄を長押しして「ペースト」してね。';gpxPasteField.focus();return;}
  try{
    const xml=await navigator.clipboard.readText();
    gpxPasteField.value=xml;
-   await ingestClipboardText(xml);
+   await ingestClipboardText(xml,michinoPaste);michinoPaste=false;
  }catch(e){gpxPasteStatus.textContent='自動読み取りができなかったよ。入力欄を長押しして「ペースト」すれば読み込めるよ。';}
 });
 receiveShare();
