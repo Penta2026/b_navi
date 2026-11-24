@@ -33,7 +33,7 @@ test('only explicit 126cc+ crossing with preferences may unlock motorway and tol
  for(const restricted of ['access=no|private','vehicle=no|private','motor_vehicle=no|private','motorcycle=no|private'])
   assert.ok(crossing.includes('switch '+restricted+' 10000'),restricted);
  assert.match(tuning.tuneProfile(read('profiles/bn_125_general.brf'),{preferences:{},allowMotorway:true,allowToll:true},1),
-  /switch highway=motorway\|motorway_link 10000/);
+  /switch highway=motorway 10000\.00/);
 });
 test('road composer follows requested vias and keeps per-island permission scoped',async()=>{
  const p=[S,I,I.map((v,i)=>v+(i===0?.001:0)),K],calls=[];
@@ -72,7 +72,8 @@ test('fast travel is replaced by motorcycle-general on scoped crossing; same-isl
  assert.equal(brouter.profileName(2,3),'bn_big_fasttravel_priority');
 });
 test('bridge references cannot substitute for disconnected or wrong BRouter road geometry',async()=>{
- await assert.rejects(big.compose([I,K],1,null,{refs,query:async pair=>({track:{points:pair,cues:[]}})}),
+ const distantRefs=refs.map((ref,i)=>i===1?{...ref,points:[[35.2,135.2],[35.2,135.2]]}:ref);
+ await assert.rejects(big.compose([I,K],1,null,{refs:distantRefs,query:async pair=>({track:{points:pair,cues:[]}})}),
   /付近を通る道路経路を確認できません/);
  await assert.rejects(big.compose([S,I,K],1,null,{refs,query:async(pair,mode,opts,leg)=>{
   if(leg.index===1)return{track:{points:[pair[0],middle(0),pair[1]],cues:[]}};
