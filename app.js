@@ -937,7 +937,7 @@ let offlineSaveTimer=null;
 function offlinePayload(){return {type:state.routeType,activeRouteTuning:state.activeRouteTuning,activeRoutingVehicle:state.activeRoutingVehicle,activeRoutingMode:state.activeRoutingMode,customRouting:state.customRouting,shimanamiBigMode:state.shimanamiBigMode,sections:state.routes.map(x=>({type:x.type,points:x.points,color:x.color,width:x.width,dash:x.dash,label:x.label,gpx:x.gpx,bridgeIndex:x.bridgeIndex,referenceOnly:x.referenceOnly,stageCheckpoint:x.stageCheckpoint})),mainGpx:state.currentGpx,shimanamiPlanPoints:state.shimanamiPlanPoints,shimanamiWebBuilt:state.shimanamiWebBuilt,islandLegs:state.islandLegs.map(x=>({name:x.name,points:x.points,turnCues:x.turnCues,bridgeAfter:x.bridgeAfter,sectionIndex:x.sectionIndex,checkpointAfter:x.checkpointAfter}))}}
 function queueOfflineSave(){if(restoringOffline)return;if(offlineSaveTimer)clearTimeout(offlineSaveTimer);offlineSaveTimer=setTimeout(()=>saveOfflineRoute(),200)}
 async function saveOfflineRoute(){try{if(!state.routeType||!state.routes.length)throw Error('ルートまたはGPXを先に読み込んでね');await BNaviOfflineRouteStore.save(offlinePayload());$('offline-status').textContent='この端末に経路を保存したよ。通信がなくても読み込めます。'}catch(e){$('offline-status').textContent='端末保存できませんでした：'+e.message}}
-function storedRouteMismatch(data,vehicle,mode){
+function storedRouteMismatch(data,vehicle,mode,currentPrefs){
  if(!data||data.activeRoutingVehicle===undefined||data.activeRoutingVehicle===null||
    ![0,1,2].includes(Number(data.activeRoutingVehicle)))
   return '前回の保存ルートは車種が確認できないため自動表示しなかったよ。ルート検索で再計算してね。';
@@ -948,10 +948,16 @@ function storedRouteMismatch(data,vehicle,mode){
   return '原付用の橋参考線を126cc以上の経路として表示できません。しまなみ島渡りモードで再計算してね。';
  if(Number.isInteger(data.activeRoutingMode)&&data.activeRoutingMode!==mode)
   return '前回の保存ルートは別の走り方で計算したもの。現在の設定では表示せず、ルート検索で再計算してね。';
+ if(mode<=2&&currentPrefs){
+  const base=x=>({view:x?.view||'normal',ride:x?.ride||'normal',backroad:x?.backroad===true});
+  const selected=base(currentPrefs),old=base(data.activeRouteTuning?.preferences);
+  if(selected.view!==old.view||selected.ride!==old.ride||selected.backroad!==old.backroad)
+   return '前回の保存ルートは異なる好みのオプションで計算したもの。現在の設定でルート検索してね。';
+ }
  return null;
 }
 async function restoreOfflineRoute(){const version=routePlanVersion;try{const data=await BNaviOfflineRouteStore.load();if(version!==routePlanVersion)return;if(!data){$('offline-status').textContent='まだ保存済みの経路はありません。';return}if(!Array.isArray(data.sections)||!data.sections.length)throw Error('保存データが壊れています');
- const mismatch=storedRouteMismatch(data,Number($('vehicle').value),routingMode());
+ const mismatch=storedRouteMismatch(data,Number($('vehicle').value),routingMode(),currentPreferences());
  if(mismatch){$('offline-status').textContent=mismatch;setMessage(mismatch,true);return;}
  restoringOffline=true;
  await displayStoredRoute(data,'前回の'+(['50cc','51〜125cc','126cc以上'][Number(data.activeRoutingVehicle)]||'')+'用ルートを復元したよ（新規計算ではありません）。通信なしで案内できます。');
