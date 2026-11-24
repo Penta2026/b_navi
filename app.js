@@ -416,6 +416,25 @@ function bindFullRouteClear(){
 const API_CONFIG_KEY='bnavi.routeApiBase.v1';
 function hostedOnPages(){return location.hostname.endsWith('.github.io')}
 function usePublicBrouter(){return hostedOnPages()&&!(localStorage.getItem(API_CONFIG_KEY)||'').trim()}
+let biwakoDecisionResolver=null;
+function settleBiwakoDecision(value){
+ const fn=biwakoDecisionResolver;if(!fn)return;
+ biwakoDecisionResolver=null;
+ const dialog=$('biwako-bridge-confirm-dialog');
+ if(dialog.open)dialog.close();
+ fn(value);
+}
+function bindBiwakoDecisionDialog(){
+ $('biwako-bridge-confirm-accept').addEventListener('click',()=>settleBiwakoDecision('bridge'));
+ $('biwako-bridge-confirm-normal').addEventListener('click',()=>settleBiwakoDecision('normal'));
+ $('biwako-bridge-confirm-close').addEventListener('click',()=>settleBiwakoDecision(null));
+ $('biwako-bridge-confirm-dialog').addEventListener('close',()=>settleBiwakoDecision(null));
+}
+function askBiwakoDecision(){
+ const d=$('biwako-bridge-confirm-dialog');
+ if(d.open||biwakoDecisionResolver)return Promise.resolve(null);
+ return new Promise(resolve=>{biwakoDecisionResolver=resolve;d.showModal();});
+}
 let bigDecisionResolver=null;
 function settleBigDecision(value){
  const fn=bigDecisionResolver;if(!fn)return;
@@ -494,6 +513,18 @@ async function postApi(path,points){const form=new URLSearchParams({vehicle:$('v
 async function calculate(){const version=++routePlanVersion;const btn=$('calculate');btn.disabled=true;clearResult();try{
  const userPoints=getRequestPoints();
  state.activeRoutingVehicle=Number($('vehicle').value);state.activeRoutingMode=routingMode();
+  // Search-time geographic screening; actual bridge crossing is verified after routing.
+  if(!biwakoBridgeSelected&&usePublicBrouter()&&
+     typeof BNaviBiwakoBridge!=='undefined'&&typeof BNaviBiwakoBridge.potential==='function'&&
+     BNaviBiwakoBridge.potential(userPoints)&&
+     !(typeof BNaviShimanamiBigRouter!=='undefined'&&BNaviShimanamiBigRouter.potential(userPoints,2))&&
+     !(typeof BNaviShimanamiWebRouter!=='undefined'&&BNaviShimanamiWebRouter.needsSpecialJourney(userPoints,state.activeRoutingVehicle))){
+   const answer=await askBiwakoDecision();
+   if(version!==routePlanVersion)return;
+   if(answer===null){setMessage('琵琶湖大橋の選択を閉じたので、探索を中止したよ。');return;}
+   biwakoBridgeSelected=answer==='bridge';
+   updateCustomRouteUI();updatePolicy();
+  }
  if(biwakoBridgeSelected&&(!usePublicBrouter()||typeof BNaviBiwakoBridge==='undefined'))
   throw Error('琵琶湖大橋の経由指定は公開BRouter専用です。PWAの更新・経路API設定を確認してね');
  if(biwakoBridgeSelected&&(
@@ -1310,4 +1341,4 @@ async function displayStoredRoute(data,message){
 $('shimanami-desk-verify').addEventListener('click',verifyShimanamiDesk);
 $('offline-save').addEventListener('click',saveOfflineRoute);
 $('offline-load').addEventListener('click',restoreOfflineRoute);
-updateModes();loadTuning();restore();bindTuning();bindCustomRouteUI();bindRoutePreferenceHelp();bindRoutePreferenceToggle();bindShimanamiBigDialog();bindPresetUI();bindMyRouteUI();renderVia();updatePointSummaries();syncNavigationButtons();refreshMap();fitMarkers();refreshServer();setPick('start');if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).catch(()=>{});restoreOfflineRoute();
+updateModes();loadTuning();restore();bindTuning();bindCustomRouteUI();bindRoutePreferenceHelp();bindRoutePreferenceToggle();bindBiwakoDecisionDialog();bindShimanamiBigDialog();bindPresetUI();bindMyRouteUI();renderVia();updatePointSummaries();syncNavigationButtons();refreshMap();fitMarkers();refreshServer();setPick('start');if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).catch(()=>{});restoreOfflineRoute();
