@@ -437,14 +437,17 @@ async function calculateWaypointJourney(points){
 // or pass a cycling reference to the GPS turn-by-turn navigator.
 async function calculateShimanamiWeb(points){
  if(typeof BNaviShimanamiWebRouter==='undefined'||typeof BNaviBridgeReferences==='undefined')throw Error('しまなみ橋参考資料が読み込まれていません。通信を確認してください。');
- setMessage('しまなみ：島内道路と橋の接続を検証中…');
+ const includesOnomichiMainland=points.some(p=>BNaviShimanamiWebRouter.isOnomichiMainland(p));
+ setMessage(includesOnomichiMainland?
+  'しまなみ：尾道大橋（国道317号）の一般道と島内道路・橋の接続を検証中…':
+  'しまなみ：島内道路と橋の接続を検証中…');
  const result=await BNaviShimanamiWebRouter.compose(points,$('vehicle').value,state.activeRoutingMode,{
   geometry:BNaviShimanamiGeometry,refs:BNaviBridgeReferences,
   query:(pair,v,m)=>BNaviPublicBrouter.query(pair,v,m,fetch,null,state.activeRouteTuning),
   bridgePreview:androidBridgePreview,
-  onProgress:step=>setMessage(`しまなみ：島内道路 ${step.index}/${step.total} 区間を計算中。橋 ${step.bridgeTotal} 本の接続も検証します。`)
+  onProgress:step=>setMessage(`しまなみ：道路 ${step.index}/${step.total} 区間を計算中。橋 ${step.bridgeTotal} 本の接続も検証します。`)
  });
- routeView('shimanami',result.sections,null,`しまなみ：島内道路${result.roadSegments}区間・橋${result.bridges}本。経由地${points.length-2}件は指定順。橋は原付通路の参考線で走行GPXと音声案内には入れません。現地標識に従ってね。${result.warnings?.length?' 注意：'+result.warnings.join('／'):''}`);
+ routeView('shimanami',result.sections,null,`しまなみ：道路${result.roadSegments}区間・橋${result.bridges}本。${includesOnomichiMainland?'尾道駅付近と向島の接続は尾道大橋（一般道）を使用。渡船は含みません。':''}経由地${points.length-2}件は指定順。橋は原付通路の参考線で走行GPXと音声案内には入れません。現地標識に従ってね。${result.warnings?.length?' 注意：'+result.warnings.join('／'):''}`);
  state.shimanamiWebBuilt=true;state.shimanamiPlanPoints=points.map(p=>p.slice());
  state.islandLegs=result.guidance;loadIslandGuidance(0);queueOfflineSave();
  $('shimanami-desk-tools').hidden=false;
