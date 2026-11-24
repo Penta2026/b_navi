@@ -6,7 +6,10 @@ const fast=read('profiles/bn_big_fasttravel_priority.brf'),general=read('profile
 const prefs=(opt)=>({preferences:{view:'normal',ride:'normal',backroad:false,coast:false,...opt}});
 const numberFor=(src,name)=>{
  const needle='  switch highway='+name+' ';
- const row=src.split('\n').find(x=>x.startsWith(needle));
+ const start=src.indexOf('assign fasttravel_road_penalty =');
+ const end=src.indexOf('assign costfactor =',start);
+ assert.ok(start>=0&&end>start,'fasttravel road penalty section');
+ const row=src.slice(start,end).split('\n').find(x=>x.startsWith(needle));
  assert.ok(row,'missing penalty '+name);
  return Number(row.slice(needle.length).trim());
 };
