@@ -13,7 +13,7 @@
 <div class="quick-actions"><button type="button" id="open-search">⌕ 場所検索</button><button type="button" id="open-favorites">☆ お気に入り</button><button type="button" id="go-location">◎ 現在地</button></div>
 <div class="fieldrow"><label>排気量<select id="vehicle"><option value="0">50cc・新基準原付</option><option value="1" selected>51〜125cc</option><option value="2">126cc以上</option></select></label><label>走り方<select id="mode" aria-label="走り方"></select></label></div>
 <fieldset id="custom-route-panel" class="route-preferences" aria-label="走り方の追加オプション">
- <legend>🛵 好みのオプション <small>基本モードに上乗せ</small></legend>
+ <legend>🛵 好みのオプション <button type="button" id="route-preference-help-open" class="route-preference-help-icon" aria-label="好みのオプションの意味を確認" aria-haspopup="dialog" aria-controls="route-preference-help-dialog" title="オプションの説明を開く">ⓘ</button> <small>基本モードに上乗せ</small></legend>
  <div class="route-preference-group"><strong>🌿 景色と距離</strong>
   <div class="route-preference-choices" role="group" aria-label="景色と距離">
    <label><input type="radio" name="route-view" value="normal" checked><span>そのまま</span></label>
@@ -31,6 +31,44 @@
  <label class="route-backroad-toggle"><input id="route-backroad" type="checkbox"><span><strong>🛤️ 裏道優先</strong><small>ビギナー・一般・探索に合わせて裏道の性格が変わる</small></span></label>
  <p class="smallprint">全基本モードで登録済み信号を強く回避。一般は「20％程度遠回りしても気持ちよく流れる道」を調整の目標にするよ。これは距離上限や時間短縮の保証ではありません。</p>
 </fieldset>
+<dialog id="route-preference-help-dialog" class="route-preference-help-dialog" aria-labelledby="route-preference-help-title" aria-describedby="route-preference-help-intro">
+ <div class="dialog-head">
+  <h2 id="route-preference-help-title">ⓘ 好みのオプションの意味</h2>
+  <button type="button" id="route-preference-help-close" class="close-button" aria-label="説明を閉じる">×</button>
+ </div>
+ <p id="route-preference-help-intro" class="route-preference-help-intro">選んだ「ビギナー・一般・探索」の走り方に、好みを追加して道路の評価を調整するよ。複数のオプションを組み合わせることもできるよ。</p>
+ <section class="route-preference-help-section" aria-labelledby="route-help-view">
+  <h3 id="route-help-view">🌿 景色と距離</h3>
+  <dl>
+   <div><dt>そのまま</dt><dd>この項目では補正しない。基本モードの道路の選び方を生かすよ。</dd></div>
+   <div><dt>景観優先</dt><dd>地図データの森林や川の周辺情報を使い、自然に近い道を少し評価する。実際の眺望を保証するものではないよ。</dd></div>
+   <div><dt>距離優先</dt><dd>道路の好みによる遠回りを抑え、短めのルートを評価する。ただし最短距離を保証する設定ではないよ。</dd></div>
+  </dl>
+ </section>
+ <section class="route-preference-help-section" aria-labelledby="route-help-ride">
+  <h3 id="route-help-ride">🏍️ 走り心地</h3>
+  <dl>
+   <div><dt>そのまま</dt><dd>この項目では補正しない。基本モードの走り方を生かすよ。</dd></div>
+   <div><dt>快走優先</dt><dd>狭い道や頻繁な右左折を避ける方向に調整。走り続けやすい道路を重視するよ。</dd></div>
+   <div><dt>効率優先</dt><dd>距離だけでなく、右左折・狭い道・生活道路の負担も評価して、無駄の少ない経路を狙うよ。</dd></div>
+  </dl>
+ </section>
+ <section class="route-preference-help-section" aria-labelledby="route-help-backroad">
+  <h3 id="route-help-backroad">🛤️ 裏道優先</h3>
+  <p>幹線道路より地域の道を評価する方向に調整するよ。基本モードによって性格が変わるの。</p>
+  <dl>
+   <div><dt>ビギナー</dt><dd>細すぎる道や右左折の多い道を抑えて、分かりやすい地域道を探す。</dd></div>
+   <div><dt>一般</dt><dd>信号が少なく、そこそこ広い地域道を重視する。</dd></div>
+   <div><dt>探索</dt><dd>細い道や右左折も比較的許容して、地域道を幅広く探す。</dd></div>
+  </dl>
+ </section>
+ <section class="route-preference-help-section" aria-labelledby="route-help-common">
+  <h3 id="route-help-common">🚦 共通のルール</h3>
+  <p>ビギナー・一般・探索は、どれも地図に登録されている信号を強く避ける試験設定だよ。組み合わせても通行禁止などの車両制約は変更しないよ。</p>
+  <p>実際の渋滞や走行時間は取得していないため、必ず速い道や信号ゼロの道を選ぶわけではないよ。一般で「距離が約20％増えても走りやすければ評価する」のは調整目標で、遠回りの上限ではないよ。</p>
+ </section>
+ <p class="route-preference-help-note">※ 126cc以上のファストトラベルは独立したモードのため、この追加オプションの対象外だよ。</p>
+</dialog>
 <!-- Legacy tuning controls retained in DOM for compatibility only; never exposed in the PWA UI. -->
 <div id="legacy-tuning-compat" hidden inert aria-hidden="true" style="display:none !important">
 <details id="route-tuning-panel" class="route-tuning-panel"><summary>🎛 カスタマイズ <span class="tuning-tag" id="tuning-tag">OFF</span></summary>
