@@ -68,6 +68,10 @@
   }
   if(!stageAllowed(oldTrack.slice(startIndex,index+1),group))
    throw Error('橋をまたぐ道路区間は手動迂回しません');
+  // A user checkpoint on the short segment must NEVER vanish when we splice.
+  const prefix=oldTrack.slice(startIndex,index+1);
+  if(targets.some(t=>manual.distanceToPolyline(t,prefix)<85))
+   throw Error('この区間に経由地があるので、経由地を飛ばす迂回は行いません');
   const protectedPlaces=protectedCrossingPoints(refs);
   if(protectedPlaces.some(p=>manual.meters(position,p)<MIN_BRIDGE_BUFFER_METERS||
      manual.meters(rejoin,p)<MIN_BRIDGE_BUFFER_METERS||

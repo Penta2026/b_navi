@@ -34,7 +34,7 @@ test('PWA and iPhone launcher icons use versioned new artwork, not the old arrow
  assert.match(html,/rel="icon" type="image\/png" href="\.\/icon-192\.png\?v=pop-icon-20261124"/);
  assert.doesNotMatch(html,/rel="icon" href="\.\/icon\.svg"/);
  assert.match(html,/manifest\.webmanifest\?v=pop-icon-20261124/);
- assert.match(sw,/const CACHE='bnavi-pc-pwa-20261124-manual-detour-v1'/);
+ assert.match(sw,/const CACHE='bnavi-pc-pwa-20261124-shimanami-road-detour-v1'/);
  for(const f of ['icon-192.png','icon-512.png','apple-touch-icon.png'])
   assert.ok(sw.includes("'./"+f+"'"),'app shell pre-cache '+f);
 });

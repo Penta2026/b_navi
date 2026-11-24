@@ -65,7 +65,7 @@ test('one tappable detour control lives on active voice HUD, with no bridge-refe
  assert.match(app,/state\.manualDetour=keepDetour/);
  assert.match(app,/if\(version!==routePlanVersion\|\|!state\.navActive\|\|state\.navPaused\)return/);
  assert.match(sw,/'\.\/manual-detour\.js'/);
- assert.match(sw,/bnavi-pc-pwa-20261124-manual-detour-v1/);
+ assert.match(sw,/bnavi-pc-pwa-20261124-shimanami-road-detour-v1/);
  assert.ok(html.indexOf('./public-brouter-client.js')<html.indexOf('./manual-detour.js'));
  assert.ok(html.indexOf('./manual-detour.js')<html.indexOf('./app.js'));
 });
