@@ -33,8 +33,6 @@
    syncToolbar();
    setTimeout(()=>{if(typeof map!=='undefined'&&map.resize)map.resize();},230);
  }
- document.querySelectorAll('.pick').forEach(btn=>btn.addEventListener('click',()=>{if(isMobile())toggleSheet(false)}));
- $('start-pick').addEventListener('click',()=>{if(isMobile())toggleSheet(false)});$('goal-pick').addEventListener('click',()=>{if(isMobile())toggleSheet(false)});$('add-via').addEventListener('click',()=>{if(isMobile())toggleSheet(false)});
  $('mobile-route').onclick=()=>toggleSheet(!sheet.classList.contains('sheet-open')||placeDialog.open);
  $('mobile-map').onclick=()=>{closePlaces();toggleSheet(false)};
  $('sheet-handle').onclick=()=>toggleSheet(!sheet.classList.contains('sheet-open'));
