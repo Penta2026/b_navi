@@ -14,13 +14,17 @@ test('info symbol beside routing options opens an accessible help dialog explain
  for(const title of ['景観優先','距離優先','快走優先','効率優先','ビギナー','一般','探索'])
   assert.ok(body.includes('<dt>'+title+'</dt>'),'missing definition '+title);
  assert.equal((body.match(/<dt>そのまま<\/dt>/g)||[]).length,2);
- assert.match(body,/森林や川の周辺情報/);
+ assert.match(body,/森林や川の近くなど、景色の良さそうな道を重視する/);
  assert.match(body,/右左折・狭い道・生活道路/);
  assert.match(body,/登録されている信号/);
  assert.match(body,/通行禁止/);
  assert.match(body,/最短距離を保証する設定ではない/);
- assert.match(body,/実際の渋滞や走行時間は取得していない/);
- assert.match(body,/約20％増えても走りやすければ評価する/);
+ assert.match(body,/渋滞・実際の走行時間は取得していない/);
+ assert.match(body,/約20％の遠回りでも走りやすければ評価する/);
+ assert.match(body,/快走優先<\/dt><dd>狭い道や右左折を減らし、走り続けやすい道を重視する/);
+ assert.match(body,/効率優先<\/dt><dd>右左折・狭い道・生活道路の負担を考えて、無駄の少ない道を重視する/);
+ assert.match(body,/幹線道路を避けて地域道を重視する。狭い道の許容度は基本モードによって変わる/);
+ assert.doesNotMatch(body,/効率優先<\/dt><dd>右左折が増えても/);
  assert.match(body,/ファストトラベルは独立したモード/);
 });
 test('help can open and close by icon, × or outside; never changes route preferences',()=>{
@@ -61,5 +65,5 @@ test('help remains legible in mobile PWA and keeps the routing controls unchange
  assert.match(css,/\.route-preference-help-dialog\{/);
  assert.match(css,/max-height:min\(85dvh,780px\)/);
  assert.match(css,/grid-template-columns:84px 1fr/);
- assert.match(sw,/bnavi-pc-pwa-20261124-route-preferences-help-v1/);
+ assert.match(sw,/bnavi-pc-pwa-20261124-concise-option-info-v2/);
 });
