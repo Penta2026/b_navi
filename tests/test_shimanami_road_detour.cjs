@@ -19,6 +19,15 @@ test('mainland Hiroshima-to-Onomichi road is eligible for a short local detour e
  assert.equal(merged.cues.at(-1).desc,'left');
  assert.equal(local.region([34.4,132.46]),-1);
 });
+test('126cc crossing route requires ordinary motorcycle BRouter to reproduce the current road before the patch',()=>{
+ const prepared=local.prepare(road[2],road,[road.at(-1)],{refs:[]});
+ assert.equal(local.validateGeneralRoad(prepared,{points:[road[2],prepared.rejoin]}),true);
+ assert.throws(()=>local.validateGeneralRoad(prepared,{points:[
+   road[2],[road[2][0]+.01,road[2][1]+.004],
+   [prepared.rejoin[0]+.01,prepared.rejoin[1]-.004],prepared.rejoin
+ ]}),/元の道路を一般道として確認できません/);
+ assert.throws(()=>local.validateGeneralRoad(prepared,{points:[[35,135],prepared.rejoin]}),/一般道の再探索|一般道の道路区間/);
+});
 test('Inland island-road leg can be detoured without touching its following bridge',()=>{
  const island=pts(34.320,133.140,24,.0022);
  const p=local.prepare(island[1],island,[island.at(-1)],{bridgeAfter:true,refs:[]});

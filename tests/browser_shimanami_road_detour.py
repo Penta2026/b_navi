@@ -58,8 +58,9 @@ with sync_playwright() as p:
      if(window.__fail)throw Error('network is unavailable');
      const [origin,rejoin]=points;
      const shifted=.003;
-     const path=[origin,[origin[0]+shifted,origin[1]+.002],
-      [rejoin[0]+shifted,rejoin[1]-.002],rejoin];
+     const path=!options?[origin,rejoin]:
+      [origin,[origin[0]+shifted,origin[1]+.002],
+       [rejoin[0]+shifted,rejoin[1]-.002],rejoin];
      return{track:{points:path,cues:[]},
        gpx:BNaviPublicBrouter.gpxFromTrack({points:path,cues:[]},'partial')};
     };
@@ -78,9 +79,11 @@ with sync_playwright() as p:
     message:document.querySelector('#nav-status').textContent,
     originalSuffix:window.__originalSuffix,bridgeSnapshot:window.__bridgeSnapshot
    })''')
-   assert len(outcome['calls'])==1,('no detour BRouter call',setup,width,outcome)
-   assert len(outcome['calls'][0]['points'])==2,'should only replan to a rejoin point'
-   assert outcome['calls'][0]['options']['nogos'][0]['radius']==110,outcome
+   expected_calls=2 if setup=='big_mainland' else 1
+   assert len(outcome['calls'])==expected_calls,('no detour BRouter call',setup,width,outcome)
+   assert all(len(call['points'])==2 for call in outcome['calls']),'should only replan to a rejoin point'
+   if setup=='big_mainland':assert outcome['calls'][0]['options'] is None,('general-road probe missing',width,outcome)
+   assert outcome['calls'][-1]['options']['nogos'][0]['radius']==110,outcome
    assert outcome['road'][-3:]==outcome['originalSuffix'],('future route lost',setup,width,outcome)
    assert outcome['bridge']==outcome['bridgeSnapshot'],('bridge changed',setup,width)
    assert outcome['avoid'] and outcome['active'] and '一般道' in outcome['message'],outcome
