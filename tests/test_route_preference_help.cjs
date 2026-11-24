@@ -65,5 +65,5 @@ test('help remains legible in mobile PWA and keeps the routing controls unchange
  assert.match(css,/\.route-preference-help-dialog\{/);
  assert.match(css,/max-height:min\(85dvh,780px\)/);
  assert.match(css,/grid-template-columns:84px 1fr/);
- assert.match(sw,/bnavi-pc-pwa-20261124-concise-option-info-v2/);
+ assert.match(sw,/const CACHE='bnavi-pc-pwa-[^']+'/);
 });
