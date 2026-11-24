@@ -473,8 +473,10 @@ async function calculatePublicRoute(points,version){
   const missed=points.slice(1,-1).map((p,i)=>({n:i+1,d:BNaviRideLogic.distanceToPolyline(p,result.track.points)})).filter(v=>v.d>300);
   if(missed.length)throw Error('経由地'+missed.map(x=>x.n).join('、')+'を通る道路経路が取得できません（300m以上離れています）。場所とルートを確認してね。');
  }
- routeView('normal',[{type:'road',points:result.track.points,color:'#06799b',width:5,label:'BRouterで計算した道路ルート',gpx:result.gpx}],result.gpx,
-   'BRouter経路を計算しました：'+result.profile+'（通信・計算 '+(result.elapsedMs/1000).toFixed(1)+'秒）。GPXと案内指示を端末に保存。道路規制・適法性は未検証。'+(state.activeRouteTuning?.preferences?.coast?'海沿い優先は水辺の推定値による試験評価で、海岸線・眺望は未検証。':'')+(!result.track.cues.length?'今回は音声用右左折指示が返りませんでした。':''));
+ if(biwakoBridgeSelected)BNaviBiwakoBridge.verify(result.track.points);
+ routeView('normal',[{type:'road',points:result.track.points,color:'#06799b',width:5,label:biwakoBridgeSelected?'琵琶湖大橋を通る道路ルート':'BRouterで計算した道路ルート',gpx:result.gpx}],result.gpx,
+   'BRouter経路を計算しました：'+result.profile+'（通信・計算 '+(result.elapsedMs/1000).toFixed(1)+'秒）。GPXと案内指示を端末に保存。道路規制・適法性は未検証。'+(biwakoBridgeSelected?'琵琶湖大橋（有料）を経由指定し、湖の両岸へ道路がつながることを確認。':'')+(state.activeRouteTuning?.preferences?.coast?'海沿い優先は水辺の推定値による試験評価で、海岸線・眺望は未検証。':'')+(!result.track.cues.length?'今回は音声用右左折指示が返りませんでした。':''));
+ state.biwakoBridgeActive=biwakoBridgeSelected;
 }
 
 function apiRoot(){
@@ -489,7 +491,16 @@ $('route-api-save').addEventListener('click',()=>{try{const raw=$('route-api-bas
 $('route-api-clear').addEventListener('click',()=>{localStorage.removeItem(API_CONFIG_KEY);updateApiSettings();refreshServer()});
 updateApiSettings();
 async function postApi(path,points){const form=new URLSearchParams({vehicle:$('vehicle').value,mode:String(state.activeRoutingMode??routingMode()),points:points.map(fmt).join('|')});const response=await fetch(apiUrl(path),{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:form});const text=await response.text();if(!response.ok)throw new Error(text.slice(0,300));return {response,text};}
-async function calculate(){const version=++routePlanVersion;const btn=$('calculate');btn.disabled=true;clearResult();try{const points=getRequestPoints();state.activeRoutingVehicle=Number($('vehicle').value);state.activeRoutingMode=routingMode();
+async function calculate(){const version=++routePlanVersion;const btn=$('calculate');btn.disabled=true;clearResult();try{
+ const userPoints=getRequestPoints();
+ state.activeRoutingVehicle=Number($('vehicle').value);state.activeRoutingMode=routingMode();
+ if(biwakoBridgeSelected&&(!usePublicBrouter()||typeof BNaviBiwakoBridge==='undefined'))
+  throw Error('琵琶湖大橋の経由指定は公開BRouter専用です。PWAの更新・経路API設定を確認してね');
+ if(biwakoBridgeSelected&&(
+   (typeof BNaviShimanamiBigRouter!=='undefined'&&BNaviShimanamiBigRouter.potential(userPoints,2))||
+   (typeof BNaviShimanamiWebRouter!=='undefined'&&BNaviShimanamiWebRouter.needsSpecialJourney(userPoints,state.activeRoutingVehicle))))
+  throw Error('しまなみ専用の橋渡りと同時には選べません。琵琶湖大橋の指定をOFFにしてね');
+ const points=biwakoBridgeSelected?BNaviBiwakoBridge.plan(userPoints).points:userPoints;
  const wantsOptions=preferencesActive();
  const p=currentPreferences();
  const isFast=state.activeRoutingMode===3;
@@ -500,6 +511,8 @@ async function calculate(){const version=++routePlanVersion;const btn=$('calcula
  state.activeRouteTuning=useExtraPreferences
    ?BNaviRouteTuning.normalize({preferences:p},state.activeRoutingVehicle)
    :(customEnabled?tuningNow():null);
+ if(biwakoBridgeSelected&&state.activeRoutingMode!==3)
+  state.activeRouteTuning=BNaviRouteTuning.normalize({...state.activeRouteTuning,biwakoBridgeToll:true},state.activeRoutingVehicle);
  persist();
  // Never silently enable toll roads: only explicit user confirmation permits island legs.
  if(usePublicBrouter()&&state.activeRoutingVehicle===2&&
@@ -735,6 +748,8 @@ function manualDetourUnavailable(){
   if(!road?.points?.length||!Number.isInteger(road.sectionIndex)||state.routes[road.sectionIndex]?.type!=='road')
    return '橋に接続する一般道の区間が確認できません';
  }
+ if(state.biwakoBridgeActive&&BNaviBiwakoBridge.isAhead(state.location,state.gpsPoints))
+  return '琵琶湖大橋を通る案内中は橋までの手動迂回を一時停止しています';
  if(!usePublicBrouter())return '公開BRouterへの接続が必要です';
  if(!state.location||!Number.isFinite(state.gpsAccuracy)||state.gpsAccuracy>35)return 'GPS精度35m以内で現在地を取得してね';
  if(!state.gpsPoints||state.gpsPoints.length<2||!state.activeTargets.slice(state.targetIndex).length)
@@ -891,7 +906,10 @@ async function rerouteFromGps(){
  }
  const dest=state.activeTargets.slice(state.targetIndex);
  if(!dest.length)return;
- const points=[state.location.slice(),...dest];
+ const basePoints=[state.location.slice(),...dest];
+ const bridgePending=state.biwakoBridgeActive&&typeof BNaviBiwakoBridge!=='undefined'&&
+   BNaviBiwakoBridge.isAhead(state.location,state.gpsPoints);
+ const points=bridgePending?BNaviBiwakoBridge.plan(basePoints).points:basePoints;
  if(needsDedicatedApi(points)&&usePublicBrouter()){
    $('nav-status').textContent='原付専用区間の再探索には専用経路サーバーが必要です。';return;
  }
@@ -908,14 +926,15 @@ async function rerouteFromGps(){
     await BNaviPublicBrouter.query(points,state.activeRoutingVehicle??$('vehicle').value,
       state.shimanamiBigMode&&state.activeRoutingMode===3?1:state.activeRoutingMode??1,fetch,null,state.activeRouteTuning,
       state.manualDetour&&!state.shimanamiBigMode?{nogos:[state.manualDetour]}:null);
+   if(bridgePending)BNaviBiwakoBridge.verify(r.track.points);
    if(points.length>2){
     const missed=points.slice(1,-1).map((p,i)=>({n:i+1,d:BNaviRideLogic.distanceToPolyline(p,r.track.points)})).filter(v=>v.d>300);
     if(missed.length)throw Error('リルートで経由地を通れません。残りの中継地点を維持します。');
    }
    if(!state.navActive)return;
-   const keepBig=state.shimanamiBigMode,keepDetour=state.manualDetour;
+   const keepBig=state.shimanamiBigMode,keepDetour=state.manualDetour,keepBridge=state.biwakoBridgeActive;
    routeView('normal',[{type:'road',points:r.track.points,color:'#06799b',width:5,label:'リルート済み道路経路',gpx:r.gpx}],r.gpx,'GPS現在地から再探索しました。',{keepView:true});
-   state.shimanamiBigMode=keepBig;state.manualDetour=keepDetour;
+   state.shimanamiBigMode=keepBig;state.manualDetour=keepDetour;state.biwakoBridgeActive=keepBridge;
    if(keepBig)$('route-label').textContent='しまなみ島渡り';
   }else{
    const {response,text}=await postApi('route',points);
