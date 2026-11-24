@@ -277,19 +277,34 @@ function downloadGpx(xml,name){const blob=new Blob([xml],{type:'application/gpx+
 function fitResult(){const points=state.routes.flatMap(x=>x.points);if(points.length)map.fit(sampled(points,4000));else fitMarkers();}
 function fitMarkers(){const x=getMarkers().map(m=>m.point);if(x.length)map.fit(x);}
 function clearResult(){$('shimanami-desk-tools').hidden=true;state.shimanamiPlanPoints=[];state.shimanamiWebBuilt=false;stopVoiceGuidance(false);stopDemo();state.islandLegs=[];state.islandIndex=0;state.awaitingBridge=false;state.turnCues=[];state.cumKm=[];$('demo-on').disabled=true;$('demo-off').disabled=true;state.routeType=null;state.currentGpx=null;state.routes=[];state.gpsPoints=[];$('save-gpx').disabled=true;$('fit-route').disabled=true;$('route-label').textContent='未計算';$('metrics').textContent='計算すると距離や経路が表示されるよ。';$('route-segments').replaceChildren();refreshMap();syncNavigationButtons();}
-async function clearFullRoutePlan(){
- // Free-ride recording is independent of the route plan: don't interrupt it.
- if(window.BNaviRideMode?.isActive?.()){
+function freeRideInProgress(){
+ return window.BNaviRideMode?.getMode?.()==='free'||
+  document.body.classList.contains('free-ride-active');
+}
+function hasRoutePlan(){
+ return Boolean($('start').value.trim()||$('goal').value.trim()||state.via.length||
+  state.routeType||state.routes.length||$('calculate').disabled);
+}
+function requestFullRouteClear(){
+ if(freeRideInProgress()){
   setMessage('フリー走行中はルートをクリアできません。走行を終了してから操作してね。',true);
   return;
  }
- const hasPlan=Boolean($('start').value.trim()||$('goal').value.trim()||state.via.length||
-  state.routeType||state.routes.length||$('calculate').disabled);
- if(!hasPlan){setMessage('クリアするルートはまだないよ。');return;}
- const warning=state.navActive?
-  '音声案内を終了し、出発地・目的地・経由地と現在のルートをすべてクリアする？\\n保存済みのマイルート・走行記録・走り方設定は消えません。':
-  '出発地・目的地・経由地と現在のルートをすべてクリアする？\\n保存済みのマイルート・走行記録・走り方設定は消えません。';
- if(!window.confirm(warning.replace('\\n','\n')))return;
+ if(!hasRoutePlan()){setMessage('クリアするルートはまだないよ。');return;}
+ const dialog=$('route-clear-confirm-dialog');
+ $('route-clear-confirm-description').textContent=state.navActive?
+  '音声案内とGPS追従を終了して、出発地・目的地・経由地と現在のルートをすべてクリアするよ。':
+  '出発地・目的地・経由地と現在のルートをすべてクリアするよ。';
+ if(!dialog.open)dialog.showModal();
+}
+async function clearFullRoutePlan(){
+ // This is called ONLY after the user taps "クリアする" in our own modal.
+ // Mobile installed PWAs may suppress window.confirm(): never depend on it.
+ if(freeRideInProgress()){
+  setMessage('フリー走行中はルートをクリアできません。走行を終了してから操作してね。',true);
+  return;
+ }
+ if(!hasRoutePlan()){setMessage('クリアするルートはまだないよ。');return;}
  const version=++routePlanVersion;
  if(offlineSaveTimer!==null){clearTimeout(offlineSaveTimer);offlineSaveTimer=null;}
  if(state.navActive)stopVoiceGuidance(true);
@@ -301,7 +316,6 @@ async function clearFullRoutePlan(){
  $('calculate').disabled=false;
  setMessage('ルートをクリアしたよ。次の出発地と目的地を選んでね。');
  try{
-  // The auto-restored last route must not reappear on next PWA launch.
   await BNaviOfflineRouteStore.clear();
   if(version===routePlanVersion)$('offline-status').textContent='一時保存ルートをクリアしました。マイルートの保存データは残っています。';
  }catch(e){
@@ -310,6 +324,15 @@ async function clearFullRoutePlan(){
    $('offline-status').textContent=message;setMessage(message,true);
   }
  }
+}
+function bindFullRouteClear(){
+ const dialog=$('route-clear-confirm-dialog');
+ $('clear-route-plan').addEventListener('click',requestFullRouteClear);
+ $('route-clear-dialog-cancel').addEventListener('click',()=>dialog.close());
+ $('route-clear-dialog-confirm').addEventListener('click',()=>{
+  dialog.close();
+  clearFullRoutePlan().catch(e=>setMessage('クリア処理に失敗しました：'+String(e?.message||e),true));
+ });
 }
 const API_CONFIG_KEY='bnavi.routeApiBase.v1';
 function hostedOnPages(){return location.hostname.endsWith('.github.io')}
@@ -837,7 +860,7 @@ $('vehicle').addEventListener('change',()=>{updateModes();updateTuningUI();updat
 for(const b of document.querySelectorAll('.pick'))b.addEventListener('click',()=>setPick(b.dataset.pick));$('start-pick').addEventListener('click',()=>setPick('start'));$('goal-pick').addEventListener('click',()=>setPick('goal'));
 $('start').addEventListener('input',()=>{updatePointSummaries();refreshMap();persist();});$('goal').addEventListener('input',()=>{updatePointSummaries();refreshMap();persist();});
 $('add-via').addEventListener('click',()=>{if(state.via.length>=50){setMessage('経由地は50件まで。',true);return;}setPick('via');setMessage('地図を長押しし、表示されたメニューから「経由地に追加」を選んでね。');});$('clear-vias').addEventListener('click',()=>{state.via=[];renderVia();refreshMap();persist();});
-$('calculate').addEventListener('click',calculate);$('clear-route-plan').addEventListener('click',clearFullRoutePlan);$('clear-route').addEventListener('click',()=>{routePlanVersion++;clearResult();$('calculate').disabled=false;setMessage('結果だけ消したよ。出発地・目的地・経由地は残してあります。');});$('fit-route').addEventListener('click',fitResult);$('save-gpx').addEventListener('click',()=>{if(state.currentGpx)downloadGpx(state.currentGpx,'B_Navi_route.gpx');});
+$('calculate').addEventListener('click',calculate);bindFullRouteClear();$('clear-route').addEventListener('click',()=>{routePlanVersion++;clearResult();$('calculate').disabled=false;setMessage('結果だけ消したよ。出発地・目的地・経由地は残してあります。');});$('fit-route').addEventListener('click',fitResult);$('save-gpx').addEventListener('click',()=>{if(state.currentGpx)downloadGpx(state.currentGpx,'B_Navi_route.gpx');});
 for(const id of ['hiroshima','shimanami','kanmon'])$(`sample-${id}`).addEventListener('click',()=>setExample(id));
 $('zoom-in').addEventListener('click',()=>map.setZoom(map.zoom+1));$('zoom-out').addEventListener('click',()=>map.setZoom(map.zoom-1));$('center-hiroshima').addEventListener('click',()=>map.center(34.4,132.46,11));$('map-location').addEventListener('click',startGps);$('nav-radar-toggle').addEventListener('click',()=>window.BNaviRideMode?.openNavRadar?.());$('compass-reset').addEventListener('click',()=>setOrientationMode('north'));$('help-btn').addEventListener('click',()=>$('help-dialog').showModal());$('gps-on').addEventListener('click',startGps);$('gps-off').addEventListener('click',stopGps);$('demo-on').addEventListener('click',startDemo);$('demo-off').addEventListener('click',stopDemo);for(const id of ['nav-start','nav-start-quick'])$(id).addEventListener('click',startVoiceGuidance);for(const id of ['nav-stop','nav-stop-quick'])$(id).addEventListener('click',()=>stopVoiceGuidance(true));for(const id of ['voice-test','voice-test-quick'])$(id).addEventListener('click',voiceTest);
 let restoringOffline=false;
