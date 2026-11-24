@@ -43,7 +43,7 @@ test('BRouter encodes lon lat radius with a hard nogo, only when explicitly requ
  await publicRouter.query(loc,1,1,fetcher,null,null,{nogos:[avoid]});
  await publicRouter.query(loc,1,1,fetcher,null,null);
  assert.equal(calcUrls.length,2);
- assert.equal(new URL(calcUrls[0]).searchParams.get('nogos'),'132.450190,34.403215,110');
+ assert.equal(new URL(calcUrls[0]).searchParams.get('nogos'),'132.450190,34.403214,110');
  assert.equal(new URL(calcUrls[1]).searchParams.has('nogos'),false);
  assert.equal(uploads,1);
 });

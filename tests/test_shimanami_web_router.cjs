@@ -51,7 +51,10 @@ test('reject BRouter route with far-away road snap, no silent off-island detour'
 test('only special on cross-island trips with 50cc and <=125cc; normal local routing unaffected',()=>{
  assert(router.needsSpecialJourney([from,to],0));assert(router.needsSpecialJourney([to,from],1));
  assert(!router.needsSpecialJourney([from,to],2));assert(!router.needsSpecialJourney([from,[34.38,133.19]],0));
- assert(!router.needsSpecialJourney([[34.4,132.46],to],0));
+ // Western mainland gateways are now intentionally considered for a cross-island trip.
+ assert(router.needsSpecialJourney([[34.4,132.46],to],0));
+ // Two points on western mainland alone do not form an island-crossing.
+ assert(!router.needsSpecialJourney([[34.4,132.46],[34.42,132.50]],0));
 });
 test('Android bridge audit rejects tampering before the user can trust a route',()=>{
  const copy=JSON.parse(JSON.stringify(geometry));copy.bridges[0].directions.forward[0].points[0]=[35,133];

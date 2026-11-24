@@ -26,7 +26,7 @@ with sync_playwright() as p:
     }});
     window.fetch=async()=>({ok:false,status:503,json:async()=>[],text:async()=>''});
   }''')
-  for filename in names:page.add_script_tag(content=(ROOT/filename).read_text())
+  for filename in names:page.add_script_tag(content=(ROOT/filename.split('?',1)[0]).read_text())
   page.wait_for_timeout(160)
   for id in ['start-pick','goal-pick','add-via']:assert page.locator('#'+id).count()==0,(id,width)
   assert page.locator('.pickbar').count()==0
