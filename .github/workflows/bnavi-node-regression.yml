@@ -58,3 +58,4 @@ jobs:
           python tests/browser_coast_backroad.py
           python tests/browser_route_preference_fold.py
           python tests/browser_fasttravel_preferences.py
+          python tests/browser_biwako_bridge.py

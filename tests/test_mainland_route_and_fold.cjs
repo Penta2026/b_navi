@@ -37,5 +37,5 @@ test('option panel folds without removing its controls or altering route setting
  assert.match(app,/body\.hidden=!body\.hidden/);
  assert.match(app,/bindCustomRouteUI\(\);bindRoutePreferenceHelp\(\);bindRoutePreferenceToggle\(\)/);
  assert.match(css,/\.route-preference-body\[hidden\]/);
- assert.match(sw,/bnavi-pc-pwa-20261124-fasttravel-preferences-v1/);
+ assert.match(sw,/bnavi-pc-pwa-20261124-biwako-bridge-v1/);
 });
