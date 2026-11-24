@@ -59,6 +59,7 @@ function updateCustomRouteUI(){
  for(const input of document.querySelectorAll('input[name="route-ride"]'))input.checked=input.value===p.ride;
  $('route-backroad').checked=p.backroad;
  $('route-coast').checked=p.coast;
+ if(document.getElementById('route-preference-toggle'))updateRoutePreferenceCollapseUI();
 }
 function preferenceSummary(){
  const p=currentPreferences(),parts=[];
@@ -89,6 +90,24 @@ function chooseCustom(enabled,openPanel=false){
  if(customEnabled)$('mode').value='1';
  if(openPanel)$('route-tuning-panel').open=true;
  updateTuningUI();updateCustomRouteUI();updatePolicy();persist();
+}
+function updateRoutePreferenceCollapseUI(){
+ const body=$('route-preference-body'),toggle=$('route-preference-toggle'),status=$('route-preference-collapsed-summary');
+ const collapsed=body.hidden;
+ toggle.setAttribute('aria-expanded',String(!collapsed));
+ toggle.textContent=collapsed?'▾ オプションを開く':'▴ オプションをしまう';
+ status.hidden=!collapsed;
+ if(collapsed)status.textContent='現在の設定：'+preferenceSummary();
+}
+function bindRoutePreferenceToggle(){
+ const body=$('route-preference-body');
+ try{body.hidden=localStorage.getItem('bnavi.routeOptionsCollapsed.v1')==='1'}catch{}
+ updateRoutePreferenceCollapseUI();
+ $('route-preference-toggle').addEventListener('click',()=>{
+  body.hidden=!body.hidden;
+  updateRoutePreferenceCollapseUI();
+  try{localStorage.setItem('bnavi.routeOptionsCollapsed.v1',body.hidden?'1':'0')}catch{}
+ });
 }
 function bindRoutePreferenceHelp(){
  const dialog=$('route-preference-help-dialog');
@@ -1255,4 +1274,4 @@ async function displayStoredRoute(data,message){
 $('shimanami-desk-verify').addEventListener('click',verifyShimanamiDesk);
 $('offline-save').addEventListener('click',saveOfflineRoute);
 $('offline-load').addEventListener('click',restoreOfflineRoute);
-updateModes();loadTuning();restore();bindTuning();bindCustomRouteUI();bindRoutePreferenceHelp();bindShimanamiBigDialog();bindPresetUI();bindMyRouteUI();renderVia();updatePointSummaries();syncNavigationButtons();refreshMap();fitMarkers();refreshServer();setPick('start');if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).catch(()=>{});restoreOfflineRoute();
+updateModes();loadTuning();restore();bindTuning();bindCustomRouteUI();bindRoutePreferenceHelp();bindRoutePreferenceToggle();bindShimanamiBigDialog();bindPresetUI();bindMyRouteUI();renderVia();updatePointSummaries();syncNavigationButtons();refreshMap();fitMarkers();refreshServer();setPick('start');if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).catch(()=>{});restoreOfflineRoute();

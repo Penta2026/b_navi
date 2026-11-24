@@ -39,9 +39,19 @@ function region(p){return isOnomichiMainland(p)?-1:island(p);}
 // are routed on actual roads; a gateway candidate is not proof of land access.
 const TAKEHARA_ROADSIDE=[34.343938,132.912168];
 function validJourneyPoint(p){return Array.isArray(p)&&p.length===2&&p.every(Number.isFinite)&&p[0]>=20&&p[0]<=46&&p[1]>=122&&p[1]<=154;}
+// Conservative western Onomichi/Mihara MAINLAND road approach guard.
+// The older nearest-island heuristic incorrectly treated central Honshu
+// destinations as islands, causing bogus 3-leg bridge itineraries and a
+// BRouter "no track found" on the final fabricated island approach.
+// This is NOT a coastline polygon: island points outside this known northern
+// mainland band still need the protected island/bridge planner.
+function isWesternMainlandApproach(p){
+ if(!validJourneyPoint(p)||p[1]<132.95||p[1]>=133.185)return false;
+ return p[1]<=133.12?p[0]>=34.365:p[0]>=34.401;
+}
 function journeyRegion(p){
  if(!validJourneyPoint(p))throw Error('旅程の座標が不正です');
- if(isOnomichiMainland(p))return -1;
+ if(isOnomichiMainland(p)||isWesternMainlandApproach(p))return -1;
  // The known Takehara mainland vicinity and the western/northern outer
  // corridor must not be mistaken for the nearest island.
  if(meters(p,TAKEHARA_ROADSIDE)<=2000||(p[0]>=34.31&&p[1]<132.95)||(p[0]>=34.41&&p[1]<=133.25))return -1;
@@ -249,5 +259,5 @@ function deskCheck(result,points){
  steps.push('最終目的地：到着案内');
  return {...plan,steps};
 }
-return Object.freeze({ISLANDS,ISLAND_NAMES,MAX_USER_WAYPOINT_SNAP_METERS,MAX_BRIDGE_SEAM_METERS,ONOMICHI_STATION,ONOMICHI_BRIDGE_ROAD_ANCHOR,MAX_ONOMICHI_BRIDGE_ANCHOR_METERS,onomichiMainlandPoint,isOnomichiMainland,region,journeyRegion,meters,inArea,island,needsSpecialJourney,plan,validateRoad,compose,verifyPlan,deskCheck});
+return Object.freeze({ISLANDS,ISLAND_NAMES,MAX_USER_WAYPOINT_SNAP_METERS,MAX_BRIDGE_SEAM_METERS,ONOMICHI_STATION,ONOMICHI_BRIDGE_ROAD_ANCHOR,MAX_ONOMICHI_BRIDGE_ANCHOR_METERS,onomichiMainlandPoint,isOnomichiMainland,isWesternMainlandApproach,region,journeyRegion,meters,inArea,island,needsSpecialJourney,plan,validateRoad,compose,verifyPlan,deskCheck});
 });

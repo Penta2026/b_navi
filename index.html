@@ -14,6 +14,9 @@
 <div class="fieldrow"><label>排気量<select id="vehicle"><option value="0">50cc・新基準原付</option><option value="1" selected>51〜125cc</option><option value="2">126cc以上</option></select></label><label>走り方<select id="mode" aria-label="走り方"></select></label></div>
 <fieldset id="custom-route-panel" class="route-preferences" aria-label="走り方の追加オプション">
  <legend>🛵 好みのオプション <button type="button" id="route-preference-help-open" class="route-preference-help-icon" aria-label="好みのオプションの意味を確認" aria-haspopup="dialog" aria-controls="route-preference-help-dialog" title="オプションの説明を開く">ⓘ</button> <small>基本モードに上乗せ</small></legend>
+ <button type="button" id="route-preference-toggle" class="route-preference-toggle" aria-controls="route-preference-body" aria-expanded="true">▴ オプションをしまう</button>
+ <p id="route-preference-collapsed-summary" class="route-preference-collapsed-summary" hidden></p>
+ <div id="route-preference-body" class="route-preference-body">
  <div class="route-preference-group"><strong>🌿 景色と距離</strong>
   <div class="route-preference-choices" role="group" aria-label="景色と距離">
    <label><input type="radio" name="route-view" value="normal" checked><span>そのまま</span></label>
@@ -33,6 +36,7 @@
   <label class="route-backroad-toggle"><input id="route-coast" type="checkbox"><span><strong>🌊 海沿い優先（試験）</strong><small>裏道優先と同時にON可能。水辺の推定値で調整（海岸線の直接評価は準備中）</small></span></label>
  </div>
  <p class="smallprint">全基本モードで登録済み信号を強く回避。一般は「20％程度遠回りしても気持ちよく流れる道」を調整の目標にするよ。これは距離上限や時間短縮の保証ではありません。</p>
+ </div>
 </fieldset>
 <dialog id="route-preference-help-dialog" class="route-preference-help-dialog" aria-labelledby="route-preference-help-title" aria-describedby="route-preference-help-intro">
  <div class="dialog-head">
