@@ -501,7 +501,7 @@ async function calculate(){const version=++routePlanVersion;const btn=$('calcula
  }
  if(!usePublicBrouter()&&customEnabled&&!BNaviRouteTuning.isDefault(state.activeRouteTuning,state.activeRoutingVehicle))throw Error('保存済みの詳細ルート調整は、現在の経路サーバーに対応していません。');setMessage('BRouter計算中。道路データを照合しています…');
  if(usePublicBrouter()){
-   if(Number($('vehicle').value)<=1&&(typeof BNaviShimanamiWebRouter==='undefined'||typeof BNaviShimanamiWebRouter.journeyRegion!=='function'))throw Error('しまなみ判定モジュールが旧版です。アプリを更新してください（20261124-mixed-v3）。');
+   if(Number($('vehicle').value)<=1&&(typeof BNaviShimanamiWebRouter==='undefined'||typeof BNaviShimanamiWebRouter.journeyRegion!=='function'))throw Error('しまなみ判定モジュールが読み込まれていません。アプリを再読み込みしてね。');
    if(typeof BNaviShimanamiWebRouter!=='undefined'&&BNaviShimanamiWebRouter.needsSpecialJourney(points,$('vehicle').value))await calculateShimanamiWeb(points,version);
    else await calculatePublicRoute(points,version);
    return;
@@ -516,7 +516,14 @@ async function calculate(){const version=++routePlanVersion;const btn=$('calcula
     else{const road=gpxPoints(text);routeView('normal',[{type:'road',points:road,color:'#06799b',width:5,label:'BRouter道路経路',gpx:text}],text,response.headers.get('X-BNavi-Route')==='kanmon-r2-verified'?'125cc：関門国道2号のトンネル経由を計算したよ。':`選択した探索条件：${$('mode').selectedOptions[0]?.textContent}（${ROUTE_POLICIES[Number($('mode').value)]}）。異なる条件でも道路網と区間によっては同じ経路になる場合があります。`);}
    }catch(error){if(version!==routePlanVersion)return;const reason=String(error.message||error);if(Number($('vehicle').value)<=1&&state.via.length===0&&reason.includes('しまなみ')){await calculateShimanami(points,version);}else throw error;}
   }
- }catch(e){if(version===routePlanVersion)setMessage('計算できなかったよ（20261124-mixed-v3）：'+String(e?.message||e),true);}finally{if(version===routePlanVersion)btn.disabled=false;}}
+ }catch(e){
+  if(version===routePlanVersion){
+   const reason=String(e?.message||e);
+   const help=/no track found|HTTP 400/i.test(reason)
+    ?' 指定地点と道路の接続、または通れる道路条件を確認できませんでした。目的地を道路上で選び直すか、追加オプションを変えて再検索してね。':'';
+   setMessage('計算できなかったよ：'+reason+help,true);
+  }
+ }finally{if(version===routePlanVersion)btn.disabled=false;}}
 function decodeBase64Utf8(x){const bytes=Uint8Array.from(atob(x),c=>c.charCodeAt(0));return new TextDecoder().decode(bytes);}
 // Keep cycling bridge references separate from routed GPX. Clipping removes
 // duplicated reference approaches; small gaps to the routed leg are drawn as
