@@ -330,14 +330,23 @@
       }
       let results=mergeCore.combine(q,groups);
       if(!results.length&&parsed.region.length&&parsed.name.length>=2){
-        // Find companies indexed only without their city; keep locality filter.
-        try{
-          const rows=(await searchPhoton(parsed.name,cat)).map(row=>({...row,
-            categoryMatch:searchCore.categoryMatches(row,cat)}));
-          candidates.push(...rows);
-          results=mergeCore.combine(q,[...groups,{kind:'geocoder',rows}]);
+        // Search without the locality prefix, then strictly filter returned addresses.
+        // Avoid another Nominatim request (public rate limits).
+        const retry=await Promise.allSettled([
+          searchPhoton(parsed.name,cat),
+          searchOpenPoi(parsed.name,'suggest')
+        ]);
+        for(let i=0;i<retry.length;i++){
+          if(retry[i].status!=='fulfilled')continue;
           providerSuccesses++;
-        }catch(err){/* Do not invent unindexed places. */}
+          const kind=i===0?'geocoder':'suggest';
+          const rows=kind==='geocoder'
+            ?retry[i].value.map(row=>({...row,categoryMatch:searchCore.categoryMatches(row,cat)}))
+            :retry[i].value;
+          groups.push({kind,rows});
+          if(kind==='geocoder')candidates.push(...rows);
+        }
+        results=mergeCore.combine(q,groups);
       }
       if(!results.length&&!localStationQuery&&!localRows.length){
         try{const matches=await searchStations(q);if(matches.length){showStationResults(matches,el);return;}}
