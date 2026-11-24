@@ -185,10 +185,24 @@ function normalize(raw,vehicle){
 }
 function isDefault(raw,vehicle){const v=normalize(raw,vehicle);return !v.preferences&&!v.style&&!v.explore&&!v.width&&!v.scenic&&!v.allowMotorway&&!v.allowToll;}
 function key(raw,vehicle){const v=normalize(raw,vehicle);return `${v.explore},${v.width},${v.scenic},${v.allowMotorway?1:0},${v.allowToll?1:0}`+(v.style?':'+v.style:'')+(v.preferences?':'+preferenceKey(v.preferences):'');}
+function unlockShimanamiBigRoads(src,options,vehicle){
+ if(Number(vehicle)!==2||(!options.allowMotorway&&!options.allowToll))return src;
+ let out=src;
+ const change=(pattern,replacement,label)=>{
+  if(!pattern.test(out))throw Error('BRF '+label+' の制限を安全に調整できません');
+  out=out.replace(pattern,replacement);
+ };
+ if(options.allowToll)change(/^    switch toll=yes 10000\r?\n/m,'','有料道路');
+ if(options.allowMotorway){
+  change(/^    switch motorroad=yes 10000\r?\n/m,'','自動車専用道路');
+  change(/^(\s*switch highway=motorway\|motorway_link\s+)10000(?:\.00)?(\s*)$/m,(_,a,b)=>a+'add againstOneway 1.150'+b,'高速道路');
+ }
+ return out;
+}
 function tuneProfile(base,raw,vehicle,mode=1){
  if(typeof base!=='string'||!base.includes('---context:way')||!base.includes('---context:node'))throw Error('基本BRFファイルが不正です');
  const v=normalize(raw,vehicle);
- if(v.preferences)return tunePreferences(base,v.preferences,vehicle,mode);
+ if(v.preferences)return unlockShimanamiBigRoads(tunePreferences(base,v.preferences,vehicle,mode),v,vehicle);
  if(v.style)return tuneStyle(base,v.style); // independent of the legacy three sliders
  if(isDefault(v,vehicle))return base; // exact, byte-identical general route at the centre.
  const header='# B_Navi route-tuning v1: '+key(v,vehicle)+' (approximate OSM preferences; legal gates unchanged except explicit 126cc options)\n';
