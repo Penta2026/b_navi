@@ -33,8 +33,9 @@ test('real-road sections cannot cross the island/mainland boundary, bridge proxi
  const island=pts(34.320,133.140,24,.0022);
  assert.throws(()=>local.prepare(island[1],island,[island.at(-1)],{refs:[{points:[island[5],island[6],island[7]]}]}),/橋の接続付近/);
  assert.throws(()=>local.prepare(road[road.length-4],road,[road.at(-1)],{refs:[]}),/区間終端|目的地が近い/);
- const mixed=[...road.slice(0,11),[34.32,133.17],...road.slice(11)];
- assert.throws(()=>local.prepare(mixed[2],mixed,[mixed.at(-1)],{refs:[]}),/島・本州の境界|橋をまたぐ/);
+ const mixed=[...road.slice(0,5),[34.32,133.17],...road.slice(5)];
+ assert.equal(local.stageAllowed([road[2],[34.32,133.17]],-1),false);
+ assert.throws(()=>local.prepare(mixed[2],mixed,[mixed.at(-1)],{refs:[]}),/島・本州の境界|橋をまたぐ|区間終端/);
 });
 test('waypoint on the proposed detour section must never be silently skipped',()=>{
  const p=local.prepare(road[2],road,[road.at(-1)],{refs:[]});

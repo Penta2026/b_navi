@@ -58,7 +58,7 @@ test('one tappable detour control lives on active voice HUD, with no bridge-refe
  assert.match(html,/<div id="navigation-hud"[^>]*>[\s\S]*?id="nav-detour"/);
  assert.equal((html.match(/id="nav-detour"/g)||[]).length,1);
  assert.match(css,/#navigation-hud \.navigation-hud-actions #nav-detour\{pointer-events:auto/);
- assert.match(app,/state\.routeType!=='normal'\|\|state\.shimanamiBigMode/);
+ assert.match(app,/!\['normal','shimanami'\]\.includes\(state\.routeType\)/);
  assert.match(app,/BNaviManualDetour\.plan\(origin,state\.gpsPoints,targets\)/);
  assert.match(app,/BNaviManualDetour\.verify\(response\.track\.points,avoid\)/);
  assert.match(app,/state\.manualDetour=avoid/);
