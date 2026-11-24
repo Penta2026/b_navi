@@ -64,7 +64,7 @@ with sync_playwright() as p:
     status:document.querySelector('#message').textContent
   })''')
   assert len(query['calls'])==1,('query not performed',width,query)
-  assert query['calls'][0]['mode']==3 and query['calls'][0]['vehicle']==2,query
+  assert query['calls'][0]['mode']==3 and str(query['calls'][0]['vehicle'])=='2',query
   assert query['calls'][0]['custom']['preferences']==summary,query
   assert query['setting']['preferences']==summary,query
   # Switching all four preferences off must restore the ORIGINAL fast BRF.
