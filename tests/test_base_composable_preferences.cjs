@@ -26,7 +26,7 @@ test('18 preference keys, no invalid choices, and normal preferences still raise
   assert.equal(signal(t.tuneProfile(base,raw,1)),850);
  }
  assert.equal(keys.size,18);
- assert.deepEqual(t.normalizePreferences({view:'bogus',ride:'bogus',backroad:'true'}),{view:'normal',ride:'normal',backroad:false});
+ assert.deepEqual(t.normalizePreferences({view:'bogus',ride:'bogus',backroad:'true'}),{view:'normal',ride:'normal',backroad:false,coast:false});
  assert.equal(t.tuneProfile(base,null,1),base); // preserve public API for older stored routes
  assert.equal(t.SIGNAL_TRIAL_COST,850);
 });
