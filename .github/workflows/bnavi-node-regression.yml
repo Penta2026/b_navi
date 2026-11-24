@@ -57,3 +57,4 @@ jobs:
           python tests/browser_shimanami_road_detour.py
           python tests/browser_coast_backroad.py
           python tests/browser_route_preference_fold.py
+          python tests/browser_fasttravel_preferences.py

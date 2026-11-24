@@ -68,7 +68,7 @@ test('PWA connects normal and Shimanami itineraries to leg-only detour and keeps
  assert.match(app,/state\.manualDetour=null;state\.manualDetourLegIndex=null/);
  assert.match(html,/<script src="\.\/manual-detour-local\.js" defer><\/script>/);
  assert.match(sw,/'\.\/manual-detour-local\.js'/);
- assert.match(sw,/bnavi-pc-pwa-20261124-mainland-options-toggle-v1/);
+ assert.match(sw,/bnavi-pc-pwa-20261124-fasttravel-preferences-v1/);
  assert.ok(html.indexOf('./manual-detour.js')<html.indexOf('./manual-detour-local.js'));
  assert.ok(html.indexOf('./manual-detour-local.js')<html.indexOf('./app.js'));
 });
