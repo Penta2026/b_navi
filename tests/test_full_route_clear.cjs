@@ -57,7 +57,7 @@ test('accepted full reset wipes route inputs/result and autosave while preservin
  assert.equal(h.fields.start.value,'');assert.equal(h.fields.goal.value,'');
  assert.equal(h.state.via.length,0);
  assert.equal(h.state.routes.length,0);assert.equal(h.state.routeType,null);
- assert.deepEqual(h.state.activeTargets,[]);
+ assert.equal(h.state.activeTargets.length,0);
  assert.equal(h.state.targetIndex,0);assert.equal(h.state.lastInputHash,'');
  assert.equal(h.fields.mode.value,'2');assert.equal(h.fields.vehicle.value,'1');
  assert.equal(h.fields.calculate.disabled,false);
