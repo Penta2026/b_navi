@@ -381,3 +381,11 @@ body.navigation-active #track-panel,body.free-ride-active #track-panel{display:n
 .route-preference-help-section p,.route-preference-help-note{font-size:12px;line-height:1.7;margin:7px 0}
 .route-preference-help-note{margin:14px 4px 0;color:#516a77}
 @media(max-width:390px){.route-preference-help-dialog{padding:12px}.route-preference-help-dialog .dialog-head{top:-12px;margin:-12px -12px 10px;padding:12px}.route-preference-help-section dl>div{grid-template-columns:73px 1fr;gap:7px}}
+
+/* Primary route action and intentional full-plan reset, visible without expanding details. */
+.route-quick{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
+.route-quick #calculate{min-width:0;min-height:46px}
+.route-quick .route-plan-clear{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:46px;padding:9px 12px;border:1px solid #b9cad1;border-radius:9px;background:#f7f9fa;color:#486477;font-size:12px;font-weight:750;white-space:nowrap}
+.route-quick .route-plan-clear:hover{background:#fceee9;border-color:#dba998;color:#903f31}
+.route-quick .route-plan-clear:focus-visible{outline:3px solid #16849d;outline-offset:2px}
+@media(max-width:380px){.route-quick .route-plan-clear{font-size:11px;padding:9px 7px}.route-quick{gap:6px}}
