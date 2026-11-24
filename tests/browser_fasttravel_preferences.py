@@ -82,7 +82,7 @@ with sync_playwright() as p:
   assert again['calls'][-1]['custom'] is None,('fasttravel no-options should use base BRF',width,again)
   assert again['tuning'] is None,again
   page.locator('#vehicle').select_option('1')
-  assert all(x.value!='3' for x in page.locator('#mode option').all()),width
+  assert all(x.get_attribute('value')!='3' for x in page.locator('#mode option').all()),width
   assert not errors,('page script errors',width,errors)
   print('PASS FAST 126cc extra preferences+water+backroad+cruise, no-options untouched:',width)
   page.close()
