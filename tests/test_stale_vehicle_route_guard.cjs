@@ -14,6 +14,12 @@ test('restored 125cc moped route is NOT shown under 126cc or as fast travel',()=
  assert.match(mismatch({...older,activeRoutingVehicle:undefined},2,3),/車種が確認できない/);
  assert.equal(mismatch({...older,activeRoutingVehicle:2,activeRoutingMode:3,type:'normal'},2,3),null);
  assert.equal(mismatch(older,1,1),null);
+ assert.match(mismatch({...older,type:'normal',activeRoutingVehicle:2,activeRoutingMode:1,
+  activeRouteTuning:{preferences:{view:'scenic',ride:'normal',backroad:false}}},2,1,
+  {view:'normal',ride:'normal',backroad:false}),/異なる好みのオプション/);
+ assert.equal(mismatch({...older,type:'normal',activeRoutingVehicle:2,activeRoutingMode:1,
+  activeRouteTuning:{preferences:{view:'scenic',ride:'normal',backroad:false}}},2,1,
+  {view:'scenic',ride:'normal',backroad:false}),null);
 });
 test('preference or engine selection always discards stale calculated lines but retains points and settings',()=>{
  assert.match(app,/invalidateDisplayedRoute\('排気量'\);updateModes\(\)/);
@@ -42,7 +48,7 @@ test('preference or engine selection always discards stale calculated lines but 
  assert.equal(scope.invalidate('排気量'),false);
 });
 test('offline startup checks saved profile before display and explains a restored route is not newly calculated',()=>{
- assert.match(app,/const mismatch=storedRouteMismatch\(data,Number\(\$\('vehicle'\)\.value\),routingMode\(\)\)/);
+ assert.match(app,/const mismatch=storedRouteMismatch\(data,Number\(\$\('vehicle'\)\.value\),routingMode\(\),currentPreferences\(\)\)/);
  assert.match(app,/if\(mismatch\)\{\$\('offline-status'\)\.textContent=mismatch;setMessage\(mismatch,true\);return;\}/);
  assert.match(app,/新規計算ではありません/);
  assert.match(app,/if\(data\.type==='shimanami'&&Number\(data\.activeRoutingVehicle\?\?\$\('vehicle'\)\.value\)===2\)/);
