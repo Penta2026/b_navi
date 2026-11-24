@@ -77,7 +77,7 @@ function plan(points,vehicle,geometry,refs){
        from=exit;fromRole='bridge';
      }
    }
-   const mainlandCrossing=toMainland?'to_mainland':fromMainland?'to_island':null;
+   const mainlandCrossing=toMainland&&!fromMainland?'to_mainland':fromMainland&&!toMainland?'to_island':null;
    // For Onomichi->Mukoshima local legs and round-trip return legs, this
    // R317 crossing must be calculated as real roads via the named bridge.
    stages.push({type:'road',from,to:points[leg+1],fromRole,toRole:'user',island:end,
@@ -159,7 +159,7 @@ async function compose(points,vehicle,mode,{geometry,refs,query,bridgePreview,on
    const stage=stages[i];
    if(stage.type==='road'){
      const result=results.get(stage),pts=result.track.points;
-     const sec={type:'road',points:pts,color:'#06799b',width:5,gpx:result.gpx||null,label:stage.mainlandCrossing?'尾道大橋（国道317号・一般道）':`${ISLAND_NAMES[stage.island]}：島内道路`,stageCheckpoint:stage.checkpoint,anchorOnly:!!result.anchorOnly};
+     const sec={type:'road',points:pts,color:'#06799b',width:5,gpx:result.gpx||null,label:stage.mainlandCrossing?'尾道大橋（国道317号・一般道）':(isOnomichiMainland(stage.from)&&isOnomichiMainland(stage.to)?'尾道市街地：一般道':`${ISLAND_NAMES[stage.island]}：島内道路`),stageCheckpoint:stage.checkpoint,anchorOnly:!!result.anchorOnly};
      const sectionIndex=sections.length;
      sections.push(sec);
      guidance.push({name:ISLAND_NAMES[stage.island],points:pts,turnCues:result.track.cues||[],bridgeAfter:stages[i+1]?.type==='bridge',sectionIndex,checkpointAfter:stage.checkpointEnd?stage.checkpoint:null});
