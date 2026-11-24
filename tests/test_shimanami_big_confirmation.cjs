@@ -29,7 +29,7 @@ test('only explicit 126cc+ crossing with preferences may unlock motorway and tol
  assert.doesNotMatch(crossing,/switch highway=motorway\|motorway_link 10000/);
  assert.doesNotMatch(crossing,/switch motorroad=yes 10000/);
  assert.doesNotMatch(crossing,/switch toll=yes 10000/);
- assert.match(crossing,/switch highway=motorway\|motorway_link 1\.150/);
+ assert.match(crossing,/switch highway=motorway\|motorway_link add againstOneway 1\.150/);
  for(const restricted of ['access=no|private','vehicle=no|private','motor_vehicle=no|private','motorcycle=no|private'])
   assert.ok(crossing.includes('switch '+restricted+' 10000'),restricted);
  assert.match(tuning.tuneProfile(read('profiles/bn_125_general.brf'),{preferences:{},allowMotorway:true,allowToll:true},1),
@@ -77,7 +77,7 @@ test('bridge references cannot substitute for disconnected or wrong BRouter road
   /付近を通る道路経路を確認できません/);
  await assert.rejects(big.compose([S,I,K],1,null,{refs,query:async(pair,mode,opts,leg)=>{
   if(leg.index===1)return{track:{points:[pair[0],middle(0),pair[1]],cues:[]}};
-  return{track:{points:[[pair[0][0]+.001,pair[0][1]],middle(1),pair[1]],cues:[]}};
+  return{track:{points:[[pair[0][0]+.0005,pair[0][1]],middle(1),pair[1]],cues:[]}};
  }}),/道路接続が/);
 });
 test('B_Navi dialog requires explicit confirmation; offline restore remembers the selected mode',()=>{

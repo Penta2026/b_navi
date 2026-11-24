@@ -68,8 +68,8 @@
    if(!Array.isArray(track?.points)||track.points.length<2||
       !track.points.every(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite)))
     throw Error('経由区間'+leg.index+'の道路線が不正です');
-   if(islands.meters(track.points[0],points[leg.index-1])>300||
-      islands.meters(track.points.at(-1),points[leg.index])>300)
+   if(islands.meters(track.points[0],points[leg.index-1])>80||
+      islands.meters(track.points.at(-1),points[leg.index])>80)
     throw Error('経由区間'+leg.index+'で道路線が出発地か目的地から離れすぎています');
    if(crossing){checkBridgeProximity(track,leg.bridges,refs);crossingLegs++;}
    if(merged.points.length){

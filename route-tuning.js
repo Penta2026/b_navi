@@ -195,7 +195,7 @@ function unlockShimanamiBigRoads(src,options,vehicle){
  if(options.allowToll)change(/^    switch toll=yes 10000\r?\n/m,'','有料道路');
  if(options.allowMotorway){
   change(/^    switch motorroad=yes 10000\r?\n/m,'','自動車専用道路');
-  change(/^(\s*switch highway=motorway\|motorway_link\s+)10000(?:\.00)?(\s*)$/m,(_,a,b)=>a+'1.150'+b,'高速道路');
+  change(/^(\s*switch highway=motorway\|motorway_link\s+)10000(?:\.00)?(\s*)$/m,(_,a,b)=>a+'add againstOneway 1.150'+b,'高速道路');
  }
  return out;
 }
