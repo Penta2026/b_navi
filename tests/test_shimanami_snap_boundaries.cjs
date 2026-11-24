@@ -14,8 +14,13 @@ test('JR Onomichi Station is on mainland, NOT categorized as Mukoshima road entr
  assert.ok(router.onomichiMainlandPoint([onomichi,mukoshima]));
  assert.equal(router.onomichiMainlandPoint([mukoshima]),null);
  assert.equal(router.needsSpecialJourney([onomichi,[34.064,132.995]],1),true);
- assert.throws(()=>router.plan([onomichi,[34.064,132.995]],1,geometry,refs),
-  /尾道駅周辺は本州側.*渡船・尾道大橋.*向島側/);
+ assert.equal(router.region(onomichi),-1,'JR station must be on mainland');
+ const stages=router.plan([onomichi,[34.064,132.995]],1,geometry,refs);
+ assert.equal(stages.filter(x=>x.type==='bridge').length,6);
+ const road=stages.find(x=>x.type==='road');
+ assert.equal(road.mainlandCrossing,'to_island');
+ assert.deepEqual(road.via,[router.ONOMICHI_BRIDGE_ROAD_ANCHOR]);
+ assert.equal(stages.filter(x=>x.type==='road').length,7);
 });
 
 test('52m road snap for a USER point is allowed without inventing an off-road GPX connector',()=>{
