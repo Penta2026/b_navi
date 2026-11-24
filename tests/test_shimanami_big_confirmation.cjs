@@ -85,6 +85,9 @@ test('B_Navi dialog requires explicit confirmation; offline restore remembers th
  for(const id of ['shimanami-big-confirm-dialog','shimanami-big-confirm-close','shimanami-big-confirm-normal','shimanami-big-confirm-accept'])
   assert.ok(html.includes('id="'+id+'"'),id);
  assert.match(html,/島を渡る区間だけ高速・有料道路/);
+ assert.ok(html.indexOf('./route-tuning.js')<html.indexOf('./shimanami-big-router.js'));
+ assert.ok(html.indexOf('./public-brouter-client.js')<html.indexOf('./shimanami-big-router.js'));
+ assert.ok(html.indexOf('./shimanami-big-router.js')<html.indexOf('./app.js'));
  assert.match(app,/const choice=await askBigDecision\(\)/);
  assert.match(app,/if\(choice==='cross'\)\{await calculateBigShimanami/);
  assert.match(app,/state\.shimanamiBigMode=data\.shimanamiBigMode===true/);
