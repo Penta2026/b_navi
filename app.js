@@ -851,15 +851,16 @@ async function rerouteFromGps(){
    const big=cross?await queryBigShimanami(points,state.activeRoutingMode??1,state.activeRouteTuning,routePlanVersion):null;
    const r=big?{track:big.track,gpx:big.gpx}:
     await BNaviPublicBrouter.query(points,state.activeRoutingVehicle??$('vehicle').value,
-      state.shimanamiBigMode&&state.activeRoutingMode===3?1:state.activeRoutingMode??1,fetch,null,state.activeRouteTuning);
+      state.shimanamiBigMode&&state.activeRoutingMode===3?1:state.activeRoutingMode??1,fetch,null,state.activeRouteTuning,
+      state.manualDetour&&!state.shimanamiBigMode?{nogos:[state.manualDetour]}:null);
    if(points.length>2){
     const missed=points.slice(1,-1).map((p,i)=>({n:i+1,d:BNaviRideLogic.distanceToPolyline(p,r.track.points)})).filter(v=>v.d>300);
     if(missed.length)throw Error('リルートで経由地を通れません。残りの中継地点を維持します。');
    }
    if(!state.navActive)return;
-   const keepBig=state.shimanamiBigMode;
+   const keepBig=state.shimanamiBigMode,keepDetour=state.manualDetour;
    routeView('normal',[{type:'road',points:r.track.points,color:'#06799b',width:5,label:'リルート済み道路経路',gpx:r.gpx}],r.gpx,'GPS現在地から再探索しました。',{keepView:true});
-   state.shimanamiBigMode=keepBig;
+   state.shimanamiBigMode=keepBig;state.manualDetour=keepDetour;
    if(keepBig)$('route-label').textContent='しまなみ島渡り';
   }else{
    const {response,text}=await postApi('route',points);
