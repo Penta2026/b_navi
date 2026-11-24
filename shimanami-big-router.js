@@ -12,7 +12,7 @@
  const brouter=root.BNaviPublicBrouter||(typeof require==='function'?require('./public-brouter-client.js'):null);
  const BRIDGE_RADIUS_METERS=1500,JOIN_GAP_METERS=30;
  const valid=points=>Array.isArray(points)&&points.length>=2&&points.length<=52&&
-   points.every(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite)&&islands.inArea(p));
+   points.every(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite)&&p[0]>=20&&p[0]<=46&&p[1]>=122&&p[1]<=154);
  function bridgeIndices(a,b){
   if(!Number.isInteger(a)||!Number.isInteger(b))return [];
   const out=[];for(let i=Math.max(0,Math.min(a,b));i<Math.max(a,b);i++)out.push(i);
@@ -20,8 +20,14 @@
  }
  function plan(points,vehicle=2){
   if(Number(vehicle)!==2||!valid(points))return null;
-  const groups=points.map(islands.region);
-  const legs=groups.slice(1).map((r,i)=>({index:i+1,from:groups[i],to:r,bridges:bridgeIndices(groups[i],r)}));
+  const groups=points.map(p=>islands.journeyRegion(p));
+  const local=r=>Number.isInteger(r)&&r>=0&&r<=6;
+  const endpoint=r=>r===-1?0:r===7?6:r;
+  const legs=groups.slice(1).map((r,i)=>{
+   const from=groups[i],to=r;
+   const crossing=from!==to&&(local(from)||local(to))&&from!==null&&to!==null;
+   return {index:i+1,from,to,bridges:crossing?bridgeIndices(endpoint(from),endpoint(to)):[]};
+  });
   return {legs,bridgeCount:legs.reduce((a,l)=>a+l.bridges.length,0)};
  }
  function potential(points,vehicle=2){const p=plan(points,vehicle);return Boolean(p&&p.bridgeCount);}
