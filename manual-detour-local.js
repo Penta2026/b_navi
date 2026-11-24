@@ -80,7 +80,27 @@
   const suffix=oldTrack.slice(index);
   if(manual.distanceToPolyline(avoid.point,suffix)<avoid.radius+10)
    throw Error('合流後の元ルートが回避エリアを通るため、安全に接続できません');
-  return {avoid,index,original:oldTrack,origin:position.slice(),rejoin:rejoin.slice(),group,bridgeAfter};
+  return {avoid,index,startIndex,original:oldTrack,origin:position.slice(),rejoin:rejoin.slice(),group,bridgeAfter};
+ }
+ function validateGeneralRoad(prepared,track){
+  if(!prepared||!Array.isArray(track?.points)||track.points.length<2||
+     !stageAllowed(track.points,prepared.group))
+   throw Error('一般道の道路区間を確認できません');
+  if(manual.meters(track.points[0],prepared.origin)>20||
+     manual.meters(track.points.at(-1),prepared.rejoin)>MAX_JOIN_GAP_METERS)
+   throw Error('一般道の再探索では現在地と元ルートに正確に接続できません');
+  const baseline=prepared.original.slice(prepared.startIndex+1,prepared.index+1);
+  // The non-motorway BRouter profile must reproduce the actual original
+  // stretch closely, not merely a frontage road with similar endpoints.
+  if(!baseline.length||baseline.some(p=>manual.distanceToPolyline(p,track.points)>25))
+   throw Error('この区間は元の道路を一般道として確認できません。高速・専用道路の可能性があるため迂回を停止しました');
+  let candidateLength=0,oldLength=0;
+  for(let i=1;i<track.points.length;i++)candidateLength+=manual.meters(track.points[i-1],track.points[i]);
+  for(let i=Math.max(1,prepared.startIndex+1);i<=prepared.index;i++)
+   oldLength+=manual.meters(prepared.original[i-1],prepared.original[i]);
+  if(candidateLength>oldLength*1.45+120)
+   throw Error('一般道で元の道路区間を再現できません。高速・専用道路の可能性があるため迂回を停止しました');
+  return true;
  }
  function merge(prepared,track,originalCues=[]){
   if(!prepared||!Array.isArray(track?.points)||track.points.length<2||
@@ -111,5 +131,5 @@
    throw Error('迂回した道路が回避範囲へ侵入しています');
   return {points,cues,joinGapMeters:gap,avoid:prepared.avoid,rejoin:prepared.rejoin};
  }
- return Object.freeze({prepare,merge,closestProgress,region,stageAllowed,REJOIN_AHEAD_METERS,MIN_SUFFIX_METERS,MIN_BRIDGE_BUFFER_METERS,MAX_JOIN_GAP_METERS});
+ return Object.freeze({prepare,merge,validateGeneralRoad,closestProgress,region,stageAllowed,REJOIN_AHEAD_METERS,MIN_SUFFIX_METERS,MIN_BRIDGE_BUFFER_METERS,MAX_JOIN_GAP_METERS});
 });
