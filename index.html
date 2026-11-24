@@ -185,5 +185,14 @@
 </div>
 <div id="radar-screen" hidden><div class="radar-top"><strong>📡 目的地レーダー</strong><button type="button" id="radar-exit">🔈 音声案内へ戻る</button></div><canvas id="radar-canvas" aria-label="目的地までの方向と距離" role="img"></canvas><div id="radar-readout" aria-live="polite">GPSを取得中…</div><small class="radar-note">レーダーは目的地への直線距離を表示。通常の音声案内に戻すと右左折案内が再開します。</small></div>
 <div id="ride-pill" hidden>🏍 フリー走行中 <button type="button" id="ride-stop">終了・GPX保存へ</button></div>
+<dialog id="route-clear-confirm-dialog" class="route-clear-confirm-dialog" aria-labelledby="route-clear-confirm-title" aria-describedby="route-clear-confirm-description">
+ <h2 id="route-clear-confirm-title">↺ ルートをクリアする？</h2>
+ <p id="route-clear-confirm-description">出発地・目的地・経由地と、現在の計算結果をすべてクリアするよ。</p>
+ <p class="route-clear-confirm-preserve">排気量・走り方の設定、保存済みのマイルート、走行記録、地図データは消えません。</p>
+ <div class="route-clear-confirm-actions">
+  <button type="button" id="route-clear-dialog-cancel" class="secondary">キャンセル</button>
+  <button type="button" id="route-clear-dialog-confirm" class="route-clear-confirm-accept">クリアする</button>
+ </div>
+</dialog>
 <dialog id="next-destination-dialog" aria-labelledby="next-destination-title" class="next-destination-dialog"><h2 id="next-destination-title">経由地に到着しました</h2><p id="next-destination-message">次の目的地を案内しますか？</p><div class="next-destination-actions"><button type="button" id="next-destination-stop">案内を終了</button><button type="button" class="primary" id="next-destination-continue">次の目的地へ</button></div></dialog>
 <script src="./track-recorder.js" defer></script><script src="./ride-logic.js" defer></script><script src="./navigation-heading.js" defer></script><script src="./map-core.js" defer></script><script src="./android-approaches.js" defer></script><script src="./shimanami-geometry.js" defer></script><script src="./shimanami-bridge-references.js" defer></script><script src="./shimanami-web-router.js" defer></script><script src="./offline-route-store.js" defer></script><script src="./route-tuning.js" defer></script><script src="./route-presets.js" defer></script><script src="./my-route-library.js" defer></script><script src="./public-brouter-client.js" defer></script><script src="./voice-settings.js" defer></script><script src="./app.js" defer></script><script src="./place-search-core.js" defer></script><script src="./openpoi-search.js" defer></script><script src="./poi-search-merge.js" defer></script><script src="./station-search.js" defer></script><script src="./address-search.js" defer></script><script src="./michinotochu-spot-search.js" defer></script><script src="./mobile-ui.js" defer></script><script src="./ride-radar.js" defer></script><script src="./gpx-itinerary-core.js" defer></script><script src="./gpx-transfer.js" defer></script><script type="module" src="./offline-map-bridge.mjs"></script><script type="module" src="./offline-map-download.mjs"></script></body></html>
