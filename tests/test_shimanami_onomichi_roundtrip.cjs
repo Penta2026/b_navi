@@ -71,7 +71,7 @@ test('ordinary R317 crossing is NOT forced for a purely mainland local road pair
 test('old bridge reference data remain untouched, with no ferry or motorway GPX fabrication',()=>{
  const source=fs.readFileSync('shimanami-web-router.js','utf8');
  assert.match(source,/ONOMICHI_BRIDGE_ROAD_ANCHOR=/);
- assert.match(source,/new.*ROAD.*never/mi);
+ assert.match(source,/It never becomes a fabricated drivable GPX line/);
  assert.match(source,/MAX_BRIDGE_SEAM_METERS=25/);
  assert.match(source,/MAX_USER_WAYPOINT_SNAP_METERS=80/);
  assert.match(source,/stage\.via\?\[stage\.from,\.\.\.stage\.via,stage\.to\]/);
