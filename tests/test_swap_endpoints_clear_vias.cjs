@@ -73,7 +73,7 @@ test('failure removing temporary autosave is reported and does not roll back swa
  const h=harness({fail:true});
  assert.equal(await h.ctx.swap(),true);
  assert.equal(h.fields.start.value,'34.0,133.0');
- assert.deepEqual(h.state.via,[]);
+ assert.equal(h.state.via.length,0);
  assert.equal(h.fields.calculate.disabled,false);
  assert.ok(h.log.some(x=>x[0]==='message'&&x[2]===true&&x[1].includes('db busy')));
 });
