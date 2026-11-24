@@ -222,10 +222,74 @@ function unlockShimanamiBigRoads(src,options,vehicle){
  }
  return out;
 }
+// Kinematic fasttravel BRF differs from the normal motorcycle profiles.
+// Keep original motorway/toll access and speed model; alter SOFT road costs only.
+// estimated_river_class is a WATER proxy, not actual sea visibility.
+function tuneFastTravelPreferences(base,prefs,vehicle){
+ if(Number(vehicle)!==2||!base.includes('---model:btools.router.KinematicModel')||
+    !base.includes('assign fasttravel_road_penalty ='))
+  throw Error('ファストトラベル専用の道路プロファイルを確認できません');
+ const p=normalizePreferences(prefs);
+ if(p.view==='normal'&&p.ride==='normal'&&!p.backroad&&!p.coast)return base;
+ let out='# B_Navi fasttravel additive preferences: '+preferenceKey(p)+' (no motorway/toll access changes)\n'+base;
+ const delta={trunk:0,primary:0,secondary:0,tertiary:0,unclassified:0,residential:0};
+ const add=obj=>{for(const [key,value] of Object.entries(obj))delta[key]+=value;};
+ if(p.backroad)add({trunk:.12,primary:.10,secondary:-.04,tertiary:-.12,unclassified:-.14,residential:.12});
+ if(p.ride==='cruise')add({primary:-.025,secondary:.01,tertiary:.055,unclassified:.12,residential:.25});
+ if(p.ride==='efficient')add({trunk:-.025,primary:-.025,tertiary:.065,unclassified:.09,residential:.16});
+ if(p.view==='distance')add({secondary:-.025,tertiary:-.07,unclassified:-.10,residential:-.06});
+ if(p.view==='scenic')add({secondary:-.015,tertiary:-.025,unclassified:-.025});
+ const anchors={
+  trunk:['trunk|trunk_link','0.05'],
+  primary:['primary|primary_link','0.18'],
+  secondary:['secondary|secondary_link','0.25'],
+  tertiary:['tertiary|tertiary_link','0.38'],
+  unclassified:['unclassified','0.55'],
+  residential:['residential|living_street','1.1']
+ };
+ for(const [key,[names,number]] of Object.entries(anchors)){
+  const original='  switch highway='+names+' '+number;
+  if(out.split(original).length!==2)throw Error('高速優先の道路係数が一致しません：'+key);
+  out=out.replace(original,'  switch highway='+names+' '+
+   Math.max(0,Number(number)+delta[key]).toFixed(3));
+ }
+ const bias=[];
+ if(p.coast)bias.push({name:'fasttravel_water_hint_bias',src:
+  'assign fasttravel_water_hint_bias =\n'+
+  '  switch estimated_river_class=6 0\n'+
+  '  switch estimated_river_class=5 0.035\n'+
+  '  switch estimated_river_class=4 0.105\n'+
+  '  switch estimated_river_class=3 0.175\n'+
+  '  0.260\n\n'});
+ if(p.view==='scenic')bias.push({name:'fasttravel_green_hint_bias',src:
+  'assign fasttravel_green_hint_bias =\n'+
+  '  switch estimated_forest_class=6 0\n'+
+  '  switch estimated_forest_class=5 0.030\n'+
+  '  switch estimated_forest_class=4 0.080\n'+
+  '  switch estimated_forest_class=3 0.120\n'+
+  '  0.180\n\n'});
+ if(bias.length){
+  const anchor='assign fasttravel_road_penalty =',cost='  add fasttravel_road_penalty\n  add town_penalty';
+  if(out.split(anchor).length!==2||out.split(cost).length!==2)
+   throw Error('高速優先の水辺・景観評価を安全に追加できません');
+  out=out.replace(anchor,bias.map(b=>b.src).join('')+anchor);
+  out=out.replace(cost,'  add fasttravel_road_penalty\n'+
+   bias.map(b=>'  add '+b.name+'\n').join('')+'  add town_penalty');
+ }
+ if(!out.includes('  switch highway=motorway|motorway_link 0')||
+    !out.includes('assign avoid_toll          = false')||
+    !out.includes('assign avoid_motorways     = false'))
+  throw Error('高速・有料道路の既存条件が変わっているため停止しました');
+ return out;
+}
+
 function tuneProfile(base,raw,vehicle,mode=1){
  if(typeof base!=='string'||!base.includes('---context:way')||!base.includes('---context:node'))throw Error('基本BRFファイルが不正です');
  const v=normalize(raw,vehicle);
- if(v.preferences)return unlockShimanamiBigRoads(tunePreferences(base,v.preferences,vehicle,mode),v,vehicle);
+ if(v.preferences){
+  if(Number(mode)===3)return tuneFastTravelPreferences(base,v.preferences,vehicle);
+  return unlockShimanamiBigRoads(tunePreferences(base,v.preferences,vehicle,mode),v,vehicle);
+ }
  if(v.style)return tuneStyle(base,v.style); // independent of the legacy three sliders
  if(isDefault(v,vehicle))return base; // exact, byte-identical general route at the centre.
  const header='# B_Navi route-tuning v1: '+key(v,vehicle)+' (approximate OSM preferences; legal gates unchanged except explicit 126cc options)\n';
@@ -297,7 +361,7 @@ function tuneProfile(base,raw,vehicle,mode=1){
  if(!/max 1\.01/.test(out))throw Error('基本BRFのコスト下限ガードが見つかりません');
  return out;
 }
-const api={DEFAULT,LIMIT,STEP,STYLE_SPECS,PREFERENCE_CHOICES,SIGNAL_TRIAL_COST,BACKROAD_BIAS,normalizePreferences,normalize,isDefault,key,tuneProfile};
+const api={DEFAULT,LIMIT,STEP,STYLE_SPECS,PREFERENCE_CHOICES,SIGNAL_TRIAL_COST,BACKROAD_BIAS,normalizePreferences,normalize,isDefault,key,tuneFastTravelPreferences,tuneProfile};
 root.BNaviRouteTuning=api;
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof window==='undefined'?globalThis:window);
