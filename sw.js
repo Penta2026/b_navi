@@ -1,5 +1,5 @@
 /* Cache only local static app-shell files, NEVER .rd5, routes, or map tiles. */
-const CACHE='bnavi-pc-pwa-20261124-swap-handler-once-v2';
+const CACHE='bnavi-pc-pwa-20261124-swap-stale-guard-v3';
 const FILES=['./','./index.html','./style.css','./app.js','./ride-logic.js','./navigation-heading.js','./voice-settings.js','./route-tuning.js','./route-presets.js','./my-route-library.js','./offline-map-download.mjs','./offline-map-bridge.mjs','./offline-map-layer.mjs','./offline-region-mosaic.mjs','./public-brouter-client.js','./offline-route-store.js','./place-search-core.js','./openpoi-search.js','./poi-search-merge.js','./station-search.js','./michinotochu-spot-search.js','./data/michinotochu_spots.json','./data/jr_stations.json','./address-search.js','./mobile-ui.js','./gpx-itinerary-core.js','./gpx-transfer.js','./ride-radar.js','./track-recorder.js','./android-approaches.js','./shimanami-geometry.js','./shimanami-bridge-references.js','./shimanami-web-router.js','./shimanami-big-router.js','./map-core.js','./icon.svg','./icon-192.png','./icon-512.png','./manifest.webmanifest'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('bnavi-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
@@ -35,4 +35,8 @@ self.addEventListener('fetch',e=>{
    return;
  }
  if(e.request.method!=='GET'||u.origin!==self.location.origin||u.pathname.includes('/api/')||u.pathname.endsWith('.rd5'))return;
- e.respondWith(fetch(e.request).then(r=>{if(r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));}return r;}).catch(()=>caches.match(e.request)));});
+ // App shell scripts and HTML must not be served from an outdated browser HTTP cache.
+ // Keep CacheStorage offline fallback, but force a fresh network validation when online.
+ const appShell=/\\.(?:html|css|js|mjs)$/i.test(u.pathname)||u.pathname.endsWith('/b_navi/');
+ const fresh=appShell?new Request(e.request,{cache:'no-store'}):e.request;
+ e.respondWith(fetch(fresh).then(r=>{if(r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));}return r;}).catch(()=>caches.match(e.request)));});
