@@ -340,6 +340,11 @@ body.navigation-active #track-panel,body.free-ride-active #track-panel{display:n
 /* Base mode + independently composable preferences (not a fourth route mode). */
 .route-preferences{display:grid;gap:11px;margin:10px 0 12px;padding:11px;border:1px solid #b7d3da;border-radius:12px;background:#f5fafb;color:#214c60;min-width:0}
 .route-preferences[hidden]{display:none!important}
+.route-preference-body{display:grid;gap:11px;min-width:0}
+.route-preference-body[hidden],.route-preference-collapsed-summary[hidden]{display:none!important}
+.route-preferences .route-preference-toggle{width:100%;min-height:38px;padding:8px;border:1px solid #b7d3da;background:#fff;color:#0b657b;border-radius:9px;font-weight:800;font-size:12px;cursor:pointer}
+.route-preferences .route-preference-toggle:focus-visible{outline:3px solid #1f8ca8;outline-offset:2px}
+.route-preference-collapsed-summary{margin:0;font-size:11px;line-height:1.5;color:#315d70;overflow-wrap:anywhere}
 .route-preferences legend{padding:0 5px;font-size:13px;font-weight:800}
 .route-preferences legend small{font-size:10px;font-weight:400;color:#67818c}
 .route-preference-group{display:grid;gap:6px;min-width:0}

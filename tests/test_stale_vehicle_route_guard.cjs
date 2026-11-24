@@ -55,5 +55,5 @@ test('offline startup checks saved profile before display and explains a restore
  assert.match(app,/if\(state\.routeType==='shimanami'&&Number\(\$\('vehicle'\)\.value\)===2\)/);
  assert.match(app,/state\.shimanamiBigMode=keepBig/);
  const sw=read('sw.js');
- assert.match(sw,/bnavi-pc-pwa-20261124-coast-backroad-v1/);
+ assert.match(sw,/bnavi-pc-pwa-20261124-mainland-options-toggle-v1/);
 });
