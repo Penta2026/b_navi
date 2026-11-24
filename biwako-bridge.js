@@ -42,6 +42,22 @@
   const copy=points.map(p=>p.slice());copy.splice(insert,0,CENTER.slice());
   return {points:copy,inserted:true,index:insert,center:CENTER.slice(),extraMeters:Math.round(best)};
  }
+ // Conservative geographic pre-check only; it never claims road connectivity.
+ // The selected bridge route is subsequently computed and verified by BRouter.
+ function potential(points){
+  if(!Array.isArray(points)||points.length<2||!points.every(valid))return false;
+  for(let i=1;i<points.length;i++){
+   const a=points[i-1],b=points[i];
+   const west=a[1]<135.925? a : b[1]<135.925?b:null;
+   const east=a[1]>135.946? a : b[1]>135.946?b:null;
+   if(!west||!east)continue;
+   if(meters(a,b)<6000||meters(a,CENTER)>75000||meters(b,CENTER)>75000)continue;
+   const extra=meters(a,CENTER)+meters(CENTER,b)-meters(a,b);
+   if(extra>18000||proximity(CENTER,[a,b])>22000)continue;
+   return true;
+  }
+  return false;
+ }
  function verify(track){
   if(!Array.isArray(track)||track.length<2||track.length>100000||!track.every(valid))
    throw Error('琵琶湖大橋の道路経路を確認できません');
@@ -67,5 +83,5 @@
   // If GPS is not trustworthy against this polyline, keep the bridge waypoint.
   return closest>250||index<=bridgeIdx+1;
  }
- return Object.freeze({CENTER,meters,proximity,plan,verify,isAhead});
+ return Object.freeze({CENTER,meters,proximity,potential,plan,verify,isAhead});
 });
