@@ -40,7 +40,8 @@
  $('sheet-handle').onclick=()=>toggleSheet(!sheet.classList.contains('sheet-open'));
  $('mobile-search').onclick=()=>showPlaces('search');$('mobile-faves').onclick=()=>showPlaces('favorites');$('open-search').onclick=()=>showPlaces('search');$('open-favorites').onclick=()=>showPlaces('favorites');
  $('go-location').onclick=()=>{startGps();toggleSheet(false)};
- $('swap-endpoints').onclick=()=>{const a=$('start').value;$('start').value=$('goal').value;$('goal').value=a;state.via.reverse();renderVia();refreshMap();fitMarkers();persist();updatePointSummaries();setMessage('出発地と目的地を交換したよ。経由地も逆順にしたよ。')};
+ // Endpoint reversal belongs exclusively to the app.js handler.
+ // Registering a second onclick here swaps the two fields back.
  $('place-dialog-close').onclick=closePlaces;$('place-action-close').onclick=()=>$('place-action-dialog').close();
  placeDialog.addEventListener('close',syncToolbar);
  function safeShowModal(dialog){if(!dialog)return;try{if(dialog.open)dialog.close();dialog.showModal()}catch{dialog.setAttribute('open','open')}}
