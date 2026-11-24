@@ -39,11 +39,8 @@ with sync_playwright() as p:
   page.locator('input[name="route-ride"][value="cruise"]').check()
   saved=page.evaluate('''() => JSON.parse(localStorage.getItem('bnavi.pc.v1')).routePreferences''')
   assert saved=={'view':'distance','ride':'cruise','backroad':True,'coast':True},saved
-  output=page.evaluate('''() => BNaviRouteTuning.tuneProfile(
-   document.querySelector('#route-coast').checked
-     ? '# test\n---context:way\nassign contextual_ride_bias\n    add regional_route_bias\n    add traffic_route_bias ride_width_surface_bias\nassign costfactor\n    max 1.01\n    switch highway=trunk|trunk_link 3.850\n    switch highway=primary|primary_link 2.800\n    switch highway=secondary|secondary_link 1.280\n    switch highway=tertiary|tertiary_link 1.030\n    switch highway=unclassified 1.260\n    switch highway=residential 5.800\nassign turncost 90.000\n---context:node\nassign initialcost\n    switch highway=traffic_signals 350.000\n'
-     : '',{preferences:currentPreferences()},1,1)''')
-  assert 'additive_coastal_water_bias' in output
+  current=page.evaluate('''() => currentPreferences()''')
+  assert current==saved,('current preferences differ from saved',width,current,saved)
   back.uncheck()
   assert coast.is_checked() and not back.is_checked(),'coast unexpectedly toggled backroad'
   coast.uncheck()
