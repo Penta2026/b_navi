@@ -12,7 +12,8 @@ core.el.insertBefore(background,core.tiles);
 const style={version:8,sources:{},layers:[{id:'plain-background',type:'background',paint:{'background-color':'#f7f5f0'}}]};
 const vectorMap=new maplibregl.Map({
  container:background,style,interactive:false,
- center:[core.lon,core.lat],zoom:Math.max(0,core.zoom-1),bearing:core.bearing,
+ // CSS overlays rotate clockwise by core.bearing; MapLibre camera bearing is the opposite sign.
+ center:[core.lon,core.lat],zoom:Math.max(0,core.zoom-1),bearing:-core.bearing,
  attributionControl:false,pitchWithRotate:false,dragRotate:false,renderWorldCopies:false
 });
 window.__bikeMap=vectorMap;
@@ -24,7 +25,7 @@ function sync(){
  const key=[core.lat.toFixed(6),core.lon.toFixed(6),core.zoom,core.bearing.toFixed(2)].join(':');
  if(key!==previous){
   previous=key;
-  vectorMap.jumpTo({center:[core.lon,core.lat],zoom:Math.max(0,core.zoom-1),bearing:core.bearing});
+  vectorMap.jumpTo({center:[core.lon,core.lat],zoom:Math.max(0,core.zoom-1),bearing:-core.bearing});
  }
 }
 window.__bnaviMapBridge={sync,refresh:()=>window.dispatchEvent(new Event('bnavi:offline-maps-changed'))};
