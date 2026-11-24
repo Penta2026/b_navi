@@ -34,7 +34,12 @@ test('visible route exchange sits between start and goal, with a clear waypoints
  assert.equal((html.match(/id="swap-endpoints"/g)||[]).length,1);
  assert.match(html,/aria-label="出発地と目的地を交換し、経由地をすべてクリア"/);
  assert.match(app,/\$\('swap-endpoints'\)\.addEventListener\('click'/);
- assert.match(read('sw.js'),/bnavi-pc-pwa-20261124-swap-clears-vias-v1/);
+ const mobile=read('mobile-ui.js');
+ // Both source files are loaded by the browser; swap must be owned by app.js alone.
+ assert.doesNotMatch(mobile,/\$\('swap-endpoints'\)\.onclick\s*=/);
+ assert.doesNotMatch(mobile,/\$\('swap-endpoints'\)\.addEventListener\(/);
+ assert.equal((app.match(/\$\('swap-endpoints'\)\.addEventListener\('click'/g)||[]).length,1);
+ assert.match(read('sw.js'),/bnavi-pc-pwa-20261124-swap-handler-once-v2/);
 });
 test('one click exchanges only start and goal, clears all vias, invalidates route and preserves choice settings',async()=>{
  const h=harness({active:true});
