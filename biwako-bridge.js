@@ -48,9 +48,10 @@
   // Endpoint snap alone is not proof of a bridge crossing. It must touch the
   // centre AND reach both shores within the known short approach corridor.
   const d=proximity(CENTER,track);
+  const actualBridgeNode=track.some(p=>meters(p,CENTER)<120);
   const west=track.some(p=>p[1]<135.925&&p[0]>35.090&&p[0]<35.155);
   const east=track.some(p=>p[1]>135.946&&p[0]>35.090&&p[0]<35.155);
-  if(d>150||!west||!east)
+  if(track.length<4||!actualBridgeNode||d>150||!west||!east)
    throw Error('公開BRouterの経路が琵琶湖大橋を横断したと確認できません。元の道路に直線を足すことはしません');
   return {distanceMeters:Math.round(d)};
  }
