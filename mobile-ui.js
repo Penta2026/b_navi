@@ -89,6 +89,7 @@
  const mergeCore=window.BNaviPoiSearchMerge;
  const openPoiCore=window.BNaviOpenPoiSearch;
  const registeredCore=window.BNaviMichinoSpotSearch;
+ const officeCore=window.BNaviVerifiedOffices;
  let registeredIndexPromise=null;
  function registeredIndex(){
    if(!registeredIndexPromise){
@@ -106,7 +107,73 @@
    const data=await registeredIndex();
    return registeredCore.rank(data,q,{group:$('registered-category').value,limit:24});
  }
- function showGroupedResults(localRows,onlineRows,el,{preview=false,related=false}={}){
+ let officeIndexPromise=null;
+ function officeIndex(){
+   if(!officeIndexPromise)officeIndexPromise=fetch('./data/verified-offices.json',{cache:'force-cache'})
+     .then(async response=>{if(!response.ok)throw Error('事業所リスト HTTP '+response.status);
+       const data=await response.json();
+       if(data.version!==1||!Array.isArray(data.offices))throw Error('事業所リストの形式が違います');
+       return data.offices;})
+     .catch(error=>{officeIndexPromise=null;throw error});
+   return officeIndexPromise;
+ }
+ async function searchVerifiedOffices(query){
+   if(!officeCore)return [];
+   return officeCore.rank(await officeIndex(),query);
+ }
+ async function locateOffice(office,button){
+   if(button.disabled)return;
+   button.disabled=true;const label=button.textContent;button.textContent='住所から位置を確認中…';
+   try{
+     if(navigator.onLine===false)throw Error('住所から位置を調べるには通信が必要だよ');
+     const url=addressCore.makeGSIUrl(office.address);
+     const r=await fetch(url,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(12000)});
+     if(!r.ok)throw Error('住所検索 HTTP '+r.status);
+     let matches=addressCore.rank(addressCore.fromGSI(await r.json()),office.address);
+     if(!matches.length){
+       const u='https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=jp&accept-language=ja&limit=5&q='+encodeURIComponent(office.address);
+       const response=await fetch(u,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(12000)});
+       if(response.ok)matches=addressCore.rank(addressCore.fromNominatim(await response.json()),office.address);
+     }
+     if(!matches.length)throw Error('この住所の座標は確認できませんでした');
+     const section=document.createElement('div');section.className='verified-office-geocodes';
+     const title=document.createElement('p');title.className='search-summary';
+     title.textContent=office.name+'：住所から見つかった位置候補（'+matches.length+'件）';
+     section.append(title);
+     const warning=document.createElement('p');warning.className='smallprint';
+     warning.textContent='住所の代表位置だよ。建物・敷地中心や20m以内の精度は保証できません。地図を確認して選んでね。';
+     section.append(warning);
+     for(const match of matches.slice(0,5))
+       showSearchResult({...match,name:office.name,address:office.address+' / 位置候補: '+match.address,source:match.source},section,'address');
+     button.closest('.verified-office-entry')?.after(section);
+     button.textContent='位置候補を表示したよ';
+   }catch(error){
+     button.textContent=label;
+     if(!button.parentElement.querySelector('.verified-office-fallback')){
+       const link=document.createElement('a');link.className='verified-office-fallback';
+       link.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(office.address);
+       link.target='_blank';link.rel='noopener noreferrer';link.textContent='地図で住所を検索';
+       button.parentElement.append(link);
+     }
+   }finally{button.disabled=false;}
+ }
+ function renderVerifiedOffices(rows,el){
+   if(!rows.length)return 0;
+   const header=document.createElement('p');header.className='search-summary';
+   header.textContent='公式所在地を確認した事業所 '+rows.length+'件';el.append(header);
+   for(const office of rows){
+     const box=document.createElement('div');box.className='place-result verified-office-entry';
+     const name=document.createElement('strong');name.textContent=office.name;
+     const address=document.createElement('small');address.textContent=office.address+'（公式住所・位置は未確定）';
+     const button=document.createElement('button');button.type='button';button.textContent='住所から位置を探す';
+     button.addEventListener('click',()=>locateOffice(office,button));
+     const source=document.createElement('a');source.href=office.sourceUrl;source.target='_blank';
+     source.rel='noopener noreferrer';source.textContent='公式所在地の出典';
+     box.append(name,address,button,source);el.append(box);
+   }
+   return rows.length;
+ }
+ function showGroupedResults(localRows,onlineRows,el,{preview=false,related=false,offices=[]}={}){
    const listed=Array.isArray(localRows)?localRows:[];
    const outsiders=registeredCore?.distinctExternal(listed,onlineRows)||onlineRows||[];
    el.replaceChildren();
@@ -117,8 +184,9 @@
      for(const row of rows)showSearchResult(row,el,kind);
    };
    section(preview?'「道の途中。」入力候補 ':'「道の途中。」登録スポット ',listed,'michino');
+   renderVerifiedOffices(offices,el);
    section(related?'外部の関連候補 ':preview?'外部の入力候補 ':'外部検索 ',outsiders,'place');
-   return listed.length+outsiders.length;
+   return listed.length+outsiders.length+offices.length;
  }
  let suggestionTimer=null,suggestionController=null,suggestionSerial=0;
  let previewLocal=[],previewRemote=[];
@@ -294,11 +362,12 @@
         catch(err){/* Fall back to online geocoders when local data cannot load. */}
       }
      // Offline registered spots are always searched FIRST; no network calls.
-     let localRows=[],localLoadError=null;
+     let localRows=[],localLoadError=null,officeRows=[];
+     try{officeRows=await searchVerifiedOffices(q)}catch(err){/* Verified branch directory remains optional. */}
      try{localRows=await searchRegistered(q)}catch(err){localLoadError=err}
-     if(localRows.length)showGroupedResults(localRows,[],el);
+     if(localRows.length||officeRows.length)showGroupedResults(localRows,[],el,{offices:officeRows});
      if(navigator.onLine===false){
-       if(!localRows.length){
+       if(!localRows.length&&!officeRows.length){
          el.replaceChildren();
          const note=document.createElement('p');note.className='search-no-match';
          note.textContent=localLoadError?'登録地点データが読み込めません。Wi-FiでPWAを更新してね。':
@@ -307,7 +376,7 @@
        }
        return;
      }
-     if(!localRows.length)el.textContent='外部の施設データも検索中…';
+     if(!localRows.length&&!officeRows.length)el.textContent='外部の施設データも検索中…';
      // Do not stop when OpenPOI finds one branch: another provider may know HQ.
       const parsed=searchCore.parts(q),cat=searchCore.category(q);
       const tasks=[
@@ -353,7 +422,7 @@
         catch(err){/* Retain online results if station index fails. */}
       }
       const suggestions=results.length?[]:searchCore.related(candidates,q,results);
-      const showed=showGroupedResults(localRows,results.length?results:suggestions,el,{related:!results.length});
+      const showed=showGroupedResults(localRows,results.length?results:suggestions,el,{related:!results.length,offices:officeRows});
       if(!showed){
         const p=document.createElement('p');p.className='search-no-match';
         p.textContent=localLoadError&&providerSuccesses===0?
