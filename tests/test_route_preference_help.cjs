@@ -1,0 +1,65 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
+
+test('info symbol beside routing options opens an accessible help dialog explaining all choices',()=>{
+ const html=read('index.html');
+ assert.match(html,/<legend>🛵 好みのオプション <button[^>]*id="route-preference-help-open"[^>]*>ⓘ<\/button>/);
+ assert.match(html,/id="route-preference-help-open"[^>]*aria-haspopup="dialog"[^>]*aria-controls="route-preference-help-dialog"/);
+ assert.match(html,/<dialog id="route-preference-help-dialog"[^>]*aria-labelledby="route-preference-help-title"/);
+ assert.match(html,/id="route-preference-help-close"[^>]*aria-label="説明を閉じる"/);
+ const body=html.slice(html.indexOf('<dialog id="route-preference-help-dialog"'),html.indexOf('</dialog>',html.indexOf('<dialog id="route-preference-help-dialog"')));
+ for(const heading of ['景色と距離','走り心地','裏道優先','共通のルール'])assert.ok(body.includes(heading),heading);
+ for(const title of ['景観優先','距離優先','快走優先','効率優先','ビギナー','一般','探索'])
+  assert.ok(body.includes('<dt>'+title+'</dt>'),'missing definition '+title);
+ assert.equal((body.match(/<dt>そのまま<\/dt>/g)||[]).length,2);
+ assert.match(body,/森林や川の周辺情報/);
+ assert.match(body,/右左折・狭い道・生活道路/);
+ assert.match(body,/登録されている信号/);
+ assert.match(body,/通行禁止/);
+ assert.match(body,/最短距離を保証する設定ではない/);
+ assert.match(body,/実際の渋滞や走行時間は取得していない/);
+ assert.match(body,/約20％増えても走りやすければ評価する/);
+ assert.match(body,/ファストトラベルは独立したモード/);
+});
+test('help can open and close by icon, × or outside; never changes route preferences',()=>{
+ const js=read('app.js');
+ const a=js.indexOf('function bindRoutePreferenceHelp(){'),b=js.indexOf('function bindCustomRouteUI(){',a);
+ assert.ok(a>0&&b>a,'dedicated help handler must be independent of route selection');
+ const code=js.slice(a,b);
+ assert.doesNotMatch(code,/persist\(|routePreferences\s*=|state\.|routingMode|calculate\(/);
+ assert.match(js,/bindCustomRouteUI\(\);bindRoutePreferenceHelp\(\);/);
+ const events={};
+ const make=id=>({id,addEventListener:(name,fn)=>{events[id+':'+name]=fn;}});
+ const dialog=make('route-preference-help-dialog');
+ dialog.open=false;
+ dialog.showModal=()=>{dialog.open=true;};
+ dialog.close=()=>{dialog.open=false;};
+ dialog.getBoundingClientRect=()=>({left:100,right:400,top:100,bottom:500});
+ const button=make('route-preference-help-open'),close=make('route-preference-help-close');
+ const elements=Object.fromEntries([dialog,button,close].map(el=>[el.id,el]));
+ const ctx={$:id=>elements[id]};
+ vm.runInNewContext(code+'\nthis.bindHelp=bindRoutePreferenceHelp;',ctx);
+ ctx.bindHelp();
+ events['route-preference-help-open:click']();
+ assert.equal(dialog.open,true);
+ events['route-preference-help-dialog:click']({target:dialog,clientX:250,clientY:240});
+ assert.equal(dialog.open,true,'tapping help content does not close');
+ events['route-preference-help-dialog:click']({target:dialog,clientX:30,clientY:10});
+ assert.equal(dialog.open,false,'tapping outside closes help');
+ events['route-preference-help-open:click']();
+ events['route-preference-help-close:click']();
+ assert.equal(dialog.open,false);
+});
+test('help remains legible in mobile PWA and keeps the routing controls unchanged',()=>{
+ const html=read('index.html'),css=read('style.css'),sw=read('sw.js');
+ assert.equal((html.match(/name="route-view"/g)||[]).length,3);
+ assert.equal((html.match(/name="route-ride"/g)||[]).length,3);
+ assert.ok(html.includes('id="route-backroad"'));
+ assert.match(css,/\.route-preference-help-icon:focus-visible/);
+ assert.match(css,/\.route-preference-help-dialog\{/);
+ assert.match(css,/max-height:min\(85dvh,780px\)/);
+ assert.match(css,/grid-template-columns:84px 1fr/);
+ assert.match(sw,/bnavi-pc-pwa-20261124-route-preferences-help-v1/);
+});
