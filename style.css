@@ -420,3 +420,11 @@ body.navigation-active #track-panel,body.free-ride-active #track-panel{display:n
 
 /* Clipboard itinerary handoff: keep the three actions in the requested order. */
 .gpx-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.gpx-actions button{min-width:0;padding:10px 4px;white-space:normal;overflow-wrap:anywhere;font-size:clamp(11px,3.2vw,14px);min-height:44px}.gpx-actions #import-michinotochu{background:#19708a;color:#fff;}
+
+/* Navigation HUD detour control: all other parts remain noninteractive. */
+#navigation-hud .navigation-hud-actions{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:8px}
+#navigation-hud .navigation-hud-actions #nav-detour{pointer-events:auto;touch-action:manipulation;min-height:46px;padding:8px 15px;border:1px solid #ce8038;border-radius:12px;background:#f3a44d;color:#153543;font-size:14px;font-weight:800}
+#navigation-hud .navigation-hud-actions #nav-detour:disabled{opacity:.52;cursor:not-allowed}
+#navigation-hud .navigation-hud-actions #nav-detour:focus-visible{outline:3px solid #09869e;outline-offset:2px}
+#navigation-hud .navigation-hud-actions #nav-detour-note{font-size:11px;line-height:1.3;flex:1;min-width:85px;color:#5c737d}
+@media(max-width:380px){#navigation-hud .navigation-hud-actions #nav-detour{padding:8px 10px}}
