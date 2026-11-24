@@ -54,3 +54,4 @@ jobs:
           python tests/browser_swap_endpoints.py
           python tests/browser_map_point_menu.py
           python tests/browser_manual_detour.py
+          python tests/browser_shimanami_road_detour.py
