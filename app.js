@@ -32,7 +32,7 @@ $('orientation-toggle').addEventListener('click',()=>{setOrientationMode(state.o
 updateOrientationButton();
 
 function setMessage(message,error=false){$('message').textContent=message;$('message').classList.toggle('error',error);}
-function setPick(kind){state.pick=kind;for(const btn of document.querySelectorAll('.pick'))btn.classList.toggle('active',btn.dataset.pick===kind);$('map-hint').textContent='地点を登録するには地図を長押し';}
+function setPick(kind){state.pick=kind;for(const btn of document.querySelectorAll('.pick'))btn.classList.toggle('active',btn.dataset.pick===kind);$('map-hint').textContent='地図を長押しし、表示されたメニューから地点を登録（PCは右クリック）';}
 const placeLabels={};
 function rememberPlaceLabel(coord,name){if(coord&&name){placeLabels[coord]=String(name).slice(0,100);try{localStorage.setItem('bnavi.placeLabels.v1',JSON.stringify(placeLabels))}catch{}}updatePointSummaries();}
 function pointLabel(coord){return placeLabels[coord]||'地図で指定した地点';}

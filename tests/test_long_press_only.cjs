@@ -24,4 +24,5 @@ test('help texts describe long press rather than tap',()=>{
   assert.match(html,/地図の長押しで地点登録/);
   assert.doesNotMatch(html,/地図をクリックで地点指定|地図クリック時の登録先/);
   assert.match(app,/地図を長押しし、表示されたメニューから/);
+  assert.match(html,/PCは右クリック/);
 });
