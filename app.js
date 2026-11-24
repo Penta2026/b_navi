@@ -51,7 +51,7 @@ const RIDE_NAMES=Object.freeze({normal:'そのまま',cruise:'快走優先',effi
 function selectedBaseMode(){const value=Number($('mode').value);return Number.isInteger(value)?value:1;}
 function routingMode(){return customEnabled?1:selectedBaseMode();}
 function currentPreferences(){return BNaviRouteTuning.normalizePreferences(routePreferences);}
-function preferencesActive(){return !customEnabled&&selectedBaseMode()<=2;}
+function preferencesActive(){return !customEnabled&&(selectedBaseMode()<=2||(Number($('vehicle').value)===2&&selectedBaseMode()===3));}
 function updateCustomRouteUI(){
  const panel=$('custom-route-panel'),p=currentPreferences();
  if(panel)panel.hidden=!preferencesActive();
@@ -73,8 +73,9 @@ function updatePolicy(){
  const el=$('route-policy');if(!el)return;
  const mode=selectedBaseMode();
  el.textContent=customEnabled?ROUTE_POLICIES[1]+' 保存済みの詳細設定を適用中。'
-  :ROUTE_POLICIES[mode]+(mode>2?' ファストトラベルは専用ルート設定を使用。'
-  :' 信号回避は全モード共通で強化。＋ '+preferenceSummary()+'。快走できる地域道なら距離約20％増も検討する試験方針（上限・時間短縮の保証なし）。公開BRouter向け。');
+  :ROUTE_POLICIES[mode]+(mode>2
+   ?' 高速・有料優先のまま好みをソフト評価：'+preferenceSummary()+'。海沿いは水辺の推定評価で、海の眺望や高速を降りる地点は保証できません。'
+   :' 信号回避は全モード共通で強化。＋ '+preferenceSummary()+'。快走できる地域道なら距離約20％増も検討する試験方針（上限・時間短縮の保証なし）。公開BRouter向け。');
 }
 function updateModes(){
  const i=Number($('vehicle').value),sel=$('mode'),prev=sel.value;
@@ -485,9 +486,10 @@ async function calculate(){const version=++routePlanVersion;const btn=$('calcula
  const p=currentPreferences();
  const isFast=state.activeRoutingMode===3;
  const nonDefaultOptions=p.view!=='normal'||p.ride!=='normal'||p.backroad||p.coast;
- if(!usePublicBrouter()&&!isFast&&nonDefaultOptions)throw Error('追加オプションは公開BRouterでのみ利用できます。専用Java API接続を解除してね。');
- state.customRouting=customEnabled||(wantsOptions&&usePublicBrouter());
- state.activeRouteTuning=wantsOptions&&usePublicBrouter()
+ if(!usePublicBrouter()&&nonDefaultOptions&&!customEnabled)throw Error('追加オプションは公開BRouterでのみ利用できます。専用Java API接続を解除してね。');
+ const useExtraPreferences=wantsOptions&&usePublicBrouter()&&(!isFast||nonDefaultOptions);
+ state.customRouting=customEnabled||useExtraPreferences;
+ state.activeRouteTuning=useExtraPreferences
    ?BNaviRouteTuning.normalize({preferences:p},state.activeRoutingVehicle)
    :(customEnabled?tuningNow():null);
  persist();
