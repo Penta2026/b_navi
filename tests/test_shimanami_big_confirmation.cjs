@@ -91,3 +91,35 @@ test('B_Navi dialog requires explicit confirmation; offline restore remembers th
  assert.match(app,/bindShimanamiBigDialog\(\);bindPresetUI/);
  assert.match(sw,/'\.\/shimanami-big-router\.js'/);
 });
+
+test('the real dialog handlers open repeatedly, accept, reject and close without duplicate listeners',async()=>{
+ const vm=require('node:vm'),source=read('app.js');
+ const start=source.indexOf('let bigDecisionResolver=null;');
+ const stop=source.indexOf('function needsDedicatedApi(points){',start);
+ assert.ok(start>=0&&stop>start);
+ const handlers={},nodes={};
+ const node=id=>({id,addEventListener(name,fn){handlers[id+':'+name]=fn;}});
+ const dialog=node('shimanami-big-confirm-dialog');
+ dialog.open=false;dialog.showModal=()=>{dialog.open=true;};
+ dialog.close=()=>{dialog.open=false;handlers['shimanami-big-confirm-dialog:close']?.();};
+ nodes[dialog.id]=dialog;
+ for(const id of ['shimanami-big-confirm-accept','shimanami-big-confirm-normal','shimanami-big-confirm-close'])nodes[id]=node(id);
+ const sandbox={$:id=>nodes[id]};
+ vm.runInNewContext(source.slice(start,stop)+'\nthis.bind=bindShimanamiBigDialog;this.ask=askBigDecision;',sandbox);
+ sandbox.bind();
+ const first=sandbox.ask();
+ assert.equal(dialog.open,true);
+ handlers['shimanami-big-confirm-accept:click']();
+ assert.equal(await first,'cross');
+ assert.equal(dialog.open,false);
+ const second=sandbox.ask();
+ handlers['shimanami-big-confirm-normal:click']();
+ assert.equal(await second,'normal');
+ const third=sandbox.ask();
+ handlers['shimanami-big-confirm-close:click']();
+ assert.equal(await third,null);
+ const fourth=sandbox.ask();
+ dialog.close(); // ESC or platform close event
+ assert.equal(await fourth,null);
+ assert.equal(dialog.open,false);
+});
