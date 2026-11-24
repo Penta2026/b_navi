@@ -50,4 +50,6 @@ jobs:
           python -m pip install 'playwright==1.58.0'
           python -m playwright install chromium
       - name: Tap start-goal swap in an actual Chromium browser
-        run: python tests/browser_swap_endpoints.py
+        run: |
+          python tests/browser_swap_endpoints.py
+          python tests/browser_map_point_menu.py

@@ -32,7 +32,7 @@ $('orientation-toggle').addEventListener('click',()=>{setOrientationMode(state.o
 updateOrientationButton();
 
 function setMessage(message,error=false){$('message').textContent=message;$('message').classList.toggle('error',error);}
-function setPick(kind){state.pick=kind;for(const btn of document.querySelectorAll('.pick'))btn.classList.toggle('active',btn.dataset.pick===kind);$('map-hint').textContent='地点を登録するには地図を長押し';}
+function setPick(kind){state.pick=kind;for(const btn of document.querySelectorAll('.pick'))btn.classList.toggle('active',btn.dataset.pick===kind);$('map-hint').textContent='地図を長押しし、表示されたメニューから地点を登録（PCは右クリック）';}
 const placeLabels={};
 function rememberPlaceLabel(coord,name){if(coord&&name){placeLabels[coord]=String(name).slice(0,100);try{localStorage.setItem('bnavi.placeLabels.v1',JSON.stringify(placeLabels))}catch{}}updatePointSummaries();}
 function pointLabel(coord){return placeLabels[coord]||'地図で指定した地点';}
@@ -632,7 +632,7 @@ function verifyShimanamiDesk(){
 function setExample(which){clearResult();state.via=[];if(which==='hiroshima'){$('vehicle').value='1';updateModes();$('mode').value='1';updatePolicy();$('start').value='34.397340,132.459390';$('goal').value='34.406310,132.476000';}
  if(which==='shimanami'){$('vehicle').value='1';updateModes();$('mode').value='1';updatePolicy();$('start').value='34.389000,133.200000';$('goal').value='34.064000,132.995000';}
  if(which==='kanmon'){$('vehicle').value='0';updateModes();$('mode').value='1';updatePolicy();$('start').value='33.975115,130.947556';$('goal').value='33.951385,130.968889';}
- renderVia();refreshMap();fitMarkers();persist();setPick('start');setMessage('テスト地点を設定したよ。計算ボタンで実際のBRouterを試せるよ。');}
+ renderVia();refreshMap();fitMarkers();persist();setPick('start');setMessage('ルート例の地点を設定したよ。「ルート検索」で経路を計算できるよ。');}
 async function refreshServer(){if(usePublicBrouter()){$('server-status').textContent='● 公開BRouter試験モード';$('server-status').classList.remove('bad');return;}try{const r=await fetch(apiUrl('status'),{cache:'no-store'});if(!r.ok)throw Error(`HTTP ${r.status}`);const d=await r.json();$('server-status').textContent=d.routeReady?`● BRouter準備OK / RD5 ${d.segments}件`:'● 道路データがありません';$('server-status').classList.toggle('bad',!d.routeReady);}catch(e){$('server-status').textContent='● サーバーに接続できません';$('server-status').classList.add('bad');setMessage(hostedOnPages()?'オンライン経路サーバーは未接続です。GPXの読み込みとオフライン案内は使えます。':'BRouterサーバーへ接続できません。',true);}}
 // Settings are persisted per device; no GPS or destination data are stored here.
 const VOICE=window.BNaviVoiceSettings;
@@ -958,9 +958,8 @@ function updateGpsProgress(demo=false){if(!state.location||state.navPaused||stat
  else if(until<=130&&!state.saidCues.has(next.offset)){state.saidCues.add(next.offset);speak(`およそ${Math.max(10,Math.round(until/10)*10)}メートル先、${cueText(next.desc)}`);}
  }}$('nav-status').textContent=`${demo?'案内デモ':'GPS'}：経路まで約${Math.round(nearest*1000)}m／残り約${remaining.toFixed(1)}km${instruction}${nearest>.08?'（経路から離れています）':''}。GPX指示に基づく概算案内。`;}
 $('vehicle').addEventListener('change',()=>{invalidateDisplayedRoute('排気量');updateModes();updateTuningUI();updatePresetUI('');$('preset-name').value='';persist();});$('mode').addEventListener('change',()=>{invalidateDisplayedRoute('走り方');chooseCustom(false);updateCustomRouteUI();updatePolicy();persist();});
-for(const b of document.querySelectorAll('.pick'))b.addEventListener('click',()=>setPick(b.dataset.pick));$('start-pick').addEventListener('click',()=>setPick('start'));$('goal-pick').addEventListener('click',()=>setPick('goal'));
 $('start').addEventListener('input',()=>{updatePointSummaries();refreshMap();persist();});$('goal').addEventListener('input',()=>{updatePointSummaries();refreshMap();persist();});
-$('add-via').addEventListener('click',()=>{if(state.via.length>=50){setMessage('経由地は50件まで。',true);return;}setPick('via');setMessage('地図を長押しし、表示されたメニューから「経由地に追加」を選んでね。');});$('clear-vias').addEventListener('click',()=>{state.via=[];renderVia();refreshMap();persist();});
+$('clear-vias').addEventListener('click',()=>{state.via=[];renderVia();refreshMap();persist();});
 $('calculate').addEventListener('click',calculate);// Registered before mobile-ui.js: suppress any stale legacy onclick still cached by an older PWA.
 $('swap-endpoints').addEventListener('click',(event)=>{
  event.stopImmediatePropagation();

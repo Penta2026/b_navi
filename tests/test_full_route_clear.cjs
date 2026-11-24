@@ -133,6 +133,6 @@ test('clear deletes only temporary last-route and serializes earlier autosave wr
  assert.match(store,/let writeChain=Promise.resolve\(\)/);
  assert.match(store,/clear:\(\)=>enqueueWrite\(remove\)/);
  const sw=read('sw.js');
- assert.match(sw,/bnavi-pc-pwa-20261124-swap-stale-guard-v3/);
+ assert.match(sw,/bnavi-pc-pwa-20261124-map-point-menu-cleanup-v1/);
  assert.match(sw,/'\.\/offline-route-store.js'/);
 });

@@ -55,5 +55,5 @@ test('offline startup checks saved profile before display and explains a restore
  assert.match(app,/if\(state\.routeType==='shimanami'&&Number\(\$\('vehicle'\)\.value\)===2\)/);
  assert.match(app,/state\.shimanamiBigMode=keepBig/);
  const sw=read('sw.js');
- assert.match(sw,/bnavi-pc-pwa-20261124-swap-stale-guard-v3/);
+ assert.match(sw,/bnavi-pc-pwa-20261124-map-point-menu-cleanup-v1/);
 });
