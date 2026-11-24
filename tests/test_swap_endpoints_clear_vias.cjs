@@ -39,7 +39,7 @@ test('visible route exchange sits between start and goal, with a clear waypoints
  assert.doesNotMatch(mobile,/\$\('swap-endpoints'\)\.onclick\s*=/);
  assert.doesNotMatch(mobile,/\$\('swap-endpoints'\)\.addEventListener\(/);
  assert.equal((app.match(/\$\('swap-endpoints'\)\.addEventListener\('click'/g)||[]).length,1);
- assert.match(read('sw.js'),/bnavi-pc-pwa-20261124-manual-detour-v1/);
+ assert.match(read('sw.js'),/bnavi-pc-pwa-20261124-shimanami-road-detour-v1/);
 });
 test('one click exchanges only start and goal, clears all vias, invalidates route and preserves choice settings',async()=>{
  const h=harness({active:true});

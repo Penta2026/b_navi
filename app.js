@@ -8,7 +8,7 @@ const ROUTE_POLICIES=['ビギナー：狭い道と曲がりを抑え、走りや
 const MODES=[['ビギナー','一般','探索'],['ビギナー','一般','探索'],['ビギナー','一般','探索','ファストトラベル（高速・有料優先）']];
 // Incrementing this generation invalidates any route calculation still in flight.
 let routePlanVersion=0;
-const state={shimanamiPlanPoints:[],shimanamiWebBuilt:false,navActive:false,navPaused:false,finishing:false,rerouting:false,targetIndex:0,activeTargets:[],arrivalPolicy:null,offRoutePolicy:null,motionGate:null,lastRerouteError:-Infinity,followGps:true,heading:{heading:null,at:-Infinity},orientation:'north',pick:'start',via:[],routes:[],currentGpx:null,location:null,watchId:null,routeType:null,gpsPoints:[],lastInputHash:'',turnCues:[],demoTimer:null,demoIndex:0,saidCues:new Set(),cumKm:[],islandLegs:[],islandIndex:0,awaitingBridge:false,gpsAccuracy:Infinity,shimanamiBigMode:false,manualDetour:null};
+const state={shimanamiPlanPoints:[],shimanamiWebBuilt:false,navActive:false,navPaused:false,finishing:false,rerouting:false,targetIndex:0,activeTargets:[],arrivalPolicy:null,offRoutePolicy:null,motionGate:null,lastRerouteError:-Infinity,followGps:true,heading:{heading:null,at:-Infinity},orientation:'north',pick:'start',via:[],routes:[],currentGpx:null,location:null,watchId:null,routeType:null,gpsPoints:[],lastInputHash:'',turnCues:[],demoTimer:null,demoIndex:0,saidCues:new Set(),cumKm:[],islandLegs:[],islandIndex:0,awaitingBridge:false,gpsAccuracy:Infinity,shimanamiBigMode:false,manualDetour:null,manualDetourLegIndex:null};
 // A single tap is for map inspection only: it must never move S, G, or waypoints.
 // Coordinates are committed through the long-press action menu (or explicit search/favorite/edit).
 const map=new BNaviMapCore.MapCore($('map-container'),$('tile-layer'),$('map-overlay'),$('path-layer'),$('point-layer'),$('gps-layer'),null);
@@ -276,7 +276,7 @@ function sanitizeName(text){return text.replace(/[^\p{L}\p{N}_-]+/gu,'_').slice(
 function downloadGpx(xml,name){const blob=new Blob([xml],{type:'application/gpx+xml;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);}
 function fitResult(){const points=state.routes.flatMap(x=>x.points);if(points.length)map.fit(sampled(points,4000));else fitMarkers();}
 function fitMarkers(){const x=getMarkers().map(m=>m.point);if(x.length)map.fit(x);}
-function clearResult(){state.manualDetour=null;state.shimanamiBigMode=false;$('shimanami-desk-tools').hidden=true;state.shimanamiPlanPoints=[];state.shimanamiWebBuilt=false;stopVoiceGuidance(false);stopDemo();state.islandLegs=[];state.islandIndex=0;state.awaitingBridge=false;state.turnCues=[];state.cumKm=[];$('demo-on').disabled=true;$('demo-off').disabled=true;state.routeType=null;state.currentGpx=null;state.routes=[];state.gpsPoints=[];$('save-gpx').disabled=true;$('route-label').textContent='未計算';$('metrics').textContent='計算すると距離や経路が表示されるよ。';$('route-segments').replaceChildren();refreshMap();syncNavigationButtons();}
+function clearResult(){state.manualDetour=null;state.manualDetourLegIndex=null;state.shimanamiBigMode=false;$('shimanami-desk-tools').hidden=true;state.shimanamiPlanPoints=[];state.shimanamiWebBuilt=false;stopVoiceGuidance(false);stopDemo();state.islandLegs=[];state.islandIndex=0;state.awaitingBridge=false;state.turnCues=[];state.cumKm=[];$('demo-on').disabled=true;$('demo-off').disabled=true;state.routeType=null;state.currentGpx=null;state.routes=[];state.gpsPoints=[];$('save-gpx').disabled=true;$('route-label').textContent='未計算';$('metrics').textContent='計算すると距離や経路が表示されるよ。';$('route-segments').replaceChildren();refreshMap();syncNavigationButtons();}
 function invalidateDisplayedRoute(label){
  // Displayed geometry is a snapshot of its calculated vehicle and profile.
  // Never silently reuse a 125cc moped bridge for a 126cc+ bike.
@@ -685,7 +685,14 @@ function canVoiceNavigate(){return (['normal','imported'].includes(state.routeTy
 function manualDetourUnavailable(){
  if(!state.navActive)return '音声案内中のみ利用できます';
  if(state.navPaused||state.finishing||state.rerouting)return '現在の案内処理が終わってから試してね';
- if(state.routeType!=='normal'||state.shimanamiBigMode)return '橋・しまなみ島渡り・読込GPXの経路は手動迂回の対象外です';
+ if(!['normal','shimanami'].includes(state.routeType))return '読込GPXや未確認の経路では迂回できません';
+ if(state.shimanamiBigMode&&state.activeRoutingMode===3)return '高速優先の走行中は道路種別を確認できないため迂回できません';
+ if(state.routeType==='shimanami'){
+  if(state.awaitingBridge)return '橋区間は迂回できません。次の島内道路で利用してね';
+  const road=state.islandLegs[state.islandIndex];
+  if(!road?.points?.length||!Number.isInteger(road.sectionIndex)||state.routes[road.sectionIndex]?.type!=='road')
+   return '橋に接続する一般道の区間が確認できません';
+ }
  if(!usePublicBrouter())return '公開BRouterへの接続が必要です';
  if(!state.location||!Number.isFinite(state.gpsAccuracy)||state.gpsAccuracy>35)return 'GPS精度35m以内で現在地を取得してね';
  if(!state.gpsPoints||state.gpsPoints.length<2||!state.activeTargets.slice(state.targetIndex).length)
@@ -820,7 +827,8 @@ async function rerouteShimanamiFromGps(){
  const sectionIndex=leg.sectionIndex;
  $('nav-status').textContent='現在の島内道路を再探索中…';speak('島内道路を再探索します。');
  try{
-  const result=await BNaviPublicBrouter.query([current.slice(),finish.slice()],state.activeRoutingVehicle??$('vehicle').value,state.activeRoutingMode??1,fetch,null,state.activeRouteTuning);
+  const result=await BNaviPublicBrouter.query([current.slice(),finish.slice()],state.activeRoutingVehicle??$('vehicle').value,state.activeRoutingMode??1,fetch,null,state.activeRouteTuning,
+   state.manualDetour&&state.manualDetourLegIndex===state.islandIndex?{nogos:[state.manualDetour]}:null);
   BNaviShimanamiWebRouter.validateRoad({from:current,to:finish,island:BNaviShimanamiWebRouter.island(finish)},result.track);
   if(leg.bridgeAfter&&BNaviShimanamiWebRouter.meters(result.track.points.at(-1),finish)>25)throw Error('橋入口に正確につながらないため新経路を採用できません');
   if(!state.navActive||state.navPaused||state.islandLegs[state.islandIndex]!==leg)return;
@@ -834,6 +842,11 @@ async function rerouteShimanamiFromGps(){
 }
 async function rerouteFromGps(){
  if(state.rerouting||!state.navActive||state.navPaused||!state.location||!['normal','imported'].includes(state.routeType))return;
+ if(state.shimanamiBigMode&&state.manualDetour){
+  state.lastRerouteError=performance.now();
+  $('nav-status').textContent='迂回区間を走行中。元のルートに合流するまでは自動再探索を停止します。';
+  return;
+ }
  const dest=state.activeTargets.slice(state.targetIndex);
  if(!dest.length)return;
  const points=[state.location.slice(),...dest];
@@ -875,6 +888,79 @@ async function rerouteFromGps(){
  }catch(e){state.lastRerouteError=performance.now();$('nav-status').textContent='再探索できません：'+String(e.message||e).slice(0,100)+'。安全な場所で確認してください。';}
  finally{state.rerouting=false;state.offRoutePolicy?.markAttempt(performance.now());}
 }
+async function requestShimanamiRoadLegDetour(origin,targets,version){
+ if(typeof BNaviRoadLegDetour==='undefined'||typeof BNaviBridgeReferences==='undefined'){
+  $('nav-status').textContent='しまなみ一般道の迂回モジュールがありません。PWAを再読み込みしてね';return;
+ }
+ const isIslandLeg=state.routeType==='shimanami',islandIndex=state.islandIndex;
+ const leg=isIslandLeg?state.islandLegs[islandIndex]:null;
+ const original=isIslandLeg?leg?.points:state.gpsPoints;
+ const originalCues=isIslandLeg?leg?.turnCues:state.turnCues;
+ let prepared;
+ try{
+  prepared=BNaviRoadLegDetour.prepare(origin,original,targets,{
+   refs:BNaviBridgeReferences,bridgeAfter:Boolean(leg?.bridgeAfter)
+  });
+ }catch(error){
+  $('nav-status').textContent='この場所では迂回できません：'+String(error?.message||error);return;
+ }
+ // Use the ordinary motorcycle BRF only for the local detour. Never alter the
+ // original highway/bridge reference segments or reuse cycling bridge GPX.
+ const vehicle=state.activeRoutingVehicle??Number($('vehicle').value);
+ const mode=state.activeRoutingMode===3?1:state.activeRoutingMode??1;
+ const tuning=state.activeRouteTuning?BNaviRouteTuning.normalize({
+  ...state.activeRouteTuning,allowMotorway:false,allowToll:false
+ },vehicle):null;
+ state.rerouting=true;syncManualDetourButton();
+ $('nav-status').textContent='前方の一般道だけ迂回して、約1.5km先の元ルートに合流する道を探索中…';
+ speak('前方の一般道を避ける道を検索します。');
+ try{
+  if(!isIslandLeg){
+   // The originally composed 126cc+ crossing profile can include E76 even on
+   // a long mainland approach. Before patching, prove this local stretch is
+   // also reachable by the ordinary motorcycle BRF with motorways forbidden.
+   $('nav-status').textContent='今の道が一般道路として接続できるか確認中…';
+   const probe=await BNaviPublicBrouter.query([origin,prepared.rejoin],vehicle,mode,fetch,null,tuning);
+   if(version!==routePlanVersion||!state.navActive||state.navPaused)return;
+   BNaviRoadLegDetour.validateGeneralRoad(prepared,probe.track);
+  }
+  $('nav-status').textContent='一般道の迂回ルートを探索中…';
+  const response=await BNaviPublicBrouter.query([origin,prepared.rejoin],vehicle,mode,fetch,null,tuning,
+   {nogos:[prepared.avoid]});
+  if(version!==routePlanVersion||!state.navActive||state.navPaused||
+     (isIslandLeg&&(state.islandLegs[islandIndex]!==leg||state.islandIndex!==islandIndex||state.awaitingBridge)))return;
+  const merged=BNaviRoadLegDetour.merge(prepared,response.track,originalCues||[]);
+  const gpx=BNaviPublicBrouter.gpxFromTrack(merged,'Shimanami road-only local detour');
+  if(isIslandLeg){
+   const sectionIndex=leg.sectionIndex;
+   if(!Number.isInteger(sectionIndex)||state.routes[sectionIndex]?.type!=='road')
+    throw Error('島内の道路区間が変更されました');
+   state.routes[sectionIndex]={...state.routes[sectionIndex],points:merged.points,gpx,
+     label:leg.name+'：一般道の手動迂回'};
+   leg.points=merged.points;leg.turnCues=merged.cues;
+   loadIslandGuidance(islandIndex);
+  }else{
+   const keepShimanami=state.shimanamiBigMode;
+   const untouchedFollowingSections=state.routes.slice(1);
+   routeView('normal',[{type:'road',points:merged.points,color:'#06799b',width:5,
+    label:'しまなみへの一般道のみ迂回（後半の高速・橋は維持）',gpx},...untouchedFollowingSections],gpx,
+    '一般道だけを迂回。橋と高速の元の接続は変更していません。',{keepView:true});
+   state.shimanamiBigMode=keepShimanami;
+   $('route-label').textContent='しまなみ島渡り';
+  }
+  state.manualDetour={...prepared.avoid,rejoin:prepared.rejoin};
+  state.manualDetourLegIndex=isIslandLeg?islandIndex:null;
+  state.offRoutePolicy?.reset();
+  refreshMap();queueOfflineSave();
+  $('nav-status').textContent='一般道を迂回して元ルートへ合流する道を設定したよ。橋・高速への接続は元のままだよ。';
+  speak('一般道の迂回ルートへ案内します。元のルートへ合流します。');
+ }catch(error){
+  if(version===routePlanVersion&&state.navActive)
+   $('nav-status').textContent='迂回を計算できません：'+String(error?.message||error).slice(0,145)+'。元の案内を維持しました。';
+ }finally{
+  state.rerouting=false;state.offRoutePolicy?.markAttempt(performance.now());syncManualDetourButton();
+ }
+}
 async function requestManualDetour(){
  const reason=manualDetourUnavailable();
  if(reason){$('nav-status').textContent=reason;return;}
@@ -882,6 +968,9 @@ async function requestManualDetour(){
  let avoid;
  try{avoid=BNaviManualDetour.plan(origin,state.gpsPoints,targets)}
  catch(e){$('nav-status').textContent='迂回できません：'+String(e?.message||e);return;}
+ // A Shimanami trip must preserve all later bridge and motorway connections.
+ if(state.routeType==='shimanami'||state.shimanamiBigMode)
+  return requestShimanamiRoadLegDetour(origin,targets,version);
  const points=[origin,...targets];
  if(needsDedicatedApi(points)){$('nav-status').textContent='原付専用道路を含むため公開BRouterでの迂回は停止しました';return;}
  state.rerouting=true;syncManualDetourButton();
@@ -914,6 +1003,12 @@ async function requestManualDetour(){
 $('nav-detour').addEventListener('click',()=>requestManualDetour().catch(e=>{
  $('nav-status').textContent='迂回処理に失敗しました：'+String(e?.message||e);state.rerouting=false;syncManualDetourButton();
 }));
+function clearPassedLocalDetour(position,accuracy){
+ if(!state.manualDetour?.rejoin||!Number.isFinite(accuracy)||accuracy>35)return;
+ if(BNaviManualDetour.meters(position,state.manualDetour.rejoin)<=65){
+  state.manualDetour=null;state.manualDetourLegIndex=null;
+ }
+}
 function observeOffRoute(position,accuracy){
  if(!state.navActive||state.navPaused||state.finishing||state.rerouting)return;
  // Only moving bikes can reroute: indoor GPS jumps cannot trigger new routes.
@@ -967,6 +1062,10 @@ function startDemo(){if(!['normal','imported'].includes(state.routeType)||!state
 // Android ShimanamiIslandHandoff: pause <=65m from current leg end AND <=160m remaining;
 // resume <=90m from next island leg start. Bridge reference line is never a navigable GPX.
 function loadIslandGuidance(i){
+ // The avoidance area belongs to this road leg, never to any bridge or next island.
+ if(state.manualDetourLegIndex!==null&&state.manualDetourLegIndex!==i){
+  state.manualDetour=null;state.manualDetourLegIndex=null;
+ }
  const leg=state.islandLegs[i];if(!leg)return;
  state.gpsPoints=leg.points;state.turnCues=leg.turnCues;state.saidCues=new Set();state.cumKm=[];
  for(let j=0;j<leg.points.length;j++)state.cumKm[j]=(state.cumKm[j-1]||0)+(j?km(leg.points[j-1],leg.points[j]):0);
@@ -1011,7 +1110,7 @@ function startGps(){
  if(!window.isSecureContext){showGpsMessage('現在地を取得できません。スマホではHTTPSが必要です（PCのlocalhostは例外）。');$('gps-status').textContent='HTTPS接続が必要';return;}
  if(!navigator.geolocation){showGpsMessage('このブラウザでは位置情報を利用できません。');$('gps-status').textContent='GPS非対応';return;}
  state.followGps=true;state.gpsNotified=false;state.heading={heading:null,at:-Infinity};map.setGpsHeading(null);showGpsMessage('現在地を取得中…位置情報の許可を確認してね。');
- const ok=pos=>{if(state.navActive)window.BNaviTrack?.add(pos);state.location=[pos.coords.latitude,pos.coords.longitude];state.gpsAccuracy=pos.coords.accuracy;updateHeadingFromPosition(pos);state.motionGate?.observe(state.location,state.gpsAccuracy,pos.coords.speed,performance.now());$('gps-status').textContent=`位置取得 ±${Math.round(pos.coords.accuracy)}m${Number.isFinite(state.heading.heading)?'・進行方位あり':'・方位待ち'}`;if(state.followGps)map.center(...state.location,Math.max(map.zoom,16));refreshMap();window.BNaviRideMode?.updateNavigationRadar?.(state.location,state.heading.heading);const arrived=(state.navActive&&!state.navPaused)?observeDestination(state.location,state.gpsAccuracy,'nav'):false;if(!arrived&&!state.navPaused&&!state.finishing)updateGpsProgress();if(!arrived)observeOffRoute(state.location,state.gpsAccuracy);if(!state.gpsNotified){showGpsMessage(`現在地を表示中（精度 ±${Math.round(pos.coords.accuracy)}m）`,3300);state.gpsNotified=true;}};
+ const ok=pos=>{if(state.navActive)window.BNaviTrack?.add(pos);state.location=[pos.coords.latitude,pos.coords.longitude];state.gpsAccuracy=pos.coords.accuracy;updateHeadingFromPosition(pos);state.motionGate?.observe(state.location,state.gpsAccuracy,pos.coords.speed,performance.now());$('gps-status').textContent=`位置取得 ±${Math.round(pos.coords.accuracy)}m${Number.isFinite(state.heading.heading)?'・進行方位あり':'・方位待ち'}`;if(state.followGps)map.center(...state.location,Math.max(map.zoom,16));refreshMap();window.BNaviRideMode?.updateNavigationRadar?.(state.location,state.heading.heading);const arrived=(state.navActive&&!state.navPaused)?observeDestination(state.location,state.gpsAccuracy,'nav'):false;if(!arrived&&!state.navPaused&&!state.finishing)updateGpsProgress();if(!arrived){clearPassedLocalDetour(state.location,state.gpsAccuracy);observeOffRoute(state.location,state.gpsAccuracy);}if(!state.gpsNotified){showGpsMessage(`現在地を表示中（精度 ±${Math.round(pos.coords.accuracy)}m）`,3300);state.gpsNotified=true;}};
  const err=x=>{const msg=x.code===1?'位置情報が拒否されています。ブラウザのサイト設定で許可してね。':x.code===2?'位置を取得できません。GPS・通信・端末の位置情報設定を確認してね。':'取得が時間切れです。屋外などで再試行してね。';$('gps-status').textContent='GPS失敗';showGpsMessage(msg);if(state.navActive){stopVoiceGuidance(false);$('nav-status').textContent='GPSエラー：'+msg;}stopGps();};
  $('gps-on').disabled=true;$('gps-off').disabled=false;state.watchId=navigator.geolocation.watchPosition(ok,err,{enableHighAccuracy:true,maximumAge:2000,timeout:15000});
 }
