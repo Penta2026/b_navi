@@ -42,6 +42,7 @@ with sync_playwright() as p:
   summary=page.evaluate('''() => currentPreferences()''')
   assert summary=={'view':'scenic','ride':'cruise','backroad':True,'coast':True},(width,summary)
   page.evaluate('''() => {
+   window.hostedOnPages=()=>true; // Test as a public GitHub Pages PWA, not about:blank.
    const start=document.querySelector('#start'),goal=document.querySelector('#goal');
    start.value='34.39734,132.45939';goal.value='34.40631,132.47600';
    window.__queries=[];
