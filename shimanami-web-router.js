@@ -77,7 +77,11 @@ function plan(points,vehicle,geometry,refs){
        from=exit;fromRole='bridge';
      }
    }
-   const mainlandCrossing=toMainland&&!fromMainland?'to_mainland':fromMainland&&!toMainland?'to_island':null;
+   // The first outbound road (to bridge 1) already crossed R317.
+   // Only a mainland->Mukoshima leg without another Shimanami bridge
+   // needs the R317 anchor in its final road stage.
+   const mainlandCrossing=toMainland&&!fromMainland?'to_mainland':
+     fromMainland&&!toMainland&&step===0?'to_island':null;
    // For Onomichi->Mukoshima local legs and round-trip return legs, this
    // R317 crossing must be calculated as real roads via the named bridge.
    stages.push({type:'road',from,to:points[leg+1],fromRole,toRole:'user',island:end,
