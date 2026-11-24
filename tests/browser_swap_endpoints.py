@@ -36,7 +36,7 @@ with sync_playwright() as p:
             window.fetch=async()=>({ok:false,status:503,json:async()=>[],text:async()=>''});
         }''')
         for filename in names:
-            page.add_script_tag(content=(ROOT/filename).read_text())
+            page.add_script_tag(content=(ROOT/filename.split('?',1)[0]).read_text())
         page.evaluate('''() => {
             document.getElementById('start').value='34.404838,133.193008';
             document.getElementById('goal').value='34.064000,132.995000';

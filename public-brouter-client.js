@@ -31,7 +31,7 @@ function publicFetch(netFetch,url,options){
 }
 const ROUTE_RESULTS=new Map(); // successful exact road legs, for this open PWA session
 const MAX_ROUTE_RESULTS=60;
-function routeResultKey(profile,points){return profile+'|'+points.map(p=>p[0].toFixed(6)+','+p[1].toFixed(6)).join('|');}
+function routeResultKey(profile,points,nogos=[]){return profile+'|'+points.map(p=>p[0].toFixed(6)+','+p[1].toFixed(6)).join('|')+(nogos.length?'|nogos:'+nogos.map(n=>n.point[0].toFixed(6)+','+n.point[1].toFixed(6)+','+n.radius).join('|'):'');}
 function rememberRoute(key,result){
  ROUTE_RESULTS.delete(key);ROUTE_RESULTS.set(key,result);
  if(ROUTE_RESULTS.size>MAX_ROUTE_RESULTS)ROUTE_RESULTS.delete(ROUTE_RESULTS.keys().next().value);
@@ -89,21 +89,29 @@ async function ensureProfile(name,cacheKey,netFetch,custom,vehicle,mode){
  }
  return PENDING_UPLOADS.get(cacheKey);
 }
-async function query(points,vehicle,mode,netFetch=fetch,onProgress=null,custom=null){
+function validateNogos(options){
+ const nogos=options?.nogos??[];
+ if(!Array.isArray(nogos)||nogos.length>8)throw Error('回避エリアが多すぎるか不正です');
+ return nogos.map(n=>{
+  if(!n||!validPoint(n.point)||n.point.length!==2||!Number.isInteger(n.radius)||n.radius<40||n.radius>2000)throw Error('回避エリアの座標または半径が不正です');
+  return {point:n.point,radius:n.radius};
+ });
+}
+async function query(points,vehicle,mode,netFetch=fetch,onProgress=null,custom=null,requestOptions=null){
  const started=Date.now();const progress=(phase,message)=>{if(typeof onProgress==='function')onProgress({phase,message,elapsedMs:Date.now()-started})};
  if(!Array.isArray(points)||points.length<2||points.length>52||points.some(p=>!validPoint(p)))throw Error('経路地点が不正です');
  const profile=profileName(vehicle,mode);
  const isCustomized=custom&&tuner&&!tuner.isDefault(custom,vehicle);
  if(custom&&!tuner)throw Error('ルート微調整モジュールがありません');
  const cacheKey=isCustomized?profile+':'+tuner.key(custom,vehicle):profile;
- const resultKey=routeResultKey(cacheKey,points);
+ const nogos=validateNogos(requestOptions);const resultKey=routeResultKey(cacheKey,points,nogos);
  if(netFetch===fetch&&ROUTE_RESULTS.has(resultKey)){
   const cached=ROUTE_RESULTS.get(resultKey);progress('done','保存済みの島内道路計算結果を再利用しました');
   return {...cached,elapsedMs:Date.now()-started,cached:true};
  }
  progress('profile',IDS.has(cacheKey)?'公開BRouter：前回の走行プロファイルを使用中…':'公開BRouter：走行プロファイルを送信中…');
  let id=await ensureProfile(profile,cacheKey,netFetch,custom,vehicle,mode);
- const calc=async()=>{const url=new URL(SERVER);url.searchParams.set('lonlats',points.map(p=>p[1]+','+p[0]).join('|'));url.searchParams.set('profile',id);url.searchParams.set('alternativeidx','0');url.searchParams.set('format','geojson');url.searchParams.set('timode','3');
+ const calc=async()=>{const url=new URL(SERVER);url.searchParams.set('lonlats',points.map(p=>p[1]+','+p[0]).join('|'));url.searchParams.set('profile',id);url.searchParams.set('alternativeidx','0');url.searchParams.set('format','geojson');url.searchParams.set('timode','3');if(nogos.length)url.searchParams.set('nogos',nogos.map(n=>n.point[1].toFixed(6)+','+n.point[0].toFixed(6)+','+n.radius).join('|'));
  return publicFetch(netFetch,url,{signal:AbortSignal.timeout(90000),cache:'no-store',credentials:'omit'});};
  progress('route','公開BRouter：道路ルートを計算中…');
  let r=await calc();if(!r.ok&&[400,404].includes(r.status)){IDS.delete(cacheKey);progress('retry','公開BRouter：プロファイル期限切れを確認・再送信中…');id=await ensureProfile(profile,cacheKey,netFetch,custom,vehicle,mode);progress('route','公開BRouter：経路を再計算中…');r=await calc()}
@@ -117,6 +125,6 @@ async function query(points,vehicle,mode,netFetch=fetch,onProgress=null,custom=n
  if(netFetch===fetch)rememberRoute(resultKey,result);
  return result;
 }
-const api={SERVER,LIVE_REQUEST_SPACING_MS,createPacer,errorFromResponse,profileName,trackFromGeoJSON,gpxFromTrack,query};root.BNaviPublicBrouter=api;
+const api={SERVER,LIVE_REQUEST_SPACING_MS,createPacer,errorFromResponse,profileName,trackFromGeoJSON,gpxFromTrack,validateNogos,query};root.BNaviPublicBrouter=api;
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof window==='undefined'?globalThis:window);

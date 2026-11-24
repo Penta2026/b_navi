@@ -92,7 +92,7 @@ test('B_Navi dialog requires explicit confirmation; offline restore remembers th
  assert.match(app,/if\(choice==='cross'\)\{await calculateBigShimanami/);
  assert.match(app,/state\.shimanamiBigMode=data\.shimanamiBigMode===true/);
  assert.match(app,/bindShimanamiBigDialog\(\);bindPresetUI/);
- assert.match(sw,/'\.\/shimanami-big-router\.js'/);
+ assert.match(sw,/'\.\/shimanami-big-router\.js(?:\?[^']+)?'/);
 });
 
 test('the real dialog handlers open repeatedly, accept, reject and close without duplicate listeners',async()=>{

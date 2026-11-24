@@ -65,8 +65,8 @@ test('ordinary R317 crossing is NOT forced for a purely mainland local road pair
  const stages=router.plan([station,home],1,geometry,refs);
  assert.equal(stages.length,1);
  assert.equal(stages[0].type,'road');
- assert.equal(stages[0].mainlandCrossing,null);
- assert.equal(stages[0].via,null);
+ assert.equal(stages[0].mainlandCrossing??null,null);
+ assert.equal(stages[0].via??null,null);
 });
 test('old bridge reference data remain untouched, with no ferry or motorway GPX fabrication',()=>{
  const source=fs.readFileSync('shimanami-web-router.js','utf8');
