@@ -417,3 +417,6 @@ body.navigation-active #track-panel,body.free-ride-active #track-panel{display:n
 .swap-endpoints-button span{font-size:11px;font-weight:400;color:#577784}
 .swap-endpoints-button:focus-visible{outline:3px solid #2386ae;outline-offset:2px}
 .swap-endpoints-button:disabled{opacity:.45;cursor:not-allowed}
+
+/* Clipboard itinerary handoff: keep the three actions in the requested order. */
+.gpx-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.gpx-actions button{min-width:0;padding:10px 4px;white-space:normal;overflow-wrap:anywhere;font-size:clamp(11px,3.2vw,14px);min-height:44px}.gpx-actions #import-michinotochu{background:#19708a;color:#fff;}
