@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "description": "Official-address verified branches. Coordinates deliberately omitted until geocoded and checked.",
+  "offices": [
+    {
+      "name": "大田鋳造所 本社",
+      "company": "大田鋳造所",
+      "branch": "本社",
+      "address": "広島県広島市西区上天満町3番23号",
+      "sourceUrl": "https://www.ohtachuzousyo.co.jp/company/"
+    },
+    {
+      "name": "大田鋳造所 千代田事業所",
+      "company": "大田鋳造所",
+      "branch": "千代田事業所",
+      "address": "広島県山県郡北広島町舞綱157-1",
+      "sourceUrl": "https://www.ohtachuzousyo.co.jp/company/"
+    },
+    {
+      "name": "大田鋳造所 島根事業所",
+      "company": "大田鋳造所",
+      "branch": "島根事業所",
+      "address": "島根県邑智郡邑南町上亀谷395-2",
+      "sourceUrl": "https://www.ohtachuzousyo.co.jp/company/"
+    }
+  ]
+}
