@@ -931,8 +931,9 @@ async function requestShimanamiRoadLegDetour(origin,targets,version){
    loadIslandGuidance(islandIndex);
   }else{
    const keepShimanami=state.shimanamiBigMode;
+   const untouchedFollowingSections=state.routes.slice(1);
    routeView('normal',[{type:'road',points:merged.points,color:'#06799b',width:5,
-    label:'しまなみへの一般道のみ迂回（後半の高速・橋は維持）',gpx}],gpx,
+    label:'しまなみへの一般道のみ迂回（後半の高速・橋は維持）',gpx},...untouchedFollowingSections],gpx,
     '一般道だけを迂回。橋と高速の元の接続は変更していません。',{keepView:true});
    state.shimanamiBigMode=keepShimanami;
    $('route-label').textContent='しまなみ島渡り';
