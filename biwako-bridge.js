@@ -54,5 +54,17 @@
    throw Error('公開BRouterの経路が琵琶湖大橋を横断したと確認できません。元の道路に直線を足すことはしません');
   return {distanceMeters:Math.round(d)};
  }
- return Object.freeze({CENTER,meters,proximity,plan,verify});
+ function isAhead(position,track){
+  if(!valid(position)||!Array.isArray(track)||track.length<2)return true;
+  let closest=Infinity,index=0,bridgeDist=Infinity,bridgeIdx=track.length-1;
+  for(let i=0;i<track.length;i++){
+   if(!valid(track[i]))return true;
+   const d=meters(position,track[i]),bd=meters(CENTER,track[i]);
+   if(d<closest){closest=d;index=i;}
+   if(bd<bridgeDist){bridgeDist=bd;bridgeIdx=i;}
+  }
+  // If GPS is not trustworthy against this polyline, keep the bridge waypoint.
+  return closest>250||index<=bridgeIdx+1;
+ }
+ return Object.freeze({CENTER,meters,proximity,plan,verify,isAhead});
 });
