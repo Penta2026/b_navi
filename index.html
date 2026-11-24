@@ -28,7 +28,10 @@
    <label><input type="radio" name="route-ride" value="efficient"><span>効率優先</span></label>
   </div>
  </div>
- <label class="route-backroad-toggle"><input id="route-backroad" type="checkbox"><span><strong>🛤️ 裏道優先</strong><small>ビギナー・一般・探索に合わせて裏道の性格が変わる</small></span></label>
+ <div class="route-special-options" role="group" aria-label="特別な希望">
+  <label class="route-backroad-toggle"><input id="route-backroad" type="checkbox"><span><strong>🛤️ 裏道優先</strong><small>ビギナー・一般・探索に合わせて裏道の性格が変わる</small></span></label>
+  <label class="route-backroad-toggle"><input id="route-coast" type="checkbox"><span><strong>🌊 海沿い優先（試験）</strong><small>裏道優先と同時にON可能。水辺の推定値で調整（海岸線の直接評価は準備中）</small></span></label>
+ </div>
  <p class="smallprint">全基本モードで登録済み信号を強く回避。一般は「20％程度遠回りしても気持ちよく流れる道」を調整の目標にするよ。これは距離上限や時間短縮の保証ではありません。</p>
 </fieldset>
 <dialog id="route-preference-help-dialog" class="route-preference-help-dialog" aria-labelledby="route-preference-help-title" aria-describedby="route-preference-help-intro">
@@ -61,6 +64,10 @@
    <div><dt>一般</dt><dd>狭すぎない、信号の少ない地域道を重視する。</dd></div>
    <div><dt>探索</dt><dd>細い道や右左折も比較的許容し、地域道を広く探す。</dd></div>
   </dl>
+ </section>
+ <section class="route-preference-help-section" aria-labelledby="route-help-coast">
+  <h3 id="route-help-coast">🌊 海沿い優先（試験）</h3>
+  <p>裏道優先と別のスイッチ。両方ONにでき、景観・距離・走り心地も組み合わせられるよ。現段階はBRouterの水辺の推定値で経路を調整するため、海岸線そのものや実際に海が見えるかは判定できません。海沿いの道路を探して比較する機能は今後の課題です。</p>
  </section>
  <section class="route-preference-help-section" aria-labelledby="route-help-common">
   <h3 id="route-help-common">🚦 共通のルール</h3>

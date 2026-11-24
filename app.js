@@ -58,12 +58,14 @@ function updateCustomRouteUI(){
  for(const input of document.querySelectorAll('input[name="route-view"]'))input.checked=input.value===p.view;
  for(const input of document.querySelectorAll('input[name="route-ride"]'))input.checked=input.value===p.ride;
  $('route-backroad').checked=p.backroad;
+ $('route-coast').checked=p.coast;
 }
 function preferenceSummary(){
  const p=currentPreferences(),parts=[];
  if(p.view!=='normal')parts.push(VIEW_NAMES[p.view]);
  if(p.ride!=='normal')parts.push(RIDE_NAMES[p.ride]);
  if(p.backroad)parts.push('裏道優先');
+ if(p.coast)parts.push('海沿い優先（試験・水辺近似）');
  return parts.length?parts.join(' ＋ '):'追加オプションなし';
 }
 function updatePolicy(){
@@ -113,9 +115,13 @@ function bindCustomRouteUI(){
    invalidateDisplayedRoute('好みのオプション');updateCustomRouteUI();updatePolicy();persist();
   });
  }
- $('route-backroad').addEventListener('change',e=>{
+ $('route-backroad').addEventListener('change',()=>{
   routePreferences=BNaviRouteTuning.normalizePreferences({...routePreferences,backroad:$('route-backroad').checked});
   invalidateDisplayedRoute('裏道優先');updateCustomRouteUI();updatePolicy();persist();
+ });
+ $('route-coast').addEventListener('change',()=>{
+  routePreferences=BNaviRouteTuning.normalizePreferences({...routePreferences,coast:$('route-coast').checked});
+  invalidateDisplayedRoute('海沿い優先');updateCustomRouteUI();updatePolicy();persist();
  });
  updateCustomRouteUI();
 }
@@ -440,7 +446,7 @@ async function calculatePublicRoute(points,version){
   if(missed.length)throw Error('経由地'+missed.map(x=>x.n).join('、')+'を通る道路経路が取得できません（300m以上離れています）。場所とルートを確認してね。');
  }
  routeView('normal',[{type:'road',points:result.track.points,color:'#06799b',width:5,label:'BRouterで計算した道路ルート',gpx:result.gpx}],result.gpx,
-   'BRouter経路を計算しました：'+result.profile+'（通信・計算 '+(result.elapsedMs/1000).toFixed(1)+'秒）。GPXと案内指示を端末に保存。道路規制・適法性は未検証。'+(!result.track.cues.length?'今回は音声用右左折指示が返りませんでした。':''));
+   'BRouter経路を計算しました：'+result.profile+'（通信・計算 '+(result.elapsedMs/1000).toFixed(1)+'秒）。GPXと案内指示を端末に保存。道路規制・適法性は未検証。'+(state.activeRouteTuning?.preferences?.coast?'海沿い優先は水辺の推定値による試験評価で、海岸線・眺望は未検証。':'')+(!result.track.cues.length?'今回は音声用右左折指示が返りませんでした。':''));
 }
 
 function apiRoot(){
@@ -459,7 +465,7 @@ async function calculate(){const version=++routePlanVersion;const btn=$('calcula
  const wantsOptions=preferencesActive();
  const p=currentPreferences();
  const isFast=state.activeRoutingMode===3;
- const nonDefaultOptions=p.view!=='normal'||p.ride!=='normal'||p.backroad;
+ const nonDefaultOptions=p.view!=='normal'||p.ride!=='normal'||p.backroad||p.coast;
  if(!usePublicBrouter()&&!isFast&&nonDefaultOptions)throw Error('追加オプションは公開BRouterでのみ利用できます。専用Java API接続を解除してね。');
  state.customRouting=customEnabled||(wantsOptions&&usePublicBrouter());
  state.activeRouteTuning=wantsOptions&&usePublicBrouter()
@@ -1146,7 +1152,7 @@ function storedRouteMismatch(data,vehicle,mode,currentPrefs){
  if(Number.isInteger(data.activeRoutingMode)&&data.activeRoutingMode!==mode)
   return '前回の保存ルートは別の走り方で計算したもの。現在の設定では表示せず、ルート検索で再計算してね。';
  if(mode<=2&&currentPrefs){
-  const base=x=>({view:x?.view||'normal',ride:x?.ride||'normal',backroad:x?.backroad===true});
+  const base=x=>({view:x?.view||'normal',ride:x?.ride||'normal',backroad:x?.backroad===true,coast:x?.coast===true});
   const selected=base(currentPrefs),old=base(data.activeRouteTuning?.preferences);
   if(selected.view!==old.view||selected.ride!==old.ride||selected.backroad!==old.backroad)
    return '前回の保存ルートは異なる好みのオプションで計算したもの。現在の設定でルート検索してね。';

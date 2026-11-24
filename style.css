@@ -348,6 +348,7 @@ body.navigation-active #track-panel,body.free-ride-active #track-panel{display:n
 .route-preference-choices label{display:flex;align-items:center;justify-content:center;gap:3px;min-height:39px;padding:6px 3px;font-size:11px;border:1px solid #d0e3e8;background:#fff;border-radius:8px;cursor:pointer;text-align:center}
 .route-preference-choices label:has(input:checked){background:#e0f2f6;border-color:#2386a4;font-weight:800}
 .route-preference-choices input[type=radio]{height:15px;width:15px;flex:0 0 15px;margin:0;accent-color:#08718c}
+.route-special-options{display:grid;gap:7px}
 .route-preferences .route-backroad-toggle{display:flex;align-items:center;gap:10px;min-height:44px;padding:8px;border:1px solid #d0e3e8;border-radius:9px;background:white;cursor:pointer}
 .route-preferences .route-backroad-toggle:has(input:checked){background:#e0f2f6;border-color:#2386a4}
 .route-backroad-toggle input{height:20px;width:20px;flex:0 0 20px;accent-color:#08718c}
