@@ -110,12 +110,12 @@ function bindCustomRouteUI(){
    if(!input.checked)return;
    const kind=input.name==='route-view'?'view':'ride';
    routePreferences=BNaviRouteTuning.normalizePreferences({...routePreferences,[kind]:input.value});
-   updateCustomRouteUI();updatePolicy();persist();
+   invalidateDisplayedRoute('好みのオプション');updateCustomRouteUI();updatePolicy();persist();
   });
  }
  $('route-backroad').addEventListener('change',e=>{
   routePreferences=BNaviRouteTuning.normalizePreferences({...routePreferences,backroad:$('route-backroad').checked});
-  updateCustomRouteUI();updatePolicy();persist();
+  invalidateDisplayedRoute('裏道優先');updateCustomRouteUI();updatePolicy();persist();
  });
  updateCustomRouteUI();
 }
@@ -277,6 +277,19 @@ function downloadGpx(xml,name){const blob=new Blob([xml],{type:'application/gpx+
 function fitResult(){const points=state.routes.flatMap(x=>x.points);if(points.length)map.fit(sampled(points,4000));else fitMarkers();}
 function fitMarkers(){const x=getMarkers().map(m=>m.point);if(x.length)map.fit(x);}
 function clearResult(){state.shimanamiBigMode=false;$('shimanami-desk-tools').hidden=true;state.shimanamiPlanPoints=[];state.shimanamiWebBuilt=false;stopVoiceGuidance(false);stopDemo();state.islandLegs=[];state.islandIndex=0;state.awaitingBridge=false;state.turnCues=[];state.cumKm=[];$('demo-on').disabled=true;$('demo-off').disabled=true;state.routeType=null;state.currentGpx=null;state.routes=[];state.gpsPoints=[];$('save-gpx').disabled=true;$('fit-route').disabled=true;$('route-label').textContent='未計算';$('metrics').textContent='計算すると距離や経路が表示されるよ。';$('route-segments').replaceChildren();refreshMap();syncNavigationButtons();}
+function invalidateDisplayedRoute(label){
+ // Displayed geometry is a snapshot of its calculated vehicle and profile.
+ // Never silently reuse a 125cc moped bridge for a 126cc+ bike.
+ if(!state.routeType&&!state.routes.length&&!$('calculate').disabled)return false;
+ ++routePlanVersion;
+ settleBigDecision(null);
+ if(offlineSaveTimer!==null){clearTimeout(offlineSaveTimer);offlineSaveTimer=null;}
+ if(state.navActive)stopVoiceGuidance(true);
+ clearResult();
+ $('calculate').disabled=false;
+ setMessage(label+'を変更したので前の経路を解除したよ。出発地・経由地・目的地は残してあるので、ルート検索で再計算してね。');
+ return true;
+}
 function freeRideInProgress(){
  return window.BNaviRideMode?.getMode?.()==='free'||
   document.body.classList.contains('free-ride-active');
@@ -789,7 +802,10 @@ async function rerouteFromGps(){
     if(missed.length)throw Error('リルートで経由地を通れません。残りの中継地点を維持します。');
    }
    if(!state.navActive)return;
+   const keepBig=state.shimanamiBigMode;
    routeView('normal',[{type:'road',points:r.track.points,color:'#06799b',width:5,label:'リルート済み道路経路',gpx:r.gpx}],r.gpx,'GPS現在地から再探索しました。',{keepView:true});
+   state.shimanamiBigMode=keepBig;
+   if(keepBig)$('route-label').textContent='しまなみ島渡り';
   }else{
    const {response,text}=await postApi('route',points);
    if((response.headers.get('content-type')||'').includes('json'))throw Error('押し歩き・特殊経路は自動リルートできません。');
@@ -828,6 +844,9 @@ function syncNavigationButtons(){const allowed=canVoiceNavigate();for(const id o
  syncNavigationHud();
 }
 function startVoiceGuidance(){
+ if(state.routeType==='shimanami'&&Number($('vehicle').value)===2){
+  $('nav-status').textContent='126cc以上では原付用の橋参考線を走行案内に利用できません。車種に合うルートを検索してね。';return;
+ }
  if(!canVoiceNavigate()){$('nav-status').textContent='先に通常道路のルートを計算するか、案内用GPXを読み込んでね。';return;}
  if(!window.isSecureContext||!navigator.geolocation){$('nav-status').textContent='音声案内にGPSが必要です。HTTPSと位置情報の許可を確認してね。';return;}
  // Browser/iOS speech begins directly inside the button click, before any geolocation permission prompt.
@@ -906,7 +925,7 @@ function updateGpsProgress(demo=false){if(!state.location||state.navPaused||stat
  if(until<=20&&until>=0&&nearest<.035&&state.gpsAccuracy<=25&&!state.saidCues.has('now-'+next.offset)){state.saidCues.add('now-'+next.offset);state.saidCues.add(next.offset);speak(cueText(next.desc));}
  else if(until<=130&&!state.saidCues.has(next.offset)){state.saidCues.add(next.offset);speak(`およそ${Math.max(10,Math.round(until/10)*10)}メートル先、${cueText(next.desc)}`);}
  }}$('nav-status').textContent=`${demo?'案内デモ':'GPS'}：経路まで約${Math.round(nearest*1000)}m／残り約${remaining.toFixed(1)}km${instruction}${nearest>.08?'（経路から離れています）':''}。GPX指示に基づく概算案内。`;}
-$('vehicle').addEventListener('change',()=>{updateModes();updateTuningUI();updatePresetUI('');$('preset-name').value='';persist();});$('mode').addEventListener('change',()=>{chooseCustom(false);updateCustomRouteUI();updatePolicy();persist();});
+$('vehicle').addEventListener('change',()=>{invalidateDisplayedRoute('排気量');updateModes();updateTuningUI();updatePresetUI('');$('preset-name').value='';persist();});$('mode').addEventListener('change',()=>{invalidateDisplayedRoute('走り方');chooseCustom(false);updateCustomRouteUI();updatePolicy();persist();});
 for(const b of document.querySelectorAll('.pick'))b.addEventListener('click',()=>setPick(b.dataset.pick));$('start-pick').addEventListener('click',()=>setPick('start'));$('goal-pick').addEventListener('click',()=>setPick('goal'));
 $('start').addEventListener('input',()=>{updatePointSummaries();refreshMap();persist();});$('goal').addEventListener('input',()=>{updatePointSummaries();refreshMap();persist();});
 $('add-via').addEventListener('click',()=>{if(state.via.length>=50){setMessage('経由地は50件まで。',true);return;}setPick('via');setMessage('地図を長押しし、表示されたメニューから「経由地に追加」を選んでね。');});$('clear-vias').addEventListener('click',()=>{state.via=[];renderVia();refreshMap();persist();});
@@ -918,8 +937,30 @@ let offlineSaveTimer=null;
 function offlinePayload(){return {type:state.routeType,activeRouteTuning:state.activeRouteTuning,activeRoutingVehicle:state.activeRoutingVehicle,activeRoutingMode:state.activeRoutingMode,customRouting:state.customRouting,shimanamiBigMode:state.shimanamiBigMode,sections:state.routes.map(x=>({type:x.type,points:x.points,color:x.color,width:x.width,dash:x.dash,label:x.label,gpx:x.gpx,bridgeIndex:x.bridgeIndex,referenceOnly:x.referenceOnly,stageCheckpoint:x.stageCheckpoint})),mainGpx:state.currentGpx,shimanamiPlanPoints:state.shimanamiPlanPoints,shimanamiWebBuilt:state.shimanamiWebBuilt,islandLegs:state.islandLegs.map(x=>({name:x.name,points:x.points,turnCues:x.turnCues,bridgeAfter:x.bridgeAfter,sectionIndex:x.sectionIndex,checkpointAfter:x.checkpointAfter}))}}
 function queueOfflineSave(){if(restoringOffline)return;if(offlineSaveTimer)clearTimeout(offlineSaveTimer);offlineSaveTimer=setTimeout(()=>saveOfflineRoute(),200)}
 async function saveOfflineRoute(){try{if(!state.routeType||!state.routes.length)throw Error('ルートまたはGPXを先に読み込んでね');await BNaviOfflineRouteStore.save(offlinePayload());$('offline-status').textContent='この端末に経路を保存したよ。通信がなくても読み込めます。'}catch(e){$('offline-status').textContent='端末保存できませんでした：'+e.message}}
-async function restoreOfflineRoute(){const version=routePlanVersion;try{const data=await BNaviOfflineRouteStore.load();if(version!==routePlanVersion)return;if(!data){$('offline-status').textContent='まだ保存済みの経路はありません。';return}if(!Array.isArray(data.sections)||!data.sections.length)throw Error('保存データが壊れています');restoringOffline=true;
- await displayStoredRoute(data,'保存済みルートを開いたよ。通信なしで案内できます。');
+function storedRouteMismatch(data,vehicle,mode,currentPrefs){
+ if(!data||data.activeRoutingVehicle===undefined||data.activeRoutingVehicle===null||
+   ![0,1,2].includes(Number(data.activeRoutingVehicle)))
+  return '前回の保存ルートは車種が確認できないため自動表示しなかったよ。ルート検索で再計算してね。';
+ const saved=Number(data.activeRoutingVehicle),names=['50cc','51〜125cc','126cc以上'];
+ if(saved!==vehicle)
+  return '前回の保存ルートは'+names[saved]+'用。現在の'+names[vehicle]+'とは違うため表示せずに残してあるよ。ルート検索で再計算してね。';
+ if(data.type==='shimanami'&&saved===2)
+  return '原付用の橋参考線を126cc以上の経路として表示できません。しまなみ島渡りモードで再計算してね。';
+ if(Number.isInteger(data.activeRoutingMode)&&data.activeRoutingMode!==mode)
+  return '前回の保存ルートは別の走り方で計算したもの。現在の設定では表示せず、ルート検索で再計算してね。';
+ if(mode<=2&&currentPrefs){
+  const base=x=>({view:x?.view||'normal',ride:x?.ride||'normal',backroad:x?.backroad===true});
+  const selected=base(currentPrefs),old=base(data.activeRouteTuning?.preferences);
+  if(selected.view!==old.view||selected.ride!==old.ride||selected.backroad!==old.backroad)
+   return '前回の保存ルートは異なる好みのオプションで計算したもの。現在の設定でルート検索してね。';
+ }
+ return null;
+}
+async function restoreOfflineRoute(){const version=routePlanVersion;try{const data=await BNaviOfflineRouteStore.load();if(version!==routePlanVersion)return;if(!data){$('offline-status').textContent='まだ保存済みの経路はありません。';return}if(!Array.isArray(data.sections)||!data.sections.length)throw Error('保存データが壊れています');
+ const mismatch=storedRouteMismatch(data,Number($('vehicle').value),routingMode(),currentPreferences());
+ if(mismatch){$('offline-status').textContent=mismatch;setMessage(mismatch,true);return;}
+ restoringOffline=true;
+ await displayStoredRoute(data,'前回の'+(['50cc','51〜125cc','126cc以上'][Number(data.activeRoutingVehicle)]||'')+'用ルートを復元したよ（新規計算ではありません）。通信なしで案内できます。');
  $('offline-status').textContent='端末内に保存した経路を読み込んだよ。音声をONにしてGPS追従を開始してね。'
  }catch(e){$('offline-status').textContent='経路の読み込みに失敗しました：'+e.message}finally{restoringOffline=false}}
 // Named *calculated* route collection: this includes route geometry and the tuning used
@@ -991,6 +1032,8 @@ function bindMyRouteUI(){
 }
 async function displayStoredRoute(data,message){
  if(!Array.isArray(data.sections)||!data.sections.length)throw Error('保存した経路データがありません。');
+ if(data.type==='shimanami'&&Number(data.activeRoutingVehicle??$('vehicle').value)===2)
+  throw Error('126cc以上では原付用の橋参考線を経路として読み込めません。');
  state.activeRoutingVehicle=data.activeRoutingVehicle??Number($('vehicle').value);
  state.activeRoutingMode=Number.isInteger(data.activeRoutingMode)?data.activeRoutingMode:1;
  // Read old saved routes as general unless their stored tuning was nondefault.
