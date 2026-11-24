@@ -39,7 +39,7 @@ test('visible route exchange sits between start and goal, with a clear waypoints
  assert.doesNotMatch(mobile,/\$\('swap-endpoints'\)\.onclick\s*=/);
  assert.doesNotMatch(mobile,/\$\('swap-endpoints'\)\.addEventListener\(/);
  assert.equal((app.match(/\$\('swap-endpoints'\)\.addEventListener\('click'/g)||[]).length,1);
- assert.match(read('sw.js'),/bnavi-pc-pwa-20261124-swap-handler-once-v2/);
+ assert.match(read('sw.js'),/bnavi-pc-pwa-20261124-swap-stale-guard-v3/);
 });
 test('one click exchanges only start and goal, clears all vias, invalidates route and preserves choice settings',async()=>{
  const h=harness({active:true});
@@ -86,4 +86,47 @@ test('swap never calls a route computation or touches the named My Route collect
  assert.doesNotMatch(handler,/calculatePublicRoute\(|calculateBigShimanami\(|BNaviMyRouteLibrary\./);
  assert.match(handler,/state\.via=\[\]/);
  assert.match(handler,/await BNaviOfflineRouteStore\.clear\(\)/);
+});
+
+
+test('real swap click blocks an old mobile-ui onclick even if the PWA loaded mixed script versions',async()=>{
+ const original=read('mobile-ui.js');
+ assert.doesNotMatch(original,/\$\('swap-endpoints'\)\.onclick\s*=/);
+ const clickBinding=app.match(/\$\('swap-endpoints'\)\.addEventListener\('click',\(event\)=>\{[\s\S]*?\}\);/);
+ assert.ok(clickBinding,'new swap click handler missing');
+ assert.match(clickBinding[0],/event\.stopImmediatePropagation\(\)/);
+ const listeners=[];
+ const fields={'swap-endpoints':{disabled:false,onclick:null,addEventListener(type,fn){listeners.push(fn)}},
+  start:{value:'START'},goal:{value:'GOAL'}};
+ let current={start:null,goal:null};
+ const sandbox={$:id=>fields[id],swapEndpointsAndClearVias:async()=>{
+  const start=fields.start.value,goal=fields.goal.value;
+  fields.start.value=goal;fields.goal.value=start;current={start:fields.start.value,goal:fields.goal.value};},
+  setMessage:()=>{}};
+ const vm=require('node:vm');
+ vm.runInNewContext(clickBinding[0],sandbox);
+ // Simulate a stale old script assigning its property listener after the new app script.
+ fields['swap-endpoints'].onclick=()=>{const start=fields.start.value;fields.start.value=fields.goal.value;fields.goal.value=start;};
+ const e={stopped:false,stopImmediatePropagation(){this.stopped=true}};
+ listeners[0](e);
+ if(!e.stopped)fields['swap-endpoints'].onclick(e);
+ await Promise.resolve();
+ assert.equal(e.stopped,true);
+ assert.equal(fields.start.value,'GOAL');assert.equal(fields.goal.value,'START');
+});
+test('service worker bypasses browser HTTP cache for app shell but retains offline fallback',()=>{
+ const sw=read('sw.js');
+ assert.match(sw,/cache:'no-store'/);
+ assert.match(sw,/const fresh=appShell\?new Request\(e\.request,\{cache:'no-store'\}\):e\.request/);
+ assert.match(sw,/fetch\(fresh\)/);
+ assert.match(sw,/caches\.match\(e\.request\)/);
+ const vm=require('node:vm'),expr=sw.match(/const appShell=(.*);/)[1];
+ for(const name of ['/b_navi/app.js','/b_navi/mobile-ui.js','/b_navi/index.html','/b_navi/style.css','/b_navi/offline-map-download.mjs','/b_navi/']){
+  const scope={u:{pathname:name}};vm.runInNewContext('this.shouldRefresh='+expr,scope);
+  assert.equal(scope.shouldRefresh,true,'fresh app shell: '+name);
+ }
+ for(const name of ['/b_navi/images/map.png','/b_navi/data/offline.rd5']){
+  const scope={u:{pathname:name}};vm.runInNewContext('this.shouldRefresh='+expr,scope);
+  assert.equal(scope.shouldRefresh,false,'non-app asset not forced: '+name);
+ }
 });
