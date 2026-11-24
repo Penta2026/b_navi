@@ -20,8 +20,13 @@
      if(m&&m[1]&&m[2]&&!regionPattern.test(m[2]))tokens=[m[1],m[2]];
    }
    if(tokens.length===1)return {name:tokens[0]||'',region:[],whole:tokens.join(' ')};
-   const name=tokens[tokens.length-1]||'';
-   const region=tokens.slice(0,-1).filter(Boolean);
+   // Spaces may belong to a facility name (e.g. "道の駅 よしうみ").
+   // Treat leading words as locality only if each looks like a prefecture/city/ward.
+   const locality=t=>/(?:都|道|府|県|市|区|町|村)$/.test(t)&&t.length>=2;
+   let count=0;
+   while(count<tokens.length-1&&locality(tokens[count]))count++;
+   const name=(count?tokens.slice(count):tokens).join(' ');
+   const region=tokens.slice(0,count);
    return {name,region,whole:tokens.join(' ')};
  }
  const names=x=>[x.name,...Object.values(x.namedetails||{}).filter(v=>typeof v==='string')].filter(Boolean);
