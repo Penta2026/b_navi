@@ -63,7 +63,7 @@ test('route-clear button remains beside search, opens explicit accessible app mo
  assert.match(css,/\.route-quick\{display:grid;grid-template-columns:minmax\(0,1fr\) auto/);
  assert.match(css,/\.route-clear-confirm-dialog\{box-sizing:border-box/);
  assert.match(js,/bindFullRouteClear\(\);/);
- assert.doesNotMatch(clearFns,/window\.confirm\(/);
+ assert.doesNotMatch(clearFns.replace(/\/\/[^\n]*/g,''),/window\.confirm\(/);
 });
 test('real button click -> dialog -> confirm clears input, routes and autosaved last route',async()=>{
  const h=harness();
