@@ -72,6 +72,16 @@
   const sourceNote=meta.source==='道の途中。'?' ・「道の途中。」登録地点（施設代表位置の場合あり）':'';
   const caution=meta.caution?' ・ '+meta.caution:(meta.arrivalPointType?' ・ '+meta.arrivalPointType:'');
   $('selected-place-coord').textContent=coord+sourceNote+caution;
+  // Google Maps URLs: open Street View near the chosen coordinate, if available.
+  // The panorama may be on a nearby road; don't modify the B_Navi route or point.
+  const streetView=$('street-view-open');
+  const ll=coord.split(',').map(Number);
+  if(ll.length===2&&Number.isFinite(ll[0])&&Number.isFinite(ll[1])&&Math.abs(ll[0])<=90&&Math.abs(ll[1])<=180){
+    const url=new URL('https://www.google.com/maps/@');
+    url.searchParams.set('api','1');url.searchParams.set('map_action','pano');
+    url.searchParams.set('viewpoint',ll[0].toFixed(6)+','+ll[1].toFixed(6));
+    streetView.href=url.href;streetView.hidden=false;
+  }else{streetView.removeAttribute('href');streetView.hidden=true;}
   if($('place-dialog').open)$('place-dialog').close();safeShowModal($('place-action-dialog'));
  }
  // Share a single point-action menu between place search, favorites and map long-press.
