@@ -105,7 +105,8 @@ function updateRoutePreferenceCollapseUI(){
 }
 function bindRoutePreferenceToggle(){
  const body=$('route-preference-body');
- try{body.hidden=localStorage.getItem('bnavi.routeOptionsCollapsed.v1')==='1'}catch{}
+ // Start collapsed on every launch; the user can expand it for this session.
+ body.hidden=true;
  updateRoutePreferenceCollapseUI();
  $('route-preference-toggle').addEventListener('click',()=>{
   body.hidden=!body.hidden;
