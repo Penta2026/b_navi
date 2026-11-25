@@ -453,3 +453,8 @@ body.navigation-active #track-panel,body.free-ride-active #track-panel{display:n
 .cruise-width-options label{font-size:14px;color:#194f63}
 .cruise-width-options select{box-sizing:border-box;width:100%;min-height:44px;padding:9px 12px;border:1px solid #abcbd8;border-radius:9px;background:white;color:#153e4d;font-size:15px}
 .cruise-width-options small{font-size:12px;line-height:1.6;color:#526f7a}
+
+/* Text fallback when OS clipboard blocks GPX export. */
+#track-copy-manual[hidden]{display:none!important}
+#track-copy-manual{padding:8px 0}
+#track-copy-text{display:block;box-sizing:border-box;width:100%;max-width:100%;min-height:105px;padding:10px;border:1px solid #b5d3dd;border-radius:8px;background:#fff;color:#284b56;font-size:13px;line-height:1.4;resize:vertical;user-select:text;-webkit-user-select:text}
