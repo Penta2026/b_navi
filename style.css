@@ -442,3 +442,7 @@ body.navigation-active #track-panel,body.free-ride-active #track-panel{display:n
 .verified-office-entry button{width:100%;min-height:42px;background:#e5f3f7;color:#086a83;border:1px solid #b5d3de;border-radius:8px;font-weight:700}
 .verified-office-entry a,.verified-office-fallback{font-size:12px;color:#14738d}
 .verified-office-geocodes{padding:7px 12px;border-left:3px solid #79abc0;margin-bottom:12px}
+
+/* Point action menu: external Street View link after the route/favorite actions. */
+.place-actions .street-view-action{display:flex;align-items:center;justify-content:center;min-height:46px;width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #aacbd8;border-radius:9px;background:#eaf6f9;color:#14617a;font-weight:750;text-decoration:none;text-align:center}
+.place-actions .street-view-action[hidden]{display:none!important}
