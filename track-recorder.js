@@ -17,16 +17,46 @@
  // A colon is forbidden in Windows filenames; use a hyphen between hours and minutes.
  function formatFilename(value){const d=new Date(value);if(!Number.isFinite(d.getTime()))throw Error('保存日時が不正です');const pad=n=>String(n).padStart(2,'0');return `実走GPX-${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}-${pad(d.getHours())}-${pad(d.getMinutes())}.gpx`}
  function filename(){if(!record?.points.length)throw Error('保存するGPS軌跡がありません');if(!record.exportedAt){record.exportedAt=new Date().toISOString();persist()}return formatFilename(record.exportedAt)}
- function save(){if(!record?.points.length)return;const blob=new Blob([xml()],{type:'application/gpx+xml;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename();document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);/* Retain until explicitly discarded to avoid accidental loss. */}
+ function downloadTrack(){
+  const blob=new Blob([xml()],{type:'application/gpx+xml;charset=utf-8'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=filename();document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),10000);
+  // The recorded points remain until the user explicitly discards them.
+ }
+ const shareStatus=()=>el('track-share-status');
+ function reportShare(message){const status=shareStatus();if(status)status.textContent=message;}
+ function save(){if(!record?.points.length)return;try{downloadTrack();reportShare('GPXの保存を開始したよ。端末の「ダウンロード」や「ファイル」から確認してね。');}catch(e){reportShare('GPXを保存できませんでした：'+String(e?.message||e));}}
+ function chromiumFileShareBlocked(){
+  // Chromium's Web Share allowlist does not include .gpx (nor .xml).
+  // Android Chrome may claim canShare=true and still reject on share().
+  const ua=navigator.userAgent||'';
+  return !/iPhone|iPad|iPod/i.test(ua)&&/(?:Chrome|Chromium|Edg|EdgA|SamsungBrowser|OPR)\//i.test(ua);
+ }
  async function share(){
   if(!record?.points.length)return;
-  const file=new File([xml()],filename(),{type:'application/gpx+xml'});
+  // Preserve GPX extension and content; a .txt file would not be a GPX attachment.
+  if(chromiumFileShareBlocked()){
+   save();
+   reportShare('Chrome系ブラウザではGPXの直接共有が制限されるため、GPXファイルの保存を開始したよ。LINEなどの「ファイル」添付からこのGPXを選んでね。');
+   return;
+  }
+  let file;
+  try{file=new File([xml()],filename(),{type:'application/gpx+xml'});}
+  catch(e){reportShare('共有ファイルを作成できませんでした：'+String(e?.message||e));return;}
+  if(typeof navigator.share!=='function'||typeof navigator.canShare!=='function'||!navigator.canShare({files:[file]})){
+   save();
+   reportShare('この端末ではGPXファイルを直接共有できないため、保存を開始したよ。ファイルアプリからLINEなどに添付してね。');
+   return;
+  }
   try{
-   if(!navigator.share||!navigator.canShare||!navigator.canShare({files:[file]})){
-    alert('この端末・ブラウザではGPXファイルの直接共有に対応していません。先に「実走GPXを保存」で保存し、LINEのファイル送信から選んでね。');return;
-   }
    await navigator.share({files:[file],title:'B_Navi 実走GPX'});
-  }catch(e){if(e?.name!=='AbortError')alert('共有できませんでした。GPXを保存してからLINEでファイル送信してね。');}
+   reportShare('GPXを共有メニューへ渡したよ。送信結果は共有先で確認してね。');
+  }catch(e){
+   if(e?.name==='AbortError'){reportShare('共有をキャンセルしたよ。走行記録はそのまま残してあるよ。');return;}
+   // Do not pretend share succeeded. Browsers may reject after canShare=true.
+   reportShare('直接共有に失敗（'+String(e?.name||'Error')+'）。下の「実走GPXを保存」を押して、LINEなどでファイル添付してね。');
+  }
  }
  function discard(){if(active){alert('走行記録中です。先に走行を終了してね。');return}if(!confirm('保存待ちの走行記録を破棄しますか？'))return;record=null;lastStamp=0;localStorage.removeItem(KEY);render()}
  try{const old=JSON.parse(localStorage.getItem(KEY)||'null');if(old&&Array.isArray(old.points)){record=old;active=false;lastStamp=old.points.at(-1)?.t||0}}catch{}
