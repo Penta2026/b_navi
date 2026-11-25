@@ -49,6 +49,7 @@ const OLD_STYLE_MIGRATION=Object.freeze({
 });
 const VIEW_NAMES=Object.freeze({normal:'そのまま',scenic:'景観優先',distance:'距離優先'});
 const RIDE_NAMES=Object.freeze({normal:'そのまま',cruise:'快走優先',efficient:'効率優先'});
+const CRUISE_WIDTH_NAMES=Object.freeze({standard:'',two:'2車線優先',onehalf:'1.5車線以上優先',one:'1車線も許容'});
 function selectedBaseMode(){const value=Number($('mode').value);return Number.isInteger(value)?value:1;}
 function routingMode(){return customEnabled?1:selectedBaseMode();}
 function currentPreferences(){return BNaviRouteTuning.normalizePreferences(routePreferences);}
@@ -58,6 +59,8 @@ function updateCustomRouteUI(){
  if(panel)panel.hidden=!preferencesActive();
  for(const input of document.querySelectorAll('input[name="route-view"]'))input.checked=input.value===p.view;
  for(const input of document.querySelectorAll('input[name="route-ride"]'))input.checked=input.value===p.ride;
+ $('cruise-width-options').hidden=p.ride!=='cruise';
+ $('cruise-width-select').value=p.cruiseWidth;
  $('route-backroad').checked=p.backroad;
  $('route-coast').checked=p.coast;
  $('route-biwako-bridge').checked=biwakoBridgeSelected;
@@ -67,6 +70,7 @@ function preferenceSummary(){
  const p=currentPreferences(),parts=[];
  if(p.view!=='normal')parts.push(VIEW_NAMES[p.view]);
  if(p.ride!=='normal')parts.push(RIDE_NAMES[p.ride]);
+ if(p.ride==='cruise'&&p.cruiseWidth!=='standard')parts.push(CRUISE_WIDTH_NAMES[p.cruiseWidth]);
  if(p.backroad)parts.push('裏道優先');
  if(p.coast)parts.push('海沿い優先（試験・水辺近似）');
  if(biwakoBridgeSelected)parts.push('琵琶湖大橋を経由');
@@ -139,6 +143,10 @@ function bindCustomRouteUI(){
    invalidateDisplayedRoute('好みのオプション');updateCustomRouteUI();updatePolicy();persist();
   });
  }
+ $('cruise-width-select').addEventListener('change',()=>{
+  routePreferences=BNaviRouteTuning.normalizePreferences({...routePreferences,cruiseWidth:$('cruise-width-select').value});
+  invalidateDisplayedRoute('快走時の道幅');updateCustomRouteUI();updatePolicy();persist();
+ });
  $('route-backroad').addEventListener('change',()=>{
   routePreferences=BNaviRouteTuning.normalizePreferences({...routePreferences,backroad:$('route-backroad').checked});
   invalidateDisplayedRoute('裏道優先');updateCustomRouteUI();updatePolicy();persist();
