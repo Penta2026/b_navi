@@ -24,7 +24,8 @@ const STYLE_SPECS=Object.freeze({
 // a BRF cost profile alone cannot impose a relative-to-shortest-distance bound.
 const PREFERENCE_CHOICES=Object.freeze({
   view:Object.freeze(['normal','scenic','distance']),
-  ride:Object.freeze(['normal','cruise','efficient'])
+  ride:Object.freeze(['normal','cruise','efficient']),
+  cruiseWidth:Object.freeze(['standard','two','onehalf','one'])
 });
 const SIGNAL_TRIAL_COST=850; // all three base modes, all vehicle classes (excluding fast travel)
 const BACKROAD_BIAS=Object.freeze({
@@ -40,13 +41,14 @@ function normalizePreferences(value){
  return {
   view:PREFERENCE_CHOICES.view.includes(raw.view)?raw.view:'normal',
   ride:PREFERENCE_CHOICES.ride.includes(raw.ride)?raw.ride:'normal',
+  cruiseWidth:PREFERENCE_CHOICES.cruiseWidth.includes(raw.cruiseWidth)?raw.cruiseWidth:'standard',
   backroad:raw.backroad===true,
   coast:raw.coast===true
  };
 }
 function preferenceKey(value){
  const p=normalizePreferences(value);
- return 'base-options-v2:'+p.view+':'+p.ride+':'+(p.backroad?'1':'0')+':'+(p.coast?'1':'0');
+ return 'base-options-v3:'+p.view+':'+p.ride+':'+(p.backroad?'1':'0')+':'+(p.coast?'1':'0')+':'+(p.ride==='cruise'?p.cruiseWidth:'standard');
 }
 function tunePreferences(base,prefs,vehicle,mode=1){
  const p=normalizePreferences(prefs),kind=Number(vehicle),baseMode=Number(mode);
@@ -57,7 +59,16 @@ function tunePreferences(base,prefs,vehicle,mode=1){
  const delta={trunk:0,primary:0,secondary:0,tertiary:0,unclassified:0,residential:0,lanes1:0,lanes15:0,turn:0};
  const apply=x=>{for(const [k,v] of Object.entries(x))delta[k]+=v;};
  if(p.backroad)apply(BACKROAD_BIAS[baseMode]);
- if(p.ride==='cruise')apply({trunk:-.08,primary:-.08,unclassified:.38,residential:.55,lanes1:1.65,lanes15:.90,turn:125});
+ if(p.ride==='cruise'){
+  apply({trunk:-.08,primary:-.08,unclassified:.38,residential:.55,lanes1:1.65,lanes15:.90,turn:125});
+  // Trial soft biases, never exact road-width thresholds or access changes.
+  const widthBias={
+   standard:{},two:{lanes1:3.2,lanes15:1.8,unclassified:.20,residential:.30},
+   onehalf:{lanes1:1.7,lanes15:-.65,unclassified:-.12,residential:-.08},
+   one:{lanes1:-1.45,lanes15:-1.0,unclassified:-.24,residential:-.12}
+  };
+  apply(widthBias[p.cruiseWidth]);
+ }
  if(p.ride==='efficient')apply({trunk:-.12,primary:-.12,unclassified:.34,residential:.65,lanes1:.55,lanes15:.35,turn:70});
  if(p.backroad&&p.ride==='cruise')apply({lanes1:.55,lanes15:.25,turn:25}); // comfy backroads
  if(p.backroad&&p.ride==='efficient')apply({trunk:.15,primary:.12}); // do not undo backroad preference
@@ -236,7 +247,16 @@ function tuneFastTravelPreferences(base,prefs,vehicle){
  const delta={trunk:0,primary:0,secondary:0,tertiary:0,unclassified:0,residential:0};
  const add=obj=>{for(const [key,value] of Object.entries(obj))delta[key]+=value;};
  if(p.backroad)add({trunk:.12,primary:.10,secondary:-.04,tertiary:-.12,unclassified:-.14,residential:.12});
- if(p.ride==='cruise')add({primary:-.025,secondary:.01,tertiary:.055,unclassified:.12,residential:.25});
+ if(p.ride==='cruise'){
+  add({primary:-.025,secondary:.01,tertiary:.055,unclassified:.12,residential:.25});
+  // Fast travel: coarse road-class proxy, no changes to legal access or motorway priority.
+  const widthProxy={
+   standard:{},two:{secondary:-.025,tertiary:.045,unclassified:.10,residential:.12},
+   onehalf:{secondary:.005,tertiary:-.045,unclassified:-.035,residential:-.02},
+   one:{secondary:.025,tertiary:-.07,unclassified:-.08,residential:-.045}
+  };
+  add(widthProxy[p.cruiseWidth]);
+ }
  if(p.ride==='efficient')add({trunk:-.025,primary:-.025,tertiary:.065,unclassified:.09,residential:.16});
  if(p.view==='distance')add({secondary:-.025,tertiary:-.07,unclassified:-.10,residential:-.06});
  if(p.view==='scenic')add({secondary:-.015,tertiary:-.025,unclassified:-.025});
