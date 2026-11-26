@@ -50,7 +50,8 @@ document.getElementById('offline-poi-check')?.addEventListener('click',()=>{
  const zoom=map.getZoom();
  const enabled=poiPreferences.fuel===true;
  if(!enabled){output.textContent='ガソリンスタンドがOFFだよ。先に⛽のチェックをONにしてね。';return;}
- if(zoom<14){output.textContent='現在の内部ズーム '+zoom.toFixed(1)+'。Shortbreadのガソスタ情報は原則14のタイルにあるため、まず地図をもっと拡大してから診断してね。';return;}
+ const offlineCount=window.__bnaviOfflineFuelCount||0;
+ if(zoom<14&&offlineCount===0){output.textContent='保存済みのガソスタデータがまだないよ。設定のオフライン地図から「選んだ地方のガソスタ情報を保存・更新」を試してね。';return;}
  let all=0,fuel=0,visible=0,loaded=false;
  try{
   for(const region of regions){
@@ -63,7 +64,10 @@ document.getElementById('offline-poi-check')?.addEventListener('click',()=>{
   }
   visible=map.queryRenderedFeatures({layers:regions.map(region=>prefix+region+'-poi-fuel-icon').filter(id=>map.getLayer(id))}).length;
  }catch(err){output.textContent='施設データの診断中にエラー：'+err.message;return;}
- const base='地図ズーム '+zoom.toFixed(1)+'／読込済み施設 '+all+'件／ガソスタ '+fuel+'件／描画対象 '+visible+'件。';
+ let savedVisible=0;
+ try{if(map.getLayer('bnavi-offline-fuel-icons'))savedVisible=map.queryRenderedFeatures({layers:['bnavi-offline-fuel-icons']}).length}catch{}
+ const base='地図ズーム '+zoom.toFixed(1)+'／道路地図の施設 '+all+'件／道路地図内ガソスタ '+fuel+'件／別保存ガソスタ合計 '+offlineCount+'件／現在画面のガソスタ '+savedVisible+'件。';
+ if(offlineCount>0){output.textContent=base+(savedVisible?' オフライン保存したガソスタが表示対象になっているよ。':' この画面では保存済みガソスタが描画されていないよ。保存した地方と表示位置を確認してね。');return;}
  output.textContent=base+(fuel>0
   ?(visible>0?' ガソスタのデータと表示は検出できたよ。':' ガソスタのデータはあるけれど、アイコンが描画されていないよ。表示処理の問題として調査できるよ。')
   :(all>0?' この範囲の施設データにガソスタが見つからないよ。地図への収録状況を確認する必要があるね。':(loaded?' 施設データが検出できなかったよ。地図の収録レイヤーを確認する必要があるね。':' 地図タイルの読み込み中かも。少し地図を動かして、もう一度確認してね。')));
