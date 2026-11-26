@@ -220,6 +220,22 @@ async function refresh(){
  syncVisibility();
 }
 function syncVisibility(){scheduleVisibleFuel();}
+// Update all labels from actual downloaded fuel files, preserving option values.
+let fuelMarksRequest=0;
+async function refreshFuelDownloadMarks(){
+ const generation=++fuelMarksRequest;
+ if(!regionSelect)return;
+ const options=[...regionSelect.options];
+ const results=await Promise.all(options.map(async option=>{
+  try{const record=await readFuel(option.value);return record?.stations?.length>0}
+  catch{return false}
+ }));
+ if(generation!==fuelMarksRequest)return;
+ options.forEach((option,i)=>{
+  if(!option.dataset.originalLabel)option.dataset.originalLabel=option.textContent;
+  option.textContent=option.dataset.originalLabel+(results[i]?' 【済】':'');
+ });
+}
 function updateSavedStatus(){
  const region=regionSelect?.value;
  if(!REGIONS[region])return;
@@ -237,6 +253,7 @@ button?.addEventListener('click',async()=>{
  try{
   const data=await fetchFuel(region,controller.signal);
   await saveFuel(region,data);
+  await refreshFuelDownloadMarks();
   await refresh();
   report('✅ '+REGIONS[region].name+'地方 '+data.stations.length+'件のガソスタを端末に保存したよ。⛽をONにして表示できるよ。走行中は通信不要。');
  }catch(e){report((e.name==='AbortError'?'取得を中断したよ':'取得できなかったよ：'+e.message)+'。保存済みのガソスタデータはそのまま。')}
@@ -244,6 +261,7 @@ button?.addEventListener('click',async()=>{
 });
 cancel?.addEventListener('click',()=>controller?.abort());
 regionSelect?.addEventListener('change',updateSavedStatus);
+window.addEventListener('pageshow',()=>refreshFuelDownloadMarks().catch(()=>{}));
 window.addEventListener('bnavi:offline-fuel-changed',()=>{refresh().catch(e=>report('施設地図の更新に失敗：'+e.message));});
 document.querySelector('input[data-offline-poi="fuel"]')?.addEventListener('change',syncVisibility);
 document.getElementById('offline-poi-clear')?.addEventListener('click',syncVisibility);
@@ -256,6 +274,7 @@ function boot(){
  map.on('load',()=>refresh().catch(e=>report('施設データ表示エラー：'+e.message)));
  map.on('style.load',()=>refresh().catch(e=>report('施設データ表示エラー：'+e.message)));
  refresh().catch(e=>report('施設データ表示エラー：'+e.message));
+ refreshFuelDownloadMarks().catch(()=>{});
  updateSavedStatus();
 }
 boot();
