@@ -458,3 +458,8 @@ body.navigation-active #track-panel,body.free-ride-active #track-panel{display:n
 #track-copy-manual[hidden]{display:none!important}
 #track-copy-manual{padding:8px 0}
 #track-copy-text{display:block;box-sizing:border-box;width:100%;max-width:100%;min-height:105px;padding:10px;border:1px solid #b5d3dd;border-radius:8px;background:#fff;color:#284b56;font-size:13px;line-height:1.4;resize:vertical;user-select:text;-webkit-user-select:text}
+
+/* Suppress native text-selection highlight / selection handles on map UI.
+   Preserve selectable text in sidebar, dialogs and GPX clipboard fallback. */
+#map-container,#map-container *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#map-container button{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
