@@ -37,7 +37,7 @@
  $('mobile-map').onclick=()=>{closePlaces();toggleSheet(false)};
  $('sheet-handle').onclick=()=>toggleSheet(!sheet.classList.contains('sheet-open'));
  $('mobile-search').onclick=()=>showPlaces('search');$('mobile-faves').onclick=()=>showPlaces('favorites');$('open-search').onclick=()=>showPlaces('search');$('open-favorites').onclick=()=>showPlaces('favorites');
- $('go-location').onclick=()=>{window.BNaviHandleLocationTap?.();toggleSheet(false)};
+ $('go-location').onclick=()=>{startGps();toggleSheet(false)};
  // Endpoint reversal belongs exclusively to the app.js handler.
  // Registering a second onclick here swaps the two fields back.
  $('place-dialog-close').onclick=closePlaces;$('place-action-close').onclick=()=>$('place-action-dialog').close();
