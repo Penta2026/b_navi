@@ -33,7 +33,7 @@ core.onMapFrame=sync;
 vectorMap.on('error',e=>{if(status&&isOffline)status.textContent='保存地図の表示エラー：'+(e.error?.message||'不明なエラー')});
 new ResizeObserver(()=>{vectorMap.resize();sync()}).observe(core.el);
 sync();
-try{await import('./offline-map-layer.mjs?v=20261126-fuel-store-v2')}catch(e){
+try{await import('./offline-map-layer.mjs?v=20261126-fuel-display-v3')}catch(e){
  if(status)status.textContent='端末地図の読み込みができません：'+e.message;
  window.__bikeLocalPmtilesActive=false;window.__bnaviOfflineCoverage=()=>false;
  core.schedule();
