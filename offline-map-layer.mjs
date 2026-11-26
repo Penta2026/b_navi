@@ -153,16 +153,16 @@ function addCartography(map){
  // Local Shortbread points of interest; always hidden until enabled by the user.
  const matches=(field,values)=>['in',['get',field],['literal',values]];
  const entries=[
-  ['fuel','pois',matches('amenity',['fuel']),14],
+  ['fuel','pois',matches('amenity',['fuel']),13],
   ['toilet','pois',matches('amenity',['toilets']),14],
-  ['convenience','pois',matches('shop',['convenience']),15],
+  ['convenience','pois',matches('shop',['convenience']),14],
   ['station','public_transport',matches('kind',['station','halt','tram_stop']),13],
   ['port','public_transport',matches('kind',['ferry_terminal']),13],
   ['food','pois',matches('amenity',['restaurant','cafe','fast_food','food_court']),15],
-  ['viewpoint','pois',matches('tourism',['viewpoint']),14],
-  ['tourism','pois',['any',matches('tourism',['attraction','museum','gallery','zoo','theme_park','aquarium','information']),matches('amenity',['arts_centre'])],14],
-  ['historic','pois',matches('historic',['archaeological_site','battlefield','castle','fort','ruins','wayside_shrine']),14],
-  ['landmark','pois',['any',matches('historic',['monument','memorial']),matches('tourism',['artwork']),matches('man_made',['lighthouse'])],14]
+  ['viewpoint','pois',matches('tourism',['viewpoint']),13],
+  ['tourism','pois',['any',matches('tourism',['attraction','museum','gallery','zoo','theme_park','aquarium','information']),matches('amenity',['arts_centre'])],13],
+  ['historic','pois',matches('historic',['archaeological_site','battlefield','castle','fort','ruins','wayside_shrine']),13],
+  ['landmark','pois',['any',matches('historic',['monument','memorial']),matches('tourism',['artwork']),matches('man_made',['lighthouse'])],13]
  ];
  for(const [id,source,filter,minzoom] of entries){
   add(map,'poi-'+id+'-icon','symbol',source,{minzoom,filter,layout:{
