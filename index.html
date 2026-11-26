@@ -212,9 +212,27 @@
   </div>
   <progress id="offline-map-progress" value="0" max="1" aria-label="地図のダウンロード進捗"></progress>
   <p id="offline-map-status" class="smallprint" role="status" aria-live="polite">地図の保存領域を確認中…</p>
-   <div class="offline-map-actions"><button type="button" id="offline-fuel-download" class="secondary">⛽ 選んだ地方のガソスタ情報を保存・更新</button><button type="button" id="offline-fuel-cancel" class="secondary" disabled>中断</button></div>
+   <div class="offline-fuel-settings">
+    <h3>⛽ ガソスタ情報（全国対応）</h3>
+    <p class="smallprint">道路地図とは別に、必要な地方のガソスタ情報だけ保存できるよ。ダウンロード時だけ通信が必要。</p>
+    <label class="offline-map-control" for="offline-fuel-region">ガソスタを保存する地方
+     <select id="offline-fuel-region">
+      <option value="chugoku">中国地方（広島・島根・鳥取・岡山・山口）</option>
+      <option value="shikoku">四国</option>
+      <option value="kyushu">九州・奄美</option>
+      <option value="okinawa">沖縄</option>
+      <option value="kansai">関西</option>
+      <option value="chubu">中部</option>
+      <option value="kanto">関東</option>
+      <option value="tohoku">東北</option>
+      <option value="hokkaido">北海道</option>
+     </select>
+    </label>
+    <div class="offline-map-actions"><button type="button" id="offline-fuel-download" class="secondary">⛽ この地方のガソスタ情報を保存・更新</button><button type="button" id="offline-fuel-cancel" class="secondary" disabled>中断</button></div>
+    <progress id="offline-fuel-progress" value="0" max="1" aria-label="ガソスタ情報の取得進捗"></progress>
+   </div>
    <p id="offline-fuel-status" class="smallprint" role="status" aria-live="polite">ガソスタの保存状態を確認中…</p>
-   <p class="smallprint">ガソスタ情報だけをOSMから取得。既存の道路地図は再取得しないよ。保存後は通信なしで表示可能。出典：© OpenStreetMap contributors（ODbL）</p>
+   <p class="smallprint">全国9エリアから選べるよ。公開OSMサーバーの混雑時は取得できない場合があるので、地方ごとに保存してね。営業時間・休業日は未保証。出典：© OpenStreetMap contributors（ODbL）</p>
   <p id="offline-map-display-status" class="smallprint" role="status">端末保存地図の表示準備中…</p>
   <p id="offline-map-install-note" class="smallprint"></p>
   <p class="smallprint">背景地図はBBBike Shortbread PMTilesをCloudflare経由で取得。地図データは端末内に保存します。ルートの新規計算は引き続きオンライン接続が必要です。</p>
@@ -252,4 +270,4 @@
  <div class="shimanami-big-confirm-actions"><button id="shimanami-big-confirm-normal" type="button" class="secondary">通常探索する</button><button id="shimanami-big-confirm-accept" type="button" class="primary">島渡りモードで探索</button></div>
 </dialog>
 <dialog id="next-destination-dialog" aria-labelledby="next-destination-title" class="next-destination-dialog"><h2 id="next-destination-title">経由地に到着しました</h2><p id="next-destination-message">次の目的地を案内しますか？</p><div class="next-destination-actions"><button type="button" id="next-destination-stop">案内を終了</button><button type="button" class="primary" id="next-destination-continue">次の目的地へ</button></div></dialog>
-<script src="./track-recorder.js?v=20261126-gpx-clipboard-v1" defer></script><script src="./ride-logic.js" defer></script><script src="./navigation-heading.js" defer></script><script src="./map-core.js?v=20261126-map-no-select-v1" defer></script><script src="./android-approaches.js" defer></script><script src="./shimanami-geometry.js" defer></script><script src="./shimanami-bridge-references.js" defer></script><script src="./shimanami-web-router.js?v=20261124-mixed-v3" defer></script><script src="./offline-route-store.js" defer></script><script src="./route-tuning.js?v=20261125-cruise-width-v1" defer></script><script src="./route-presets.js" defer></script><script src="./my-route-library.js" defer></script><script src="./public-brouter-client.js" defer></script><script src="./manual-detour.js" defer></script><script src="./biwako-bridge.js?v=20261124-bridge-prompt-v1" defer></script><script src="./manual-detour-local.js" defer></script><script src="./shimanami-big-router.js?v=20261124-mixed-v3" defer></script><script src="./voice-settings.js" defer></script><script src="./app.js?v=20261126-gps-double-tap-v1" defer></script><script src="./place-search-core.js?v=20261125-facility-v1" defer></script><script src="./openpoi-search.js" defer></script><script src="./poi-search-merge.js?v=20261125-facility-v1" defer></script><script src="./station-search.js" defer></script><script src="./address-search.js" defer></script><script src="./michinotochu-spot-search.js" defer></script><script src="./verified-offices.js?v=20261125-offices-v1" defer></script><script src="./mobile-ui.js?v=20261125-street-view-v1" defer></script><script src="./ride-radar.js" defer></script><script src="./gpx-itinerary-core.js" defer></script><script src="./gpx-transfer.js?v=20261124-manual-import-v1" defer></script><script type="module" src="./offline-map-bridge.mjs?v=20261126-fuel-foreground-v4"></script><script type="module" src="./offline-map-download.mjs"></script><script type="module" src="./offline-fuel.mjs?v=20261126-fuel-declutter-v5"></script></body></html>
+<script src="./track-recorder.js?v=20261126-gpx-clipboard-v1" defer></script><script src="./ride-logic.js" defer></script><script src="./navigation-heading.js" defer></script><script src="./map-core.js?v=20261126-map-no-select-v1" defer></script><script src="./android-approaches.js" defer></script><script src="./shimanami-geometry.js" defer></script><script src="./shimanami-bridge-references.js" defer></script><script src="./shimanami-web-router.js?v=20261124-mixed-v3" defer></script><script src="./offline-route-store.js" defer></script><script src="./route-tuning.js?v=20261125-cruise-width-v1" defer></script><script src="./route-presets.js" defer></script><script src="./my-route-library.js" defer></script><script src="./public-brouter-client.js" defer></script><script src="./manual-detour.js" defer></script><script src="./biwako-bridge.js?v=20261124-bridge-prompt-v1" defer></script><script src="./manual-detour-local.js" defer></script><script src="./shimanami-big-router.js?v=20261124-mixed-v3" defer></script><script src="./voice-settings.js" defer></script><script src="./app.js?v=20261126-gps-double-tap-v1" defer></script><script src="./place-search-core.js?v=20261125-facility-v1" defer></script><script src="./openpoi-search.js" defer></script><script src="./poi-search-merge.js?v=20261125-facility-v1" defer></script><script src="./station-search.js" defer></script><script src="./address-search.js" defer></script><script src="./michinotochu-spot-search.js" defer></script><script src="./verified-offices.js?v=20261125-offices-v1" defer></script><script src="./mobile-ui.js?v=20261125-street-view-v1" defer></script><script src="./ride-radar.js" defer></script><script src="./gpx-itinerary-core.js" defer></script><script src="./gpx-transfer.js?v=20261124-manual-import-v1" defer></script><script type="module" src="./offline-map-bridge.mjs?v=20261126-fuel-foreground-v4"></script><script type="module" src="./offline-map-download.mjs"></script><script type="module" src="./offline-fuel.mjs?v=20261126-national-v6"></script></body></html>
