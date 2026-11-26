@@ -177,8 +177,11 @@
   <label><input type="checkbox" data-offline-poi="landmark"> 📍 名所</label>
  </div>
  <div class="offline-poi-actionrow"><button id="offline-poi-clear" type="button" class="secondary">施設をすべて非表示</button></div>
- <div class="offline-poi-actionrow"><button id="offline-poi-check" type="button" class="secondary">⛽ ガソスタの表示を診断</button></div>
- <p class="smallprint" id="offline-poi-check-result" role="status" aria-live="polite">表示されないときは、ガソスタをONにして地図を拡大し、この診断を押してね。</p>
+ <!-- Keep the technical diagnosis available in code for troubleshooting; hide it from normal settings. -->
+ <div id="offline-poi-diagnostics" hidden>
+  <div class="offline-poi-actionrow"><button id="offline-poi-check" type="button" class="secondary">⛽ ガソスタの表示を診断</button></div>
+  <p class="smallprint" id="offline-poi-check-result" role="status" aria-live="polite">表示されないときは、ガソスタをONにして地図を拡大し、この診断を押してね。</p>
+ </div>
  <p class="smallprint">地図に登録された施設だけ表示。営業状況などのリアルタイム情報は含まないよ。</p>
  </section>
  <section class="voice-settings"><h3>音声案内</h3>
