@@ -27,6 +27,7 @@ function sync(){
   previous=key;
   vectorMap.jumpTo({center:[core.lon,core.lat],zoom:Math.max(0,core.zoom-1),bearing:-core.bearing});
  }
+ window.__bnaviFuelOverlaySync?.();
 }
 window.__bnaviMapBridge={sync,refresh:()=>window.dispatchEvent(new Event('bnavi:offline-maps-changed'))};
 core.onMapFrame=sync;
