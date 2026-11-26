@@ -16,6 +16,8 @@ class MapCore{
     const pointers=new Map();let holdTimer=null,holdFired=false,drag=null,gesture=null,pendingLongPress=null;
     const cancelHold=()=>{if(holdTimer!==null){clearTimeout(holdTimer);holdTimer=null;}};
     const skip=ev=>Boolean(ev.target.closest('button,a'));
+    // Prevent native selection handles while preserving pointer gesture handling.
+    this.el.addEventListener('selectstart',ev=>ev.preventDefault());
     const local=ev=>{const r=this.el.getBoundingClientRect();return {x:ev.clientX-r.left,y:ev.clientY-r.top};};
     const point=ev=>{const p=local(ev);return this.screenToLatLon(p.x,p.y);};
     const snapshot=()=>{const a=[...pointers.values()];const dx=a[1].x-a[0].x,dy=a[1].y-a[0].y;return {length:Math.hypot(dx,dy),angle:Math.atan2(dy,dx)*180/Math.PI,midX:(a[0].x+a[1].x)/2,midY:(a[0].y+a[1].y)/2};};
