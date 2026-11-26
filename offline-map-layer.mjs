@@ -66,7 +66,8 @@ document.getElementById('offline-poi-check')?.addEventListener('click',()=>{
  }catch(err){output.textContent='施設データの診断中にエラー：'+err.message;return;}
  let savedVisible=0;
  try{if(map.getLayer('bnavi-offline-fuel-icons'))savedVisible=map.queryRenderedFeatures({layers:['bnavi-offline-fuel-icons']}).length}catch{}
- const base='地図ズーム '+zoom.toFixed(1)+'／道路地図の施設 '+all+'件／道路地図内ガソスタ '+fuel+'件／別保存ガソスタ合計 '+offlineCount+'件／現在画面のガソスタ '+savedVisible+'件。';
+ const inView=window.__bnaviOfflineFuelInView||0;
+ const base='地図ズーム '+zoom.toFixed(1)+'／道路地図の施設 '+all+'件／道路地図内ガソスタ '+fuel+'件／別保存ガソスタ合計 '+offlineCount+'件／今の画面内 '+inView+'件／描画済み '+savedVisible+'件。';
  if(offlineCount>0){output.textContent=base+(savedVisible?' オフライン保存したガソスタが表示対象になっているよ。':' この画面では保存済みガソスタが描画されていないよ。保存した地方と表示位置を確認してね。');return;}
  output.textContent=base+(fuel>0
   ?(visible>0?' ガソスタのデータと表示は検出できたよ。':' ガソスタのデータはあるけれど、アイコンが描画されていないよ。表示処理の問題として調査できるよ。')
