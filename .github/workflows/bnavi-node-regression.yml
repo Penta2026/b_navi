@@ -51,7 +51,7 @@ jobs:
         run: |
           python -m pip install 'playwright==1.58.0'
           python -m playwright install chromium
-      - name: Tap start-goal swap in an actual Chromium browser
+      - name: Verify active-mode GPX and existing Chromium regressions
         run: |
           python tests/browser_free_gpx_nav_radar_flow.py
           python tests/browser_swap_endpoints.py
