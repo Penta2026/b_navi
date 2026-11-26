@@ -153,7 +153,7 @@ function addCartography(map){
  // Local Shortbread points of interest; always hidden until enabled by the user.
  const matches=(field,values)=>['in',['get',field],['literal',values]];
  const entries=[
-  ['fuel','pois',matches('amenity',['fuel']),13],
+  ['fuel','pois',matches('amenity',['fuel']),11],
   ['toilet','pois',matches('amenity',['toilets']),14],
   ['convenience','pois',matches('shop',['convenience']),14],
   ['station','public_transport',matches('kind',['station','halt','tram_stop']),13],
