@@ -13,6 +13,27 @@ let currentKey='',updating=false,rerun=false;
 const sourcePrefix='bike-pmtiles-';
 const prefix='bike-base-';
 const blueprints=[];
+const POI_PREF_KEY='bnavi.offlinePoiOptions.v1';
+const OPTIONAL_POI_IDS=['food','viewpoint','tourism','historic','landmark'];
+const poiPreferences=Object.fromEntries(OPTIONAL_POI_IDS.map(id=>[id,false]));
+try{const saved=JSON.parse(localStorage.getItem(POI_PREF_KEY)||'{}');for(const id of OPTIONAL_POI_IDS)poiPreferences[id]=saved?.[id]===true;}catch{}
+function applyPoiVisibility(map){
+ for(const region of regions)for(const id of OPTIONAL_POI_IDS)for(const suffix of ['dot','text']){
+  const layer=prefix+region+'-poi-'+id+'-'+suffix;
+  if(map.getLayer(layer))map.setLayoutProperty(layer,'visibility',poiPreferences[id]?'visible':'none');
+ }
+}
+for(const input of document.querySelectorAll('input[data-offline-poi]')){
+ const id=input.dataset.offlinePoi;
+ if(!OPTIONAL_POI_IDS.includes(id))continue;
+ input.checked=poiPreferences[id]===true;
+ input.addEventListener('change',()=>{
+  poiPreferences[id]=input.checked;
+  try{localStorage.setItem(POI_PREF_KEY,JSON.stringify(poiPreferences))}catch{}
+  if(window.__bikeMap)applyPoiVisibility(window.__bikeMap);
+ });
+}
+
 function message(s){if(label)label.textContent=s}
 
 async function readArchive(region){
@@ -124,6 +145,33 @@ function addCartography(map){
   'line-color':['match',K,'motorway','#e7a2a7','trunk','#f1bb8e','primary','#f8d397','secondary','#f9e3ba','tertiary','#fff5dd','#ffffff'],
   'line-width':['interpolate',['linear'],['zoom'],9,0.9,11,1.5,13,3.1,15,6.3,18,11.5]}});
 
+
+ // Shortbread POI markers (entirely from the local PMTiles).
+ const matches=(field,values)=>['in',['get',field],['literal',values]];
+ const entries=[
+  ['fuel','pois',matches('amenity',['fuel']),'油','#c46c3f',14],
+  ['toilet','pois',matches('amenity',['toilets']),'WC','#347eac',14],
+  ['convenience','pois',matches('shop',['convenience']),'店','#2b9270',14],
+  ['station','public_transport',matches('kind',['station','halt','tram_stop']),'駅','#346ba6',13],
+  ['port','public_transport',matches('kind',['ferry_terminal']),'港','#387f9a',12],
+  ['food','pois',matches('amenity',['restaurant','cafe','fast_food','food_court']),'食','#b97a4d',14],
+  ['viewpoint','pois',matches('tourism',['viewpoint']),'景','#5a945c',14],
+  ['tourism','pois',['any',matches('tourism',['attraction','museum','gallery','zoo','theme_park','aquarium','information']),matches('amenity',['arts_centre'])],'観','#8169ac',14],
+  ['historic','pois',matches('historic',['archaeological_site','battlefield','castle','fort','ruins','wayside_shrine']),'史','#90654b',14],
+  ['landmark','pois',['any',matches('historic',['monument','memorial']),matches('tourism',['artwork']),matches('man_made',['lighthouse'])],'名','#ad6a75',14]
+ ];
+ for(const [id,source,filter,mark,color,minzoom] of entries){
+  const optional=OPTIONAL_POI_IDS.includes(id);
+  add(map,'poi-'+id+'-dot','circle',source,{minzoom,filter,layout:{visibility:optional?'none':'visible'},paint:{
+   'circle-radius':['interpolate',['linear'],['zoom'],12,7,16,9],
+   'circle-color':color,'circle-stroke-color':'#fff','circle-stroke-width':1.5
+  }});
+  add(map,'poi-'+id+'-text','symbol',source,{minzoom,filter,layout:{
+   visibility:optional?'none':'visible',
+   'text-field':mark,'text-font':['sans-serif'],'text-size':mark==='WC'?9:12,
+   'text-allow-overlap':false,'text-padding':3
+  },paint:{'text-color':'#fff'}});
+ }
  // Labels: prefer local system glyph rendering (MapLibre GL JS 6) for offline maps.
  const textPaint=(color,sizeHalo=1.35)=>({'text-color':color,'text-halo-color':'#fffdfa','text-halo-width':sizeHalo,'text-halo-blur':0.5});
  const font=['sans-serif'];
@@ -170,6 +218,7 @@ function renderAll(map,records){
   map.addSource(sourceId(record.region),sourceOptions(record));
  }
  for(const layer of regionLayers(records,blueprints))map.addLayer(layer,anchor(map));
+ applyPoiVisibility(map);
  removeLegacyRoads(map);
  if(map.getLayer('plain-background'))
   map.setPaintProperty('plain-background','background-color','#f7f5f0');
