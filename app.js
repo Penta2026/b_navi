@@ -867,12 +867,14 @@ function observeDestination(position,accuracy,source='nav'){
  const last=state.targetIndex>=state.activeTargets.length-1;
  if(last){
    state.finishing=true;
+   window.BNaviTrack?.stop(); // Final arrival, not the end of the spoken message.
    $('nav-status').textContent='目的地に到着しました。案内を終了します。';
    const done=()=>{if(source==='radar'&&!state.navActive)window.BNaviRideMode?.stop?.();else stopVoiceGuidance(true);};
    // Keep the arrival message audible: stopVoiceGuidance cancels speech.
    announceArrival('目的地に到着しました。案内を終了します。',done);
  }else{
    state.navPaused=true;
+   window.BNaviTrack?.stop(); // Do not log the visit while waiting at a waypoint.
    if(state.navActive){$('nav-status').textContent='経由地に到着しました。次の目的地を案内しますか？';}
    speak('経由地に到着しました。');
    const dialog=$('next-destination-dialog');
@@ -897,7 +899,7 @@ $('next-destination-continue').addEventListener('click',()=>{
  if(state.targetIndex<state.activeTargets.length-1){
    state.targetIndex++;state.arrivalPolicy.reset();state.offRoutePolicy?.reset();state.navPaused=false;
    if(state.routeType==='shimanami'&&!state.awaitingBridge){const leg=state.islandLegs[state.islandIndex];if(leg&&!leg.bridgeAfter&&leg.checkpointAfter===state.targetIndex&&state.islandIndex<state.islandLegs.length-1){state.islandIndex++;loadIslandGuidance(state.islandIndex);}}
-   if(state.navActive){$('nav-status').textContent='次の目的地を案内します。';speak('次の目的地を案内します。');}
+   if(state.navActive){window.BNaviTrack?.start('nav');$('nav-status').textContent='次の目的地を案内します。';speak('次の目的地を案内します。');}
    else window.BNaviRideMode?.refreshTarget?.();
  }
 });
@@ -1141,7 +1143,8 @@ function startVoiceGuidance(){
  if(!canVoiceNavigate()){$('nav-status').textContent='先に通常道路のルートを計算するか、案内用GPXを読み込んでね。';return;}
  if(!window.isSecureContext||!navigator.geolocation){$('nav-status').textContent='音声案内にGPSが必要です。HTTPSと位置情報の許可を確認してね。';return;}
  // Browser/iOS speech begins directly inside the button click, before any geolocation permission prompt.
- beginTargetSequence();window.BNaviTrack?.start('nav');state.navActive=true;state.saidCues=new Set();state.followGps=true;
+ if(freeRideInProgress())window.BNaviRideMode?.stop?.(true);
+ beginTargetSequence();state.navActive=true;window.BNaviTrack?.start('nav');state.saidCues=new Set();state.followGps=true;
  window.BNaviCloseRouteSheet?.();
  syncNavigationButtons();
  const hasHints=state.routeType==='shimanami'?state.islandLegs.some(x=>x.turnCues?.length):state.turnCues.length>0;
@@ -1239,17 +1242,20 @@ function handleLocationTap(){
  lastLocationTapAt=now;startGps();
 }
 window.BNaviHandleLocationTap=handleLocationTap;
+let gpsWatchGeneration=0;
 function startGps(){
  stopDemo();
+ if(freeRideInProgress())return; // Free ride owns its watcher.
  if(state.watchId!=null){state.followGps=true;if(state.location){map.center(...state.location,Math.max(map.zoom,16));refreshMap();showGpsMessage('現在地に移動しました',2500);}return;}
  if(!window.isSecureContext){showGpsMessage('現在地を取得できません。スマホではHTTPSが必要です（PCのlocalhostは例外）。');$('gps-status').textContent='HTTPS接続が必要';return;}
  if(!navigator.geolocation){showGpsMessage('このブラウザでは位置情報を利用できません。');$('gps-status').textContent='GPS非対応';return;}
  state.followGps=true;state.gpsNotified=false;state.heading={heading:null,at:-Infinity};map.setGpsHeading(null);showGpsMessage('現在地を取得中…位置情報の許可を確認してね。');
- const ok=pos=>{if(state.navActive)window.BNaviTrack?.add(pos);state.location=[pos.coords.latitude,pos.coords.longitude];state.gpsAccuracy=pos.coords.accuracy;state.lastGpsFixAt=Date.now();updateHeadingFromPosition(pos);state.motionGate?.observe(state.location,state.gpsAccuracy,pos.coords.speed,performance.now());$('gps-status').textContent=`位置取得 ±${Math.round(pos.coords.accuracy)}m${Number.isFinite(state.heading.heading)?'・進行方位あり':'・方位待ち'}`;if(state.followGps)map.center(...state.location,Math.max(map.zoom,16));refreshMap();window.BNaviRideMode?.updateNavigationRadar?.(state.location,state.heading.heading);const arrived=(state.navActive&&!state.navPaused)?observeDestination(state.location,state.gpsAccuracy,'nav'):false;if(!arrived&&!state.navPaused&&!state.finishing)updateGpsProgress();if(!arrived){clearPassedLocalDetour(state.location,state.gpsAccuracy);observeOffRoute(state.location,state.gpsAccuracy);}if(!state.gpsNotified){showGpsMessage(`現在地を表示中（精度 ±${Math.round(pos.coords.accuracy)}m）`,3300);state.gpsNotified=true;}};
- const err=x=>{const msg=x.code===1?'位置情報が拒否されています。ブラウザのサイト設定で許可してね。':x.code===2?'位置を取得できません。GPS・通信・端末の位置情報設定を確認してね。':'取得が時間切れです。屋外などで再試行してね。';$('gps-status').textContent='GPS失敗';showGpsMessage(msg);if(state.navActive){stopVoiceGuidance(false);$('nav-status').textContent='GPSエラー：'+msg;}stopGps();};
+ const generation=++gpsWatchGeneration;
+ const ok=pos=>{if(generation!==gpsWatchGeneration)return;if(state.navActive&&!state.navPaused&&!state.finishing)window.BNaviTrack?.add(pos);state.location=[pos.coords.latitude,pos.coords.longitude];state.gpsAccuracy=pos.coords.accuracy;state.lastGpsFixAt=Date.now();updateHeadingFromPosition(pos);state.motionGate?.observe(state.location,state.gpsAccuracy,pos.coords.speed,performance.now());$('gps-status').textContent=`位置取得 ±${Math.round(pos.coords.accuracy)}m${Number.isFinite(state.heading.heading)?'・進行方位あり':'・方位待ち'}`;if(state.followGps)map.center(...state.location,Math.max(map.zoom,16));refreshMap();window.BNaviRideMode?.updateNavigationRadar?.(state.location,state.heading.heading);const arrived=(state.navActive&&!state.navPaused)?observeDestination(state.location,state.gpsAccuracy,'nav'):false;if(!arrived&&!state.navPaused&&!state.finishing)updateGpsProgress();if(!arrived){clearPassedLocalDetour(state.location,state.gpsAccuracy);observeOffRoute(state.location,state.gpsAccuracy);}if(!state.gpsNotified){showGpsMessage(`現在地を表示中（精度 ±${Math.round(pos.coords.accuracy)}m）`,3300);state.gpsNotified=true;}};
+ const err=x=>{if(generation!==gpsWatchGeneration)return;const msg=x.code===1?'位置情報が拒否されています。ブラウザのサイト設定で許可してね。':x.code===2?'位置を取得できません。GPS・通信・端末の位置情報設定を確認してね。':'取得が時間切れです。屋外などで再試行してね。';$('gps-status').textContent='GPS失敗';showGpsMessage(msg);if(state.navActive){stopVoiceGuidance(false);$('nav-status').textContent='GPSエラー：'+msg;}stopGps();};
  $('gps-on').disabled=true;$('gps-off').disabled=false;state.watchId=navigator.geolocation.watchPosition(ok,err,{enableHighAccuracy:true,maximumAge:2000,timeout:15000});
 }
-function stopGps(){if(state.watchId!=null)navigator.geolocation.clearWatch(state.watchId);state.watchId=null;state.location=null;state.lastGpsFixAt=0;map.setGpsHeading(null);refreshMap();$('gps-on').disabled=false;$('gps-off').disabled=true;$('gps-status').textContent='追従停止';}
+function stopGps(){if(state.navActive)stopVoiceGuidance(false);++gpsWatchGeneration;if(state.watchId!=null)navigator.geolocation.clearWatch(state.watchId);state.watchId=null;state.location=null;state.lastGpsFixAt=0;map.setGpsHeading(null);refreshMap();$('gps-on').disabled=false;$('gps-off').disabled=true;$('gps-status').textContent='追従停止';}
 function updateGpsProgress(demo=false){if(!state.location||state.navPaused||state.finishing)return;if(state.routeType==='shimanami'){updateShimanamiGuidance();return;}if(!['normal','imported'].includes(state.routeType)||state.gpsPoints.length<2){$('nav-status').textContent='現在地を表示中。橋の参考線・人道はGPS走行案内に利用しません。';return;}let nearest=Infinity,index=0;const pts=state.gpsPoints;for(let i=0;i<pts.length;i++){const d=km(state.location,pts[i]);if(d<nearest){nearest=d;index=i;}}const cum=state.cumKm,remaining=(cum.at(-1)||0)-(cum[index]||0);const next=state.turnCues.find(c=>c.offset>=index&&c.desc!=='destination');let instruction='';if(next){const nextIndex=Math.min(pts.length-1,Math.max(0,next.offset));const until=Math.max(0,Math.round(1000*((cum[nextIndex]||0)-(cum[index]||0))),Math.round(BNaviRideLogic.meters(state.location,pts[nextIndex])));instruction=`／次：${cueText(next.desc)} 約${until}m`;if((state.navActive||demo)&&state.gpsAccuracy<=35&&nearest<.08){
  if(until<=20&&until>=0&&nearest<.035&&state.gpsAccuracy<=25&&!state.saidCues.has('now-'+next.offset)){state.saidCues.add('now-'+next.offset);state.saidCues.add(next.offset);speak(cueText(next.desc));}
  else if(until<=130&&!state.saidCues.has(next.offset)){state.saidCues.add(next.offset);speak(`およそ${Math.max(10,Math.round(until/10)*10)}メートル先、${cueText(next.desc)}`);}

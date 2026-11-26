@@ -13,7 +13,9 @@
  function targetLabel(){return window.BNaviActiveTargetLabel?.()||'目的地';}
  function tone(ctx,freq,when,duration){const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(0.0001,when);g.gain.linearRampToValueAtTime(.17,when+.012);g.gain.exponentialRampToValueAtTime(.0001,when+duration);o.connect(g).connect(ctx.destination);o.start(when);o.stop(when+duration+.012)}
  function chime(){try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const t=audio.currentTime+.015;for(const shift of [0,.46]){tone(audio,740,t+shift,.095);tone(audio,990,t+shift+.115,.155);}}catch(e){console.warn('Radar audio unavailable',e)}}
+ let freeWatchGeneration=0;
  function stop(silent=false){
+  ++freeWatchGeneration;
   const wasFree=mode==='free';
   if(wasFree)window.BNaviTrack?.stop();
   if(watch!==null){navigator.geolocation.clearWatch(watch);watch=null}
@@ -44,7 +46,8 @@
   $('ride-free').textContent='■ フリー走行終了';$('ride-free').classList.add('active');$('ride-pill').hidden=false;panel.hidden=true;
   status('GPSを取得中…');
   // Free ride owns its GPS watch, while navigation radar uses only the navigation watch.
-  watch=navigator.geolocation.watchPosition(onFix,e=>{status('GPSエラー：'+e.message);if(e.code===1)stop(true);},{enableHighAccuracy:true,maximumAge:2000,timeout:15000});
+  const generation=++freeWatchGeneration;
+  watch=navigator.geolocation.watchPosition(pos=>{if(generation===freeWatchGeneration)onFix(pos)},e=>{if(generation!==freeWatchGeneration)return;status('GPSエラー：'+e.message);if(e.code===1)stop(true);},{enableHighAccuracy:true,maximumAge:2000,timeout:15000});
  }
  function onFix(pos){
   if(mode!=='free'||!visible)return;

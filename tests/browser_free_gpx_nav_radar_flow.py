@@ -11,7 +11,7 @@ html=re.sub(r'<script src="\./[^"]+" defer></script>','',html)
 html=html.replace('<link rel="stylesheet" href="./style.css">','')
 GPX='<?xml version="1.0"?><gpx xmlns="http://www.topografix.com/GPX/1/1"><trk><trkseg><trkpt lat="34.40" lon="132.45"/><trkpt lat="34.405" lon="132.455"/></trkseg></trk><rte><rtept lat="34.403" lon="132.453"><desc>right</desc><extensions><offset>1</offset></extensions></rtept></rte></gpx>'
 with sync_playwright() as p:
- browser=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox','--disable-dev-shm-usage'])
+ browser=p.chromium.launch(headless=True,args=['--no-sandbox','--disable-dev-shm-usage'])
  for width in (390,320):
   context=browser.new_context(viewport={'width':width,'height':844},is_mobile=True,has_touch=True,locale='ja-JP',accept_downloads=True)
   page=context.new_page()
@@ -34,10 +34,16 @@ with sync_playwright() as p:
     window.__gps=(lat,lon,t=Date.now())=>window.__gpsOk({timestamp:t,coords:{latitude:lat,longitude:lon,accuracy:5,heading:30,speed:6,altitude:8}});
   }''')
   for name in modules:
-   page.add_script_tag(content=(ROOT/name).read_text(encoding='utf8'))
+   page.add_script_tag(content=(ROOT/name.split('?',1)[0]).read_text(encoding='utf8'))
   page.wait_for_timeout(90)
   assert page.locator('#ride-radar').count()==0
   assert page.locator('#nav-radar-toggle').is_hidden()
+  # Location display alone must never start or append a record.
+  page.evaluate('startGps()')
+  page.evaluate('window.__gps(34.4,132.45,1699999999000)')
+  assert page.evaluate('BNaviTrack.getState().count')==0
+  page.evaluate('stopGps();window.__gps(34.4,132.45,1699999999500)')
+  assert page.evaluate('BNaviTrack.getState().count')==0
   # A previously calculated route must disappear only from the screen in free mode.
   # S/G coordinates and markers, and the underlying route geometry, all survive.
   page.evaluate('''gpx=>{
@@ -52,7 +58,7 @@ with sync_playwright() as p:
   assert page.locator('#ride-free').is_visible()
   page.locator('#ride-free').click()
   assert page.evaluate('BNaviRideMode.getMode()')=='free'
-  assert page.evaluate('window.__watchCount')==1
+  assert page.evaluate('window.__watchCount')==2
   page.wait_for_timeout(80)
   assert page.evaluate('map.paths.length')==0, 'free ride must hide route geometry immediately'
   assert page.evaluate('map.pathLayer.children.length')==0, 'guidance line still visible'
@@ -92,12 +98,12 @@ with sync_playwright() as p:
   assert page.evaluate('state.navActive')
   assert not page.locator('#radar-screen').is_visible()
   assert page.locator('#nav-radar-toggle').is_visible()
-  assert page.evaluate('window.__watchCount')==2
+  assert page.evaluate('window.__watchCount')==3
   page.locator('#nav-radar-toggle').click()
   assert page.locator('#radar-screen').is_visible()
   assert page.evaluate('BNaviRideMode.getMode()')=='nav-radar'
   assert page.locator('#radar-exit').inner_text().startswith('🔈')
-  assert page.evaluate('window.__watchCount')==2
+  assert page.evaluate('window.__watchCount')==3
   page.evaluate('window.__gps(34.401,132.451)')
   assert '直線' in page.locator('#radar-readout').inner_text()
   assert page.evaluate("speak('左折です')") is False
@@ -108,7 +114,19 @@ with sync_playwright() as p:
   assert not page.locator('#radar-screen').is_visible()
   page.locator('#nav-stop-quick').click()
   assert not page.evaluate('state.navActive')
-  assert page.evaluate('window.__watchCount')==2
+  assert not page.evaluate('BNaviTrack.getState().active')
+  count=page.evaluate('BNaviTrack.getState().count')
+  page.evaluate('window.__gps(34.402,132.452,Date.now()+10000)')
+  assert page.evaluate('BNaviTrack.getState().count')==count
+  assert page.evaluate('window.__watchCount')==3
+  # Explicit GPS-off must also stop navigation and recording; GPS-only restart stays idle.
+  page.evaluate('startVoiceGuidance();window.__gps(34.402,132.452,Date.now()+20000)')
+  assert page.evaluate('BNaviTrack.getState().active')
+  page.evaluate('stopGps()')
+  assert not page.evaluate('state.navActive') and not page.evaluate('BNaviTrack.getState().active')
+  count=page.evaluate('BNaviTrack.getState().count')
+  page.evaluate('startGps();window.__gps(34.403,132.453,Date.now()+30000)')
+  assert page.evaluate('BNaviTrack.getState().count')==count
   assert not errors,(width,errors)
   page.close();context.close()
  print('PASS: 320px/390px free ride->real GPX download, navigation default voice->radar->voice, single GPS watcher')
