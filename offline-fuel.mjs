@@ -7,6 +7,8 @@ const FILE_NAME='stations.json';
 const SOURCE='bnavi-offline-fuel';
 const LAYER='bnavi-offline-fuel-icons';
 const IMAGE='bnavi-offline-fuel-symbol';
+const SVG_NS='http://www.w3.org/2000/svg';
+let fuelSvgGroup=null,fuelIconData=null;
 const API='https://overpass-api.de/api/interpreter';
 const REGIONS={
  chugoku:{name:'中国',box:[33.35,130.40,36.05,134.70]},
@@ -92,33 +94,55 @@ function addFuelIcon(map){
  ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#607986';ctx.lineWidth=2.5;ctx.stroke();
  ctx.font='37px "Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji",sans-serif';
  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('⛽',32,33,52);
+ fuelIconData=canvas.toDataURL('image/png');
  map.addImage(IMAGE,ctx.getImageData(0,0,64,64),{pixelRatio:2});
 }
 let lastCount=0;
 let allFuelFeatures=[];
-let viewRefreshTimer=0;
-// Only pass fully visible icons to MapLibre. A marker whose centre is right
-// against the canvas edge otherwise gets drawn as a distracting half icon.
+function foregroundFuelLayer(){
+ if(fuelSvgGroup?.isConnected)return fuelSvgGroup;
+ const svg=window.__bnaviMapCore?.svg;
+ if(!svg)return null;
+ fuelSvgGroup=document.createElementNS(SVG_NS,'g');
+ fuelSvgGroup.setAttribute('id','bnavi-fuel-foreground');
+ fuelSvgGroup.setAttribute('pointer-events','none');
+ // The SVG is above both the MapLibre vector map and the OSM raster tiles.
+ // Keep the fuel icons beneath the route, waypoint and GPS paths.
+ svg.insertBefore(fuelSvgGroup,svg.firstChild);
+ return fuelSvgGroup;
+}
 function updateVisibleFuel(){
- const map=window.__bikeMap;
- if(!map||!map.isStyleLoaded())return;
- const source=map.getSource(SOURCE);
- if(!source)return;
- const canvas=map.getCanvas();
- const width=canvas.clientWidth,height=canvas.clientHeight;
- if(width<=0||height<=0)return;
- const margin=19;
- const visible=allFuelFeatures.filter(feature=>{
-  const p=map.project(feature.geometry.coordinates);
-  return p.x>=margin&&p.y>=margin&&p.x<=width-margin&&p.y<=height-margin;
- });
- source.setData({type:'FeatureCollection',features:visible});
- window.__bnaviOfflineFuelInView=visible.length;
+ const core=window.__bnaviMapCore,group=foregroundFuelLayer();
+ if(!core||!group)return;
+ const width=core.el.clientWidth,height=core.el.clientHeight;
+ if(width<1||height<1)return;
+ let enabled=false;
+ try{enabled=JSON.parse(localStorage.getItem('bnavi.offlinePoiOptions.v2')||'{}')?.fuel===true}catch{}
+ group.replaceChildren();
+ window.__bnaviOfflineFuelInView=0;
+ window.__bnaviOfflineFuelRendered=0;
+ if(!enabled||core.zoom<11||!fuelIconData)return;
+ const c=Math.cos(core.bearing*Math.PI/180),sin=Math.sin(core.bearing*Math.PI/180),margin=22;
+ const nodes=document.createDocumentFragment();
+ for(const feature of allFuelFeatures){
+  const [x,y]=core.screenPos([feature.geometry.coordinates[1],feature.geometry.coordinates[0]]);
+  const dx=x-width/2,dy=y-height/2;
+  const rotatedX=dx*c-dy*sin+width/2,rotatedY=dx*sin+dy*c+height/2;
+  if(rotatedX<margin||rotatedY<margin||rotatedX>width-margin||rotatedY>height-margin)continue;
+  window.__bnaviOfflineFuelInView++;
+  const marker=document.createElementNS(SVG_NS,'image');
+  marker.setAttribute('x',(x-16).toFixed(1));
+  marker.setAttribute('y',(y-16).toFixed(1));
+  marker.setAttribute('width','32');marker.setAttribute('height','32');
+  marker.setAttribute('href',fuelIconData);
+  // Cancel the parent SVG's map rotation for upright pictograms.
+  marker.setAttribute('transform','rotate('+(-core.bearing).toFixed(2)+' '+x.toFixed(1)+' '+y.toFixed(1)+')');
+  nodes.append(marker);
+ }
+ group.append(nodes);
+ window.__bnaviOfflineFuelRendered=window.__bnaviOfflineFuelInView;
 }
-function scheduleVisibleFuel(){
- clearTimeout(viewRefreshTimer);
- viewRefreshTimer=setTimeout(updateVisibleFuel,110);
-}
+function scheduleVisibleFuel(){updateVisibleFuel()}
 async function refresh(){
  const map=window.__bikeMap;
  if(!map||!map.isStyleLoaded())return;
@@ -131,21 +155,13 @@ async function refresh(){
  allFuelFeatures=geo.features;
  window.__bnaviOfflineFuelCount=lastCount;
  addFuelIcon(map);
- let source=map.getSource(SOURCE);
- if(!source)map.addSource(SOURCE,{type:'geojson',data:{type:'FeatureCollection',features:[]}});
- if(!map.getLayer(LAYER))map.addLayer({id:LAYER,type:'symbol',source:SOURCE,minzoom:11,
-  layout:{'icon-image':IMAGE,'icon-size':0.9,'icon-allow-overlap':true,'icon-ignore-placement':true,'icon-padding':5,visibility:'none'}});
- // Always give the fuel layer the topmost position; names/other POIs must not hide it.
- if(map.getLayer(LAYER))map.moveLayer(LAYER);
- updateVisibleFuel();
+ // The dedicated foreground SVG prevents raster/vector basemaps covering icons.
+ if(map.getLayer(LAYER))map.removeLayer(LAYER);
+ if(map.getSource(SOURCE))map.removeSource(SOURCE);
+ scheduleVisibleFuel();
  syncVisibility();
 }
-function syncVisibility(){
- const map=window.__bikeMap;if(!map?.getLayer(LAYER))return;
- let selected=false;
- try{selected=JSON.parse(localStorage.getItem('bnavi.offlinePoiOptions.v2')||'{}')?.fuel===true}catch{}
- map.setLayoutProperty(LAYER,'visibility',selected?'visible':'none');
-}
+function syncVisibility(){scheduleVisibleFuel();}
 function updateSavedStatus(){
  const region=regionSelect?.value;
  if(!REGIONS[region])return;
@@ -175,6 +191,7 @@ document.getElementById('offline-poi-clear')?.addEventListener('click',syncVisib
 function boot(){
  const map=window.__bikeMap;
  if(!map){setTimeout(boot,150);return;}
+ window.__bnaviFuelOverlaySync=updateVisibleFuel;
  map.on('moveend',scheduleVisibleFuel);
  map.on('resize',scheduleVisibleFuel);
  map.on('load',()=>refresh().catch(e=>report('施設データ表示エラー：'+e.message)));
