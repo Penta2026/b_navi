@@ -104,6 +104,7 @@ async function refresh(){
   catch(e){report('保存済みガソスタを読めません: '+e.message)}
  }
  const geo=fuelGeoJSON(records);lastCount=geo.features.length;
+ window.__bnaviOfflineFuelCount=lastCount;
  addFuelIcon(map);
  let source=map.getSource(SOURCE);
  if(source)source.setData(geo);
