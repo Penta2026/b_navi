@@ -127,6 +127,25 @@ with sync_playwright() as p:
   count=page.evaluate('BNaviTrack.getState().count')
   page.evaluate('startGps();window.__gps(34.403,132.453,Date.now()+30000)')
   assert page.evaluate('BNaviTrack.getState().count')==count
+  # Waypoint pause excludes its GPS fixes; continuing records a fresh GPX segment.
+  page.evaluate('stopGps();startVoiceGuidance();window.__gps(34.403,132.453,Date.now()+40000)')
+  page.evaluate('state.activeTargets=[[34.403,132.453],[34.405,132.455]];state.targetIndex=0;state.arrivalPolicy={observe:()=>true,reset(){}};observeDestination([34.403,132.453],5)')
+  assert page.evaluate('state.navPaused') and not page.evaluate('BNaviTrack.getState().active')
+  count=page.evaluate('BNaviTrack.getState().count')
+  page.evaluate('window.__gps(34.4031,132.4531,Date.now()+50000)')
+  assert page.evaluate('BNaviTrack.getState().count')==count
+  page.locator('#next-destination-continue').click()
+  assert page.evaluate('BNaviTrack.getState().active')
+  page.evaluate('window.__gps(34.404,132.454,Date.now()+60000)')
+  assert page.evaluate('BNaviTrack.getState().count')==count+1
+  assert page.evaluate('BNaviTrack.xml().split("<trkseg>").length-1')>=2
+  # Arrival must stop recording immediately, even if the spoken message has not finished.
+  page.evaluate('state.arrivalPolicy={observe:()=>true,reset(){}};observeDestination([34.405,132.455],5)')
+  assert not page.evaluate('BNaviTrack.getState().active')
+  count=page.evaluate('BNaviTrack.getState().count')
+  page.evaluate('window.__gps(34.405,132.455,Date.now()+70000)')
+  assert page.evaluate('BNaviTrack.getState().count')==count
+  page.evaluate('stopVoiceGuidance()')
   assert not errors,(width,errors)
   page.close();context.close()
  print('PASS: 320px/390px free ride->real GPX download, navigation default voice->radar->voice, single GPS watcher')

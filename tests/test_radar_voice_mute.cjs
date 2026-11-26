@@ -24,6 +24,9 @@ test('arrival finalization in radar bypasses TTS and does not hang navigation', 
 test('PWA cache revision includes new radar voice control code without purging route data', () => {
  assert.match(sw, /const CACHE='bnavi-pc-pwa-[^']+'/);
  assert.match(sw, /'\.\/app\.js(?:\?[^']+)?'/);
- assert.match(sw, /'\.\/ride-radar\.js'/);
+ assert.match(sw, /'\.\/ride-radar\.js(?:\?[^']+)?'/);
+ const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+ const radarSrc=html.match(/src="(\.\/ride-radar\.js(?:\?[^"]+)?)"/)?.[1];
+ assert.ok(radarSrc && sw.includes("'"+radarSrc+"'"),'HTML and precache must use the same radar script URL');
  assert.doesNotMatch(sw, /indexedDB\.deleteDatabase/);
 });

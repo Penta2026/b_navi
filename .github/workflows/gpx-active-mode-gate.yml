@@ -1,0 +1,30 @@
+name: B_Navi GPX active-mode gate
+on:
+  push:
+    branches: [gpx-active-modes]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gpx:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and GPX/radar regression
+        run: |
+          node --check app.js
+          node --check track-recorder.js
+          node --check ride-radar.js
+          node --check sw.js
+          node --test tests/test_track_active_modes.cjs tests/test_track_filename.cjs tests/test_radar_voice_mute.cjs
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'playwright==1.58.0'
+      - run: python -m playwright install chromium
+      - name: Actual Chromium GPS recording lifecycle
+        run: python tests/browser_free_gpx_nav_radar_flow.py
