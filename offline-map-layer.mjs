@@ -13,27 +13,31 @@ let currentKey='',updating=false,rerun=false;
 const sourcePrefix='bike-pmtiles-';
 const prefix='bike-base-';
 const blueprints=[];
-const POI_PREF_KEY='bnavi.offlinePoiOptions.v1';
-const OPTIONAL_POI_IDS=['food','viewpoint','tourism','historic','landmark'];
-const poiPreferences=Object.fromEntries(OPTIONAL_POI_IDS.map(id=>[id,false]));
-try{const saved=JSON.parse(localStorage.getItem(POI_PREF_KEY)||'{}');for(const id of OPTIONAL_POI_IDS)poiPreferences[id]=saved?.[id]===true;}catch{}
+const POI_PREF_KEY='bnavi.offlinePoiOptions.v2';
+const POI_IDS=['fuel','toilet','convenience','station','port','food','viewpoint','tourism','historic','landmark'];
+const poiPreferences=Object.fromEntries(POI_IDS.map(id=>[id,false]));
+try{const saved=JSON.parse(localStorage.getItem(POI_PREF_KEY)||'{}');for(const id of POI_IDS)poiPreferences[id]=saved?.[id]===true;}catch{}
 function applyPoiVisibility(map){
- for(const region of regions)for(const id of OPTIONAL_POI_IDS)for(const suffix of ['dot','text']){
-  const layer=prefix+region+'-poi-'+id+'-'+suffix;
+ for(const region of regions)for(const id of POI_IDS){
+  const layer=prefix+region+'-poi-'+id+'-icon';
   if(map.getLayer(layer))map.setLayoutProperty(layer,'visibility',poiPreferences[id]?'visible':'none');
  }
 }
+function persistPoiVisibility(){
+ try{localStorage.setItem(POI_PREF_KEY,JSON.stringify(poiPreferences))}catch{}
+ if(window.__bikeMap)applyPoiVisibility(window.__bikeMap);
+}
 for(const input of document.querySelectorAll('input[data-offline-poi]')){
  const id=input.dataset.offlinePoi;
- if(!OPTIONAL_POI_IDS.includes(id))continue;
+ if(!POI_IDS.includes(id))continue;
  input.checked=poiPreferences[id]===true;
- input.addEventListener('change',()=>{
-  poiPreferences[id]=input.checked;
-  try{localStorage.setItem(POI_PREF_KEY,JSON.stringify(poiPreferences))}catch{}
-  if(window.__bikeMap)applyPoiVisibility(window.__bikeMap);
- });
+ input.addEventListener('change',()=>{poiPreferences[id]=input.checked;persistPoiVisibility();});
 }
-
+document.getElementById('offline-poi-clear')?.addEventListener('click',()=>{
+ for(const id of POI_IDS)poiPreferences[id]=false;
+ for(const input of document.querySelectorAll('input[data-offline-poi]'))input.checked=false;
+ persistPoiVisibility();
+});
 function message(s){if(label)label.textContent=s}
 
 async function readArchive(region){
@@ -146,31 +150,26 @@ function addCartography(map){
   'line-width':['interpolate',['linear'],['zoom'],9,0.9,11,1.5,13,3.1,15,6.3,18,11.5]}});
 
 
- // Shortbread POI markers (entirely from the local PMTiles).
+ // Local Shortbread points of interest; always hidden until enabled by the user.
  const matches=(field,values)=>['in',['get',field],['literal',values]];
  const entries=[
-  ['fuel','pois',matches('amenity',['fuel']),'油','#c46c3f',14],
-  ['toilet','pois',matches('amenity',['toilets']),'WC','#347eac',14],
-  ['convenience','pois',matches('shop',['convenience']),'店','#2b9270',14],
-  ['station','public_transport',matches('kind',['station','halt','tram_stop']),'駅','#346ba6',13],
-  ['port','public_transport',matches('kind',['ferry_terminal']),'港','#387f9a',12],
-  ['food','pois',matches('amenity',['restaurant','cafe','fast_food','food_court']),'食','#b97a4d',14],
-  ['viewpoint','pois',matches('tourism',['viewpoint']),'景','#5a945c',14],
-  ['tourism','pois',['any',matches('tourism',['attraction','museum','gallery','zoo','theme_park','aquarium','information']),matches('amenity',['arts_centre'])],'観','#8169ac',14],
-  ['historic','pois',matches('historic',['archaeological_site','battlefield','castle','fort','ruins','wayside_shrine']),'史','#90654b',14],
-  ['landmark','pois',['any',matches('historic',['monument','memorial']),matches('tourism',['artwork']),matches('man_made',['lighthouse'])],'名','#ad6a75',14]
+  ['fuel','pois',matches('amenity',['fuel']),15],
+  ['toilet','pois',matches('amenity',['toilets']),15],
+  ['convenience','pois',matches('shop',['convenience']),16],
+  ['station','public_transport',matches('kind',['station','halt','tram_stop']),14],
+  ['port','public_transport',matches('kind',['ferry_terminal']),14],
+  ['food','pois',matches('amenity',['restaurant','cafe','fast_food','food_court']),16],
+  ['viewpoint','pois',matches('tourism',['viewpoint']),15],
+  ['tourism','pois',['any',matches('tourism',['attraction','museum','gallery','zoo','theme_park','aquarium','information']),matches('amenity',['arts_centre'])],15],
+  ['historic','pois',matches('historic',['archaeological_site','battlefield','castle','fort','ruins','wayside_shrine']),15],
+  ['landmark','pois',['any',matches('historic',['monument','memorial']),matches('tourism',['artwork']),matches('man_made',['lighthouse'])],15]
  ];
- for(const [id,source,filter,mark,color,minzoom] of entries){
-  const optional=OPTIONAL_POI_IDS.includes(id);
-  add(map,'poi-'+id+'-dot','circle',source,{minzoom,filter,layout:{visibility:optional?'none':'visible'},paint:{
-   'circle-radius':['interpolate',['linear'],['zoom'],12,7,16,9],
-   'circle-color':color,'circle-stroke-color':'#fff','circle-stroke-width':1.5
+ for(const [id,source,filter,minzoom] of entries){
+  add(map,'poi-'+id+'-icon','symbol',source,{minzoom,filter,layout:{
+   visibility:'none','icon-image':'bnavi-poi-'+id,
+   'icon-size':0.82,'icon-allow-overlap':false,'icon-ignore-placement':false,
+   'icon-padding':6,'symbol-sort-key':0
   }});
-  add(map,'poi-'+id+'-text','symbol',source,{minzoom,filter,layout:{
-   visibility:optional?'none':'visible',
-   'text-field':mark,'text-font':['sans-serif'],'text-size':mark==='WC'?9:12,
-   'text-allow-overlap':false,'text-padding':3
-  },paint:{'text-color':'#fff'}});
  }
  // Labels: prefer local system glyph rendering (MapLibre GL JS 6) for offline maps.
  const textPaint=(color,sizeHalo=1.35)=>({'text-color':color,'text-halo-color':'#fffdfa','text-halo-width':sizeHalo,'text-halo-blur':0.5});
@@ -210,6 +209,26 @@ function removeCartography(map){
  }
  activeByRegion.clear();
 }
+
+// Draw recognisable pictograms, never letters. The glyphs are rasterised locally
+// into MapLibre sprite images; no CDN, font downloads, or external images required.
+const POI_PICTOGRAMS={fuel:'⛽',toilet:'🚻',convenience:'🏪',station:'🚉',port:'⛴️',
+ food:'🍽️',viewpoint:'🏞️',tourism:'🎟️',historic:'🏯',landmark:'⭐'};
+function addPoiIconImages(map){
+ for(const [id,pictogram] of Object.entries(POI_PICTOGRAMS)){
+  const name='bnavi-poi-'+id;
+  if(map.hasImage(name))continue;
+  const canvas=document.createElement('canvas');canvas.width=64;canvas.height=64;
+  const ctx=canvas.getContext('2d');if(!ctx)continue;
+  // A compact, high-contrast white-backed icon with subtle outline.
+  ctx.beginPath();ctx.arc(32,32,28,0,Math.PI*2);ctx.fillStyle='#ffffff';ctx.fill();
+  ctx.lineWidth=2.5;ctx.strokeStyle='#607986';ctx.stroke();
+  ctx.font='37px "Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji",sans-serif';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(pictogram,32,33,52);
+  map.addImage(name,ctx.getImageData(0,0,64,64),{pixelRatio:2});
+ }
+}
 function renderAll(map,records){
  removeCartography(map);
  if(!records.length){currentKey='';window.__bikeLocalPmtilesActive=false;window.__bnaviOfflineCoverage=()=>false;window.__bnaviMapBridge?.sync?.();message('この端末には地図データがまだありません');return}
@@ -217,6 +236,7 @@ function renderAll(map,records){
   activeByRegion.set(record.region,record);
   map.addSource(sourceId(record.region),sourceOptions(record));
  }
+ addPoiIconImages(map);
  for(const layer of regionLayers(records,blueprints))map.addLayer(layer,anchor(map));
  applyPoiVisibility(map);
  removeLegacyRoads(map);
