@@ -11,19 +11,21 @@ const SVG_NS='http://www.w3.org/2000/svg';
 let fuelSvgGroup=null,fuelIconData=null;
 const API='https://overpass-api.de/api/interpreter';
 const REGIONS={
- chugoku:{name:'中国',box:[33.35,130.40,36.05,134.70]},
- shikoku:{name:'四国',box:[32.65,132.00,34.65,134.85]},
- kyushu:{name:'九州',box:[30.7,128.05,34.55,132.20]},
- kansai:{name:'関西',box:[33.35,134.05,36.45,136.95]},
- chubu:{name:'中部',box:[34.35,136.25,38.65,140.10]},
- kanto:{name:'関東',box:[34.70,138.35,37.15,141.20]},
- tohoku:{name:'東北',box:[36.70,139.05,41.65,142.20]},
- hokkaido:{name:'北海道',box:[41.25,139.20,45.65,145.90]}
+ chugoku:{name:'中国',box:[33.2,130.35,36.1,134.8]},
+ shikoku:{name:'四国',box:[32.5,131.8,34.75,134.95]},
+ kyushu:{name:'九州・奄美',box:[27.0,128.0,34.6,132.35]},
+ okinawa:{name:'沖縄',box:[24.0,122.0,28.05,131.3]},
+ kansai:{name:'関西',box:[33.3,134.0,36.7,137.15]},
+ chubu:{name:'中部',box:[34.3,136.15,38.85,140.2]},
+ kanto:{name:'関東',box:[34.65,138.2,37.5,141.3]},
+ tohoku:{name:'東北',box:[36.65,139.0,41.75,142.45]},
+ hokkaido:{name:'北海道',box:[41.2,139.1,45.75,146.15]}
 };
 const status=$('offline-fuel-status');
 const button=$('offline-fuel-download');
 const cancel=$('offline-fuel-cancel');
-const regionSelect=$('offline-map-region');
+const regionSelect=$('offline-fuel-region');
+const progress=$('offline-fuel-progress');
 const report=msg=>{if(status)status.textContent=msg};
 let controller=null;
 async function fuelFolder(region,create=false){
@@ -57,17 +59,54 @@ function normalizeFuel(elements,region){
  if(stations.length>40000)throw Error('取得件数が想定を超えました');
  return stations;
 }
-function queryFor(region){
- const b=REGIONS[region].box.join(',');
- return '[out:json][timeout:90];(node["amenity"="fuel"]('+b+');way["amenity"="fuel"]('+b+');relation["amenity"="fuel"]('+b+'););out center;';
+// Large requests are split into several bounded, sequential Overpass queries.
+// Save only after every part succeeds, so incomplete downloads never overwrite
+// an existing regional file. Public Overpass instances can throttle requests.
+function queryFor(box){
+ return '[out:json][timeout:90];(nwr["amenity"="fuel"]('+box.join(',')+'););out center;';
+}
+function splitBox(box){
+ const [south,west,north,east]=box;
+ const rows=Math.max(1,Math.ceil((north-south)/2.7));
+ const cols=Math.max(1,Math.ceil((east-west)/3.1));
+ const parts=[];
+ for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+  parts.push([
+   +(south+(north-south)*row/rows).toFixed(6),
+   +(west+(east-west)*col/cols).toFixed(6),
+   +(south+(north-south)*(row+1)/rows).toFixed(6),
+   +(west+(east-west)*(col+1)/cols).toFixed(6)
+  ]);
+ }
+ return parts;
+}
+function delay(ms,signal){
+ return new Promise((resolve,reject)=>{
+  if(signal?.aborted)return reject(new DOMException('中断しました','AbortError'));
+  const timer=setTimeout(()=>{signal?.removeEventListener('abort',abort);resolve()},ms);
+  const abort=()=>{clearTimeout(timer);reject(new DOMException('中断しました','AbortError'))};
+  signal?.addEventListener('abort',abort,{once:true});
+ });
 }
 async function fetchFuel(region,signal){
- // Explicit manual downloads only; do not hit Overpass during map browsing.
- const response=await fetch(API,{method:'POST',body:new URLSearchParams({data:queryFor(region)}),signal,cache:'no-store'});
- if(!response.ok)throw Error('OSM施設サーバー HTTP '+response.status+(response.status===429?'（混雑・制限中。時間を空けて再試行）':''));
- const data=await response.json();
- if(!Array.isArray(data?.elements))throw Error('施設サーバーの応答形式が不正です');
- return {stations:normalizeFuel(data.elements,region),osmTimestamp:data.osm3s?.timestamp_osm_base||null};
+ const parts=splitBox(REGIONS[region].box),collected=[],seen=new Set();
+ let osmTimestamp=null;
+ for(let i=0;i<parts.length;i++){
+  if(i>0)await delay(2100,signal);
+  report(REGIONS[region].name+'のガソスタ取得中… '+(i+1)+'/'+parts.length+'区画（通信中）');
+  if(progress)progress.value=i/parts.length;
+  const response=await fetch(API,{method:'POST',body:new URLSearchParams({data:queryFor(parts[i])}),signal,cache:'no-store'});
+  if(!response.ok)throw Error('施設サーバー HTTP '+response.status+(response.status===429?'（混雑中・しばらく時間を空けて再試行）':''));
+  const data=await response.json();
+  if(!Array.isArray(data?.elements))throw Error('施設サーバーの応答形式が不正です');
+  for(const entry of data.elements){
+   const key=entry.type+'/'+entry.id;
+   if(!seen.has(key)){seen.add(key);collected.push(entry)}
+  }
+  osmTimestamp=data.osm3s?.timestamp_osm_base||osmTimestamp;
+  if(progress)progress.value=(i+1)/parts.length;
+ }
+ return {stations:normalizeFuel(collected,region),osmTimestamp};
 }
 async function saveFuel(region,payload){
  const dir=await fuelFolder(region,true);
@@ -192,7 +231,8 @@ button?.addEventListener('click',async()=>{
  const region=regionSelect?.value;
  if(!REGIONS[region]||controller)return;
  controller=new AbortController();
- button.disabled=true;if(cancel)cancel.disabled=false;
+ button.disabled=true;regionSelect.disabled=true;if(cancel)cancel.disabled=false;
+ if(progress)progress.value=0;
  report(REGIONS[region].name+'地方のガソスタをOSMから取得中…（通信が必要）');
  try{
   const data=await fetchFuel(region,controller.signal);
@@ -200,7 +240,7 @@ button?.addEventListener('click',async()=>{
   await refresh();
   report('✅ '+REGIONS[region].name+'地方 '+data.stations.length+'件のガソスタを端末に保存したよ。⛽をONにして表示できるよ。走行中は通信不要。');
  }catch(e){report((e.name==='AbortError'?'取得を中断したよ':'取得できなかったよ：'+e.message)+'。保存済みのガソスタデータはそのまま。')}
- finally{controller=null;button.disabled=false;if(cancel)cancel.disabled=true}
+ finally{controller=null;button.disabled=false;regionSelect.disabled=false;if(cancel)cancel.disabled=true}
 });
 cancel?.addEventListener('click',()=>controller?.abort());
 regionSelect?.addEventListener('change',updateSavedStatus);
