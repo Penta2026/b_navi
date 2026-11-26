@@ -64,7 +64,20 @@ async function active(r){
  }catch(e){if(e.name!=='NotFoundError')throw e}
  try{return await(await d.getFileHandle('map.pmtiles')).getFile()}catch(e){if(e.name==='NotFoundError')return null;throw e}
 }
+// The selector is labeled from actual OPFS files, not from cached flags.
+async function refreshMapDownloadMarks(){
+ const select=$('offline-map-region');
+ const results=await Promise.all([...select.options].map(async option=>{
+  try{const file=await active(option.value);return file?.size>0}
+  catch{return false}
+ }));
+ [...select.options].forEach((option,i)=>{
+  if(!option.dataset.originalLabel)option.dataset.originalLabel=option.textContent;
+  option.textContent=option.dataset.originalLabel+(results[i]?' 【済】':'');
+ });
+}
 async function status(){
+ await refreshMapDownloadMarks();
  $('offline-map-install-note').textContent='✅ '+runMode()+'：地図はこの端末内のアプリ専用領域に保存されます';
  $('offline-map-download').disabled=!deliveryReady();
  try{
@@ -162,6 +175,7 @@ $('offline-map-download').onclick=async()=>{
   const response=await fetch(url,{mode:'cors',cache:'no-store',signal:downloadAbort.signal});
   if(!response.ok)throw Error('地図配信サーバー HTTP '+response.status);
   const bytes=await transfer(response,r);
+  await refreshMapDownloadMarks();
   $('offline-map-progress').value=1;
   const runtimeReady=await prepareOfflineRuntime();
   set(names[r]+'地方：'+(bytes/1048576).toFixed(1)+' MiBを端末内に保存しました。'+(runtimeReady?'オフライン描画用プログラムも保存しました。':'地図本体は保存済み。ただし描画用プログラムのオフライン保存が不完全な可能性があります。Wi-Fi中に一度PWAを再起動して確認してね。'));
