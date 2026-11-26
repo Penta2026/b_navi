@@ -95,6 +95,30 @@ function addFuelIcon(map){
  map.addImage(IMAGE,ctx.getImageData(0,0,64,64),{pixelRatio:2});
 }
 let lastCount=0;
+let allFuelFeatures=[];
+let viewRefreshTimer=0;
+// Only pass fully visible icons to MapLibre. A marker whose centre is right
+// against the canvas edge otherwise gets drawn as a distracting half icon.
+function updateVisibleFuel(){
+ const map=window.__bikeMap;
+ if(!map||!map.isStyleLoaded())return;
+ const source=map.getSource(SOURCE);
+ if(!source)return;
+ const canvas=map.getCanvas();
+ const width=canvas.clientWidth,height=canvas.clientHeight;
+ if(width<=0||height<=0)return;
+ const margin=19;
+ const visible=allFuelFeatures.filter(feature=>{
+  const p=map.project(feature.geometry.coordinates);
+  return p.x>=margin&&p.y>=margin&&p.x<=width-margin&&p.y<=height-margin;
+ });
+ source.setData({type:'FeatureCollection',features:visible});
+ window.__bnaviOfflineFuelInView=visible.length;
+}
+function scheduleVisibleFuel(){
+ clearTimeout(viewRefreshTimer);
+ viewRefreshTimer=setTimeout(updateVisibleFuel,110);
+}
 async function refresh(){
  const map=window.__bikeMap;
  if(!map||!map.isStyleLoaded())return;
@@ -104,13 +128,16 @@ async function refresh(){
   catch(e){report('保存済みガソスタを読めません: '+e.message)}
  }
  const geo=fuelGeoJSON(records);lastCount=geo.features.length;
+ allFuelFeatures=geo.features;
  window.__bnaviOfflineFuelCount=lastCount;
  addFuelIcon(map);
  let source=map.getSource(SOURCE);
- if(source)source.setData(geo);
- else map.addSource(SOURCE,{type:'geojson',data:geo});
+ if(!source)map.addSource(SOURCE,{type:'geojson',data:{type:'FeatureCollection',features:[]}});
  if(!map.getLayer(LAYER))map.addLayer({id:LAYER,type:'symbol',source:SOURCE,minzoom:11,
-  layout:{'icon-image':IMAGE,'icon-size':0.82,'icon-allow-overlap':false,'icon-ignore-placement':false,'icon-padding':5,visibility:'none'}});
+  layout:{'icon-image':IMAGE,'icon-size':0.9,'icon-allow-overlap':true,'icon-ignore-placement':true,'icon-padding':5,visibility:'none'}});
+ // Always give the fuel layer the topmost position; names/other POIs must not hide it.
+ if(map.getLayer(LAYER))map.moveLayer(LAYER);
+ updateVisibleFuel();
  syncVisibility();
 }
 function syncVisibility(){
@@ -148,6 +175,8 @@ document.getElementById('offline-poi-clear')?.addEventListener('click',syncVisib
 function boot(){
  const map=window.__bikeMap;
  if(!map){setTimeout(boot,150);return;}
+ map.on('moveend',scheduleVisibleFuel);
+ map.on('resize',scheduleVisibleFuel);
  map.on('load',()=>refresh().catch(e=>report('施設データ表示エラー：'+e.message)));
  map.on('style.load',()=>refresh().catch(e=>report('施設データ表示エラー：'+e.message)));
  refresh().catch(e=>report('施設データ表示エラー：'+e.message));
