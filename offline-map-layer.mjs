@@ -38,6 +38,36 @@ document.getElementById('offline-poi-clear')?.addEventListener('click',()=>{
  for(const input of document.querySelectorAll('input[data-offline-poi]'))input.checked=false;
  persistPoiVisibility();
 });
+
+// Inspect the actually loaded offline vector tiles, not a guessed online POI list.
+// The user can run this at a known fuel station to distinguish absent data from an
+// icon/filter/visibility issue. QuerySourceFeatures only examines loaded tiles.
+document.getElementById('offline-poi-check')?.addEventListener('click',()=>{
+ const output=document.getElementById('offline-poi-check-result');
+ if(!output)return;
+ const map=window.__bikeMap;
+ if(!map||!window.__bikeLocalPmtilesActive){output.textContent='端末のカラー地図が読み込まれていません。先に保存地図の状態を確認してね。';return;}
+ const zoom=map.getZoom();
+ const enabled=poiPreferences.fuel===true;
+ if(!enabled){output.textContent='ガソリンスタンドがOFFだよ。先に⛽のチェックをONにしてね。';return;}
+ if(zoom<14){output.textContent='現在の内部ズーム '+zoom.toFixed(1)+'。Shortbreadのガソスタ情報は原則14のタイルにあるため、まず地図をもっと拡大してから診断してね。';return;}
+ let all=0,fuel=0,visible=0,loaded=false;
+ try{
+  for(const region of regions){
+   const src=sourceId(region);
+   if(!map.getSource(src))continue;
+   loaded=loaded||map.isSourceLoaded(src);
+   const found=map.querySourceFeatures(src,{sourceLayer:'pois'});
+   all+=found.length;
+   fuel+=found.filter(f=>f.properties?.amenity==='fuel').length;
+  }
+  visible=map.queryRenderedFeatures({layers:regions.map(region=>prefix+region+'-poi-fuel-icon').filter(id=>map.getLayer(id))}).length;
+ }catch(err){output.textContent='施設データの診断中にエラー：'+err.message;return;}
+ const base='地図ズーム '+zoom.toFixed(1)+'／読込済み施設 '+all+'件／ガソスタ '+fuel+'件／描画対象 '+visible+'件。';
+ output.textContent=base+(fuel>0
+  ?(visible>0?' ガソスタのデータと表示は検出できたよ。':' ガソスタのデータはあるけれど、アイコンが描画されていないよ。表示処理の問題として調査できるよ。')
+  :(all>0?' この範囲の施設データにガソスタが見つからないよ。地図への収録状況を確認する必要があるね。':(loaded?' 施設データが検出できなかったよ。地図の収録レイヤーを確認する必要があるね。':' 地図タイルの読み込み中かも。少し地図を動かして、もう一度確認してね。')));
+});
 function message(s){if(label)label.textContent=s}
 
 async function readArchive(region){
