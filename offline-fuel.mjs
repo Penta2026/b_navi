@@ -122,25 +122,44 @@ function updateVisibleFuel(){
  window.__bnaviOfflineFuelInView=0;
  window.__bnaviOfflineFuelRendered=0;
  if(!enabled||core.zoom<11||!fuelIconData)return;
- const c=Math.cos(core.bearing*Math.PI/180),sin=Math.sin(core.bearing*Math.PI/180),margin=22;
- const nodes=document.createDocumentFragment();
+ // Zoom 11 shows a sparse regional overview; every station returns by zoom 14.
+ const gap=core.zoom<=11?105:core.zoom===12?76:core.zoom===13?46:0;
+ const size=core.zoom<=11?22:core.zoom===12?25:core.zoom===13?28:32;
+ const margin=size/2+5;
+ const angle=core.bearing*Math.PI/180,c=Math.cos(angle),sin=Math.sin(angle);
+ const occupied=new Map(),nodes=document.createDocumentFragment();
  for(const feature of allFuelFeatures){
   const [x,y]=core.screenPos([feature.geometry.coordinates[1],feature.geometry.coordinates[0]]);
   const dx=x-width/2,dy=y-height/2;
-  const rotatedX=dx*c-dy*sin+width/2,rotatedY=dx*sin+dy*c+height/2;
-  if(rotatedX<margin||rotatedY<margin||rotatedX>width-margin||rotatedY>height-margin)continue;
+  const rx=dx*c-dy*sin+width/2,ry=dx*sin+dy*c+height/2;
+  if(rx<margin||ry<margin||rx>width-margin||ry>height-margin)continue;
   window.__bnaviOfflineFuelInView++;
+  if(gap){
+   const gx=Math.floor(rx/gap),gy=Math.floor(ry/gap);
+   let crowded=false;
+   for(let ix=gx-1;ix<=gx+1&&!crowded;ix++){
+    for(let iy=gy-1;iy<=gy+1&&!crowded;iy++){
+     for(const [px,py] of occupied.get(ix+','+iy)||[]){
+      if((rx-px)**2+(ry-py)**2<gap*gap){crowded=true;break;}
+     }
+    }
+   }
+   if(crowded)continue;
+   const key=gx+','+gy;
+   if(!occupied.has(key))occupied.set(key,[]);
+   occupied.get(key).push([rx,ry]);
+  }
   const marker=document.createElementNS(SVG_NS,'image');
-  marker.setAttribute('x',(x-16).toFixed(1));
-  marker.setAttribute('y',(y-16).toFixed(1));
-  marker.setAttribute('width','32');marker.setAttribute('height','32');
+  marker.setAttribute('x',(x-size/2).toFixed(1));
+  marker.setAttribute('y',(y-size/2).toFixed(1));
+  marker.setAttribute('width',String(size));
+  marker.setAttribute('height',String(size));
   marker.setAttribute('href',fuelIconData);
-  // Cancel the parent SVG's map rotation for upright pictograms.
   marker.setAttribute('transform','rotate('+(-core.bearing).toFixed(2)+' '+x.toFixed(1)+' '+y.toFixed(1)+')');
   nodes.append(marker);
+  window.__bnaviOfflineFuelRendered++;
  }
  group.append(nodes);
- window.__bnaviOfflineFuelRendered=window.__bnaviOfflineFuelInView;
 }
 function scheduleVisibleFuel(){updateVisibleFuel()}
 async function refresh(){
